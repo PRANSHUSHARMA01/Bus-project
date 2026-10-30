@@ -1,0 +1,24 @@
+# Virtual environments & Python cache
+venv/
+backend/venv/
+__pycache__/
+backend/__pycache__/
+*.pyc
+*.pyo
+
+# Node dependencies & Next.js build output
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+.next/
+
+# Environment files
+.env
+.env*.local
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,26 @@
+{
+  "model_type": "RidgeLinearRegression",
+  "feature_names": [
+    "intercept",
+    "hour",
+    "day_of_week",
+    "is_weekend",
+    "route_A",
+    "route_B",
+    "route_C"
+  ],
+  "weights": [
+    32.35977428190551,
+    2.4385059432290928,
+    -0.2287048014186828,
+    -21.985014811775034,
+    25.26749675307274,
+    3.0688538539446735,
+    -28.336350607021867
+  ],
+  "metrics": {
+    "mae": 30.98,
+    "rmse": 41.52,
+    "r2": 0.3431
+  }
+}
