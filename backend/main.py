@@ -157,13 +157,15 @@ def routes():
                     "stops": [{"id": s["id"], "d": s["d"], **STOPS[s["id"]]} for s in r["stops"]]})
     return out
 
+# Precompute stops list at startup for instant sub-millisecond response
+PRECOMPUTED_STOPS = []
+for sid, s in STOPS.items():
+    r_list = s.get("routes") or [r["id"] for r in ROUTES.values() if any(x["id"] == sid for x in r["stops"])]
+    PRECOMPUTED_STOPS.append({"id": sid, **s, "routes": r_list})
+
 @app.get("/stops")
 def stops():
-    out = []
-    for sid, s in STOPS.items():
-        out.append({"id": sid, **s, "routes": [r["id"] for r in ROUTES.values()
-                                              if any(x["id"] == sid for x in r["stops"])]})
-    return out
+    return PRECOMPUTED_STOPS
 
 # ------------------------------------------------------------------ ETA (the PPT formula)
 # ETA = distance / effective_speed + dwell_time

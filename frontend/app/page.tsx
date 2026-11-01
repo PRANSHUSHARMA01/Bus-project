@@ -63,7 +63,7 @@ export default function UberPassengerApp() {
   const [viewMode, setViewMode] = useState<"home" | "map">("home");
 
   // Selection & Search
-  const [selectedStopId, setSelectedStopId] = useState<string>("cp");
+  const [selectedStopId, setSelectedStopId] = useState<string>("");
   const [trackingBusId, setTrackingBusId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -109,26 +109,42 @@ export default function UberPassengerApp() {
     1500
   );
 
-  const selectedStop = stops.find((s) => s.id === selectedStopId);
+  // Fallback to active route stop if current selection is invalid
+  useEffect(() => {
+    if (stops.length > 0) {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("user_selected_stop") : null;
+      if (saved && stops.some((s) => s.id === saved)) {
+        setSelectedStopId(saved);
+      } else if (!selectedStopId || !stops.some((s) => s.id === selectedStopId)) {
+        const firstActive = stops.find((s) => s.routes && s.routes.length > 0) || stops[0];
+        setSelectedStopId(firstActive.id);
+      }
+    }
+  }, [stops, selectedStopId]);
+
+  const selectedStop = stops.find((s) => s.id === selectedStopId) || stops[0];
   const trackingBus = buses.find((b) => b.bus_id === trackingBusId);
   const trackingRoute = routes.find((r) => r.id === trackingBus?.route_id);
 
   const stopName = (s: Stop) => (lang === "hi" ? s.name_hi : s.name);
 
-  // Autocomplete
+  // Autocomplete over all 6,800+ GTFS stops
   const searchHits = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
     return stops
       .filter((s) => s.name.toLowerCase().includes(q) || s.name_hi.includes(q))
-      .slice(0, 6);
+      .slice(0, 8);
   }, [searchQuery, stops]);
 
-  // Recent stops
-  const recentStops = useMemo(
-    () => stops.filter((s) => ["cp", "ndls", "kashmere_gate"].includes(s.id)),
-    [stops]
-  );
+  // Recent stops: Top landmark hubs from active corridors
+  const recentStops = useMemo(() => {
+    if (stops.length === 0) return [];
+    const activeStops = stops.filter((s) => s.routes && s.routes.length > 0);
+    const hubs = ["Kashmere Gate", "Mehrauli", "Old Delhi", "Nizamuddin", "Anand Vihar", "Rohini", "Connaught Place", "Nehru Place"];
+    const matched = activeStops.filter((s) => hubs.some((h) => s.name.toLowerCase().includes(h.toLowerCase())));
+    return (matched.length >= 3 ? matched : activeStops).slice(0, 3);
+  }, [stops]);
 
   function handleSelectStop(id: string) {
     setSelectedStopId(id);
@@ -147,9 +163,20 @@ export default function UberPassengerApp() {
     setSheetSnap("half");
   }
 
+  function openRouteTracker(routeId: string) {
+    const route = routes.find((r) => r.id === routeId || r.alias === routeId);
+    if (route && route.stops && route.stops.length > 0) {
+      openStopTracker(route.stops[0].id);
+    } else if (stops.length > 0) {
+      openStopTracker(stops[0].id);
+    }
+  }
+
   function handleLocateNearest() {
     setLocationSheetOpen(false);
-    const fallback = () => openStopTracker("cp");
+    const fallback = () => {
+      if (recentStops[0]) openStopTracker(recentStops[0].id);
+    };
     if (typeof navigator === "undefined" || !navigator.geolocation) return fallback();
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -201,21 +228,21 @@ export default function UberPassengerApp() {
     },
     {
       id: "routeA",
-      label: lang === "hi" ? "रूट A" : "Route A",
+      label: lang === "hi" ? "रूट 502" : "Route 502",
       icon: BusIcon,
-      onClick: () => openStopTracker("cp"),
+      onClick: () => openRouteTracker("502"),
     },
     {
       id: "routeB",
-      label: lang === "hi" ? "रूट B" : "Route B",
+      label: lang === "hi" ? "रूट 427" : "Route 427",
       icon: BusIcon,
-      onClick: () => openStopTracker("kashmere_gate"),
+      onClick: () => openRouteTracker("427"),
     },
     {
       id: "routeC",
-      label: lang === "hi" ? "रूट C" : "Route C",
+      label: lang === "hi" ? "रूट 102" : "Route 102",
       icon: BusIcon,
-      onClick: () => openStopTracker("ndls"),
+      onClick: () => openRouteTracker("102"),
     },
     {
       id: "safety",
@@ -264,7 +291,9 @@ export default function UberPassengerApp() {
       subtitle: lang === "hi" ? "चढ़ने से पहले सीट मिलने की संभावना जांचें" : "Predict seat availability before boarding",
       bg: "linear-gradient(135deg, #18181b 0%, #27272a 100%)",
       color: "#ffffff",
-      onClick: () => openStopTracker("cp"),
+      onClick: () => {
+        if (recentStops[0]) openStopTracker(recentStops[0].id);
+      },
     },
     {
       id: "safety",
@@ -278,11 +307,11 @@ export default function UberPassengerApp() {
     {
       id: "routeA",
       tag: "Smart Commute",
-      title: lang === "hi" ? "आपकी पसंदीदा बस: रूट A" : "Your usual bus: Route A",
-      subtitle: lang === "hi" ? "कनॉट प्लेस से अगली बस 4 मिनट में" : "Next bus from Connaught Place in 4 min",
+      title: lang === "hi" ? "प्रमुख दिल्ली रूट: 502" : "Major Delhi Corridor: 502",
+      subtitle: lang === "hi" ? "महरौली से कश्मीरी गेट बस हर 5 मिनट में" : "Mehrauli - Kashmere Gate frequency 5 min",
       bg: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
       color: "#ffffff",
-      onClick: () => openStopTracker("cp"),
+      onClick: () => openRouteTracker("502"),
     },
   ];
 

@@ -69,7 +69,7 @@ def expected_boardings(rid, stop_id, hour, weekend, surge):
     speed = hist_speed_kmh(hour) / 3.6
     lap_seconds = route["period"] / speed + route["n_visits"] * 30
     visits_per_hour = n_buses * route["n_visits"] * 3600 / lap_seconds
-    per_visit = ROUTE_PEAK[rid] * hourly_factor(hour, weekend) / visits_per_hour
+    per_visit = ROUTE_PEAK.get(rid, 500) * hourly_factor(hour, weekend) / visits_per_hour
     return per_visit * WEIGHT.get(stop_id, 1.0) * (2.2 if surge else 1.0)
 
 session = requests.Session()

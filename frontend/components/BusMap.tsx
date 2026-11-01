@@ -122,6 +122,15 @@ export default function BusMap({
     })),
   };
 
+  // High-performance filter: Render stop markers for active corridors or the selected stop
+  const displayStops = (stops || []).filter((s) => {
+    if (s.id === selectedStop) return true;
+    if (s.routes && s.routes.length > 0) {
+      return routes.some((r) => s.routes?.includes(r.id));
+    }
+    return false;
+  });
+
   return (
     <Map
       ref={mapRef}
@@ -135,7 +144,7 @@ export default function BusMap({
       </Source>
 
       {/* Uber monochrome stop markers */}
-      {stops.map((s) => (
+      {displayStops.map((s) => (
         <Marker key={s.id} longitude={s.lng} latitude={s.lat}>
           <div
             className={`uber-stop-marker ${s.id === selectedStop ? "sel" : ""}`}

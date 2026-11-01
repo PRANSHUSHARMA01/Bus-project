@@ -13,6 +13,7 @@ export interface Stop {
 export interface Route {
   id: string;
   name: string;
+  alias?: string;
   color: string;
   length_m: number;
   path: [number, number][];

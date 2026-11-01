@@ -2,7 +2,17 @@
 import math
 
 # Passengers per hour on a normal weekday peak (modelled on typical Delhi corridors)
-ROUTE_PEAK = {"A": 620, "B": 380, "C": 220}
+ROUTE_PEAK = {
+    "502": 680,
+    "427": 490,
+    "102": 560,
+    "534": 620,
+    "615": 410,
+    "764": 530,
+    "A": 680,
+    "B": 490,
+    "C": 560,
+}
 
 # Fleet maths from the project PPT: buses = ceil(peak / (capacity x target load factor))
 BUS_CAPACITY = 60 # low-floor bus, passengers

@@ -88,7 +88,8 @@ for r in rows:
 typical = {k: sum(v)/len(v) for k, v in typical_slots.items()}
 
 forecast = {}
-for route in ["A", "B", "C"]:
+unique_routes = sorted(list(by_route.keys()))
+for route in unique_routes:
     values = []
     for dow in range(7):
         for hour in range(24):

@@ -1,7 +1,7 @@
 {
-  "mae_model": 16.2,
-  "mae_baseline": 16.9,
-  "improvement_pct": 4.1,
-  "train_rows": 1680,
+  "mae_model": 17.5,
+  "mae_baseline": 18.4,
+  "improvement_pct": 5.1,
+  "train_rows": 5040,
   "holdout_days": 7
 }
