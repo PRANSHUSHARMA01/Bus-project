@@ -727,15 +727,22 @@ def get_trip_planner() -> Optional[TripPlannerEngine]:
 
 @v1_router.get("/trips/plan", response_model=TripPlanResponse)
 def plan_trip(
-    to_stop_id: str = Query(..., description="Destination stop ID"),
+    to_stop_id: Optional[str] = Query(None, description="Destination stop ID"),
+    to: Optional[str] = Query(None, description="Destination stop alias"),
     from_lat: Optional[float] = Query(None, description="Rider GPS latitude"),
     from_lng: Optional[float] = Query(None, description="Rider GPS longitude"),
     from_stop_id: Optional[str] = Query(None, description="Optional explicit boarding stop ID"),
+    from_: Optional[str] = Query(None, alias="from", description="Boarding stop alias"),
 ):
     """
     Trip Planner: Finds all routes serving boarding and destination stops in the right direction,
     and returns every live bus approaching the boarding stop with ETA, crowd %, and seat chance.
     """
+    target_to = to_stop_id or to
+    if not target_to:
+        raise HTTPException(status_code=400, detail="Destination stop ('to_stop_id' or 'to') is required")
+    target_from = from_stop_id or from_
+
     planner = get_trip_planner()
     if not planner:
         raise HTTPException(status_code=503, detail="Transit network routes not loaded")
@@ -750,8 +757,8 @@ def plan_trip(
     return planner.plan(
         from_lat=from_lat,
         from_lng=from_lng,
-        to_stop_id=to_stop_id,
-        from_stop_id=from_stop_id,
+        to_stop_id=target_to,
+        from_stop_id=target_from,
         live_buses=live_list
     )
 

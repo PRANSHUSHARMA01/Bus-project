@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Bus, ArrowRight, ShieldCheck, Mail, CheckCircle2 } from "lucide-react";
+import { MovingBus } from "@/components/anatomy/MovingBus";
 
 export default function LoginPage() {
   const { user, signInWithEmail, verifyOtp, signInWithGoogle } = useAuth();
@@ -137,22 +138,13 @@ export default function LoginPage() {
       }}>
         {/* Brand Header */}
         <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 52,
-            height: 52,
-            borderRadius: 16,
-            background: "var(--accent)",
-            color: "var(--on-accent)",
-            display: "inline-grid",
-            placeItems: "center",
-            marginBottom: 16
-          }}>
-            <Bus size={28} />
+          <div style={{ marginBottom: 12 }}>
+            <MovingBus compact={true} />
           </div>
-          <h1 className="text-display" style={{ fontSize: 26, margin: "0 0 8px 0" }}>
+          <h1 className="text-display" style={{ fontSize: 24, margin: "8px 0 6px 0" }}>
             Delhi Smart Transit
           </h1>
-          <p className="text-body" style={{ color: "var(--text-muted)", fontSize: 15, margin: 0 }}>
+          <p className="text-body" style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>
             Live bus arrival tracking, seat occupancy, and safe routes across NCR.
           </p>
         </div>

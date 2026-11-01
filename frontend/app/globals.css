@@ -4,7 +4,14 @@
    4px BASE SPACING SCALE & UBER MONOCHROME DESIGN SYSTEM
    ========================================================================== */
 :root {
-  /* 4px spacing scale */
+  /* Concentric radii (better-ui) */
+  --r-sheet: 24px;
+  --r-card: 20px;
+  --r-tile: 12px;
+  --r-chip: 8px;
+  --r-pill: 9999px;
+
+  /* 4px spacing scale (better-layout) */
   --s1: 4px;
   --s2: 8px;
   --s3: 12px;
@@ -15,45 +22,41 @@
   --s8: 64px;
   --nav-h: 76px;
 
-  /* Colors (oklch with sRGB fallback) */
-  --bg: oklch(1 0 0);
+  /* Semantic OKLCH Primitives (better-colors) */
+  --ink: oklch(0.18 0.02 260);
+  --saffron: oklch(0.80 0.17 75);
+  --magenta: oklch(0.62 0.24 355);
+  --electric-blue: oklch(0.55 0.22 262);
+  --green: oklch(0.70 0.18 150);
+  --cream: oklch(0.97 0.02 90);
+
+  /* Semantic Roles */
+  --bg: oklch(0.99 0 0);
   --surface: oklch(1 0 0);
-  --surface-2: oklch(0.96 0 0);
-  --surface-3: oklch(0.91 0 0);
-  --text: oklch(0.18 0 0);
-  --text-muted: oklch(0.48 0 0);
-  --text-dim: oklch(0.65 0 0);
+  --surface-2: oklch(0.96 0.01 90);
+  --surface-3: oklch(0.92 0.01 90);
+  --text: var(--ink);
+  --text-muted: oklch(0.46 0.02 260);
+  --text-dim: oklch(0.62 0.02 260);
   --line: oklch(0 0 0 / 0.08);
+  --border: oklch(0 0 0 / 0.08);
 
-  --primary: oklch(0.18 0 0);
+  --primary: var(--ink);
   --on-primary: oklch(1 0 0);
-  --primary-hover: oklch(0.28 0 0);
+  --primary-hover: oklch(0.28 0.02 260);
+  --accent: var(--electric-blue);
 
-  /* Delhi Transit Design System Tokens (Phase E) */
-  --dtc-green: #0A6E3F;
-  --dtc-green-dark: #054C2B;
-  --dtc-green-light: #E8F5E9;
-  --transit-ochre: #F4A900;
-  --transit-ochre-light: #FEF3C7;
-  --transit-charcoal: #111827;
-  --transit-paper: #FFFFFF;
-  --metro-red: #DC2626;
-  --metro-yellow: #CA8A04;
-  --metro-blue: #2563EB;
-
-  --accent-red: oklch(0.55 0.21 27);
-  --link-blue: oklch(0.55 0.2 262);
-
+  /* Crowd Levels */
   --crowd-low: oklch(0.58 0.15 150);
   --crowd-mod: oklch(0.62 0.15 70);
-  --crowd-high: oklch(0.55 0.2 27);
+  --crowd-high: oklch(0.55 0.20 27);
 
-  /* Layered ring shadows */
-  --ring: 0 0 0 1px oklch(0 0 0 / 0.08), 0 2px 8px oklch(0 0 0 / 0.06), 0 8px 24px oklch(0 0 0 / 0.05);
+  /* Concentric Layered Shadow Rings (better-ui) */
+  --ring: 0 0 0 1px oklch(0 0 0 / 0.08), 0 2px 8px oklch(0 0 0 / 0.08), 0 8px 24px oklch(0 0 0 / 0.06);
   --ring-subtle: 0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 3px oklch(0 0 0 / 0.04);
   --ring-elevated: 0 0 0 1px oklch(0 0 0 / 0.08), 0 4px 16px oklch(0 0 0 / 0.1), 0 16px 36px oklch(0 0 0 / 0.08);
 
-  /* Fonts */
+  /* Typography (better-typography) */
   --font-sans: var(--font-inter, Inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-deva: var(--font-devanagari, "Noto Sans Devanagari"), system-ui, sans-serif;
   --font-mono: var(--font-mono, "JetBrains Mono"), monospace;
@@ -175,6 +178,92 @@ html, body {
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Interactive & surface craft rules (better-ui) */
+.btn-press {
+  transition: transform 150ms ease-out, background-color 150ms ease-out;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+  .btn-press:hover {
+    transform: translateY(-1px);
+  }
+}
+.btn-press:active {
+  transform: scale(0.96);
+}
+.btn-press:disabled {
+  transform: none;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.img-outline {
+  outline: 1px solid oklch(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
+[data-theme="dark"] .img-outline {
+  outline: 1px solid oklch(1 0 0 / 0.1);
+}
+
+.concentric-sheet {
+  border-radius: var(--r-sheet);
+}
+.concentric-card {
+  border-radius: var(--r-card);
+  box-shadow: var(--ring);
+  border: 1px solid transparent;
+}
+.concentric-tile {
+  border-radius: var(--r-tile);
+}
+.concentric-chip {
+  border-radius: var(--r-chip);
+}
+.concentric-pill {
+  border-radius: var(--r-pill);
+}
+
+/* Staged entrance with CSS fallback (better-ui) */
+.stagger-in {
+  animation: enterStagger 300ms cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+@keyframes enterStagger {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Heartbeat tribute animation (P0.8) */
+@keyframes heartbeat {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.12); }
+  40% { transform: scale(1); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .heartbeat {
+    animation: heartbeat 1.4s ease-in-out infinite;
+  }
 }
 
 h1, h2, h3, h4, b {

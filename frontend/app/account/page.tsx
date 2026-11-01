@@ -25,6 +25,8 @@ import {
   HeartHandshake
 } from "lucide-react";
 import { API } from "@/lib/api";
+import { Avatar } from "@/components/ui/Avatar";
+import { MovingBus } from "@/components/anatomy/MovingBus";
 
 interface EmergencyContact {
   id: string;
@@ -290,63 +292,16 @@ export default function AccountPage() {
           borderRadius: 20,
           padding: 24,
           boxShadow: "var(--ring)",
-          display: "flex",
-          alignItems: "center",
-          gap: 18
+          border: "1px solid transparent"
         }}>
-          {user?.avatar_url ? (
-            <img
-              src={user.avatar_url}
-              alt={user.full_name}
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 999,
-                objectFit: "cover",
-                outline: "1px solid rgba(0,0,0,0.1)",
-                outlineOffset: -1
-              }}
-            />
-          ) : (
-            <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: 999,
-              background: "var(--accent)",
-              color: "var(--on-accent)",
-              fontSize: 22,
-              fontWeight: 700,
-              display: "grid",
-              placeItems: "center",
-              outline: "1px solid rgba(0,0,0,0.1)",
-              outlineOffset: -1
-            }}>
-              {initials}
-            </div>
-          )}
-
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>
-                {user?.full_name || "Delhi Commuter"}
-              </div>
-              <span style={{
-                background: user?.role === "admin" ? "var(--accent)" : "var(--surface-3)",
-                color: user?.role === "admin" ? "var(--on-accent)" : "var(--text-muted)",
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                padding: "2px 8px",
-                borderRadius: 999
-              }}>
-                {user?.role || "Passenger"}
-              </span>
-            </div>
-            <div className="text-caption" style={{ color: "var(--text-muted)", marginTop: 2 }}>
-              {user?.email || "Commuter account"}
-            </div>
-          </div>
+          <Avatar
+            name={user?.full_name || "Delhi Commuter"}
+            userId={user?.id || "usr_commuter"}
+            email={user?.email || "Commuter account"}
+            role={user?.role || "Passenger"}
+            size={64}
+            showDetails={true}
+          />
         </div>
 
         {/* 2. Personal Info Section */}
@@ -902,6 +857,21 @@ export default function AccountPage() {
             </span>
             <ChevronRight size={16} />
           </button>
+        </div>
+
+        {/* Anatomy Moving Bus & Authentic Footer (P0.8) */}
+        <div style={{ marginTop: 12 }}>
+          <MovingBus />
+
+          <div style={{ textAlign: "center", padding: "16px 0 10px 0" }}>
+            <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--text)", margin: "0 0 4px 0" }}>
+              Made in India for the people of India{" "}
+              <span className="heartbeat" style={{ display: "inline-block", color: "#EF4444" }}>❤️</span>
+            </p>
+            <p className="text-caption" style={{ color: "var(--text-muted)", letterSpacing: "+0.05em", textTransform: "uppercase", fontSize: "0.75rem", margin: 0 }}>
+              Made by Team Qubits
+            </p>
+          </div>
         </div>
       </div>
 

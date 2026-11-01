@@ -48,6 +48,7 @@ import { ModeTabs, ModeTab } from "../components/ui/ModeTabs";
 import { PromoBanner } from "../components/ui/PromoBanner";
 import { SearchPill } from "../components/ui/SearchPill";
 import { Sheet } from "../components/ui/Sheet";
+import { MovingBus } from "../components/anatomy/MovingBus";
 import { ShortcutGrid, ShortcutItem } from "../components/ui/ShortcutGrid";
 import { Skeleton } from "../components/ui/Skeleton";
 import { StopRow } from "../components/ui/StopRow";
@@ -764,6 +765,21 @@ export default function UberPassengerApp() {
             buttonText={lang === "hi" ? "किराया देखें" : "See fares"}
             onButtonClick={() => setFaresSheetOpen(true)}
           />
+
+          {/* Anatomy Moving Bus & Authentic Footer (P0.8) */}
+          <div style={{ marginTop: 16 }}>
+            <MovingBus />
+
+            <div style={{ textAlign: "center", padding: "16px 0 24px 0" }}>
+              <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--text)", margin: "0 0 4px 0" }}>
+                Made in India for the people of India{" "}
+                <span className="heartbeat" style={{ display: "inline-block", color: "#EF4444" }}>❤️</span>
+              </p>
+              <p className="text-caption" style={{ color: "var(--text-muted)", letterSpacing: "+0.05em", textTransform: "uppercase", fontSize: "0.75rem", margin: 0 }}>
+                Made by Team Qubits
+              </p>
+            </div>
+          </div>
         </main>
       )}
 
