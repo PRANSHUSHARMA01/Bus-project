@@ -3,89 +3,121 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth, UserProfile } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import {
-  User,
-  Phone,
-  Mail,
-  Languages,
-  Home,
-  Briefcase,
-  MapPin,
+  HelpCircle,
+  CreditCard,
+  ShieldCheck,
+  Inbox,
+  Moon,
+  Settings,
   Shield,
   FileText,
+  ChevronRight,
+  LogOut,
   Download,
   Trash2,
-  LogOut,
-  ChevronRight,
   Check,
-  AlertTriangle,
+  Sparkles,
   ArrowLeft,
-  Plus,
+  X,
+  Phone,
+  User,
   HeartHandshake
 } from "lucide-react";
 import { API } from "@/lib/api";
-import { Avatar } from "@/components/ui/Avatar";
-import { MovingBus } from "@/components/anatomy/MovingBus";
+import { Sheet } from "@/components/ui/Sheet";
+import { BottomNav } from "@/components/ui/BottomNav";
+import { PillButton } from "@/components/ui/PillButton";
+import { PinkPassIllustration } from "@/components/ui/PromoBanner";
 
 interface EmergencyContact {
   id: string;
   name: string;
   phone: string;
   relationship: string;
-  is_verified?: number;
-  created_at?: string;
 }
 
 export default function AccountPage() {
   const { user, token, updateProfile, signOut, deleteAccount } = useAuth();
   const router = useRouter();
 
-  // Personal Info form
-  const [fullName, setFullName] = useState(user?.full_name || "");
-  const [phone, setPhone] = useState(user?.phone || "");
+  const [themeMode, setThemeMode] = useState<"system" | "light" | "dark">("system");
+  const [reduceMotion, setReduceMotion] = useState<boolean>(false);
+
+  // Sheets
+  const [appearanceSheetOpen, setAppearanceSheetOpen] = useState(false);
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+  const [privacySheetOpen, setPrivacySheetOpen] = useState(false);
+  const [safetySheetOpen, setSafetySheetOpen] = useState(false);
+  const [legalSheetOpen, setLegalSheetOpen] = useState(false);
+
+  // Profile Edit
+  const [fullName, setFullName] = useState(user?.full_name || "Pranshu Sharma");
+  const [phone, setPhone] = useState(user?.phone || "+91 98765 43210");
   const [lang, setLang] = useState<"en" | "hi">(user?.language || "en");
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [personalSaved, setPersonalSaved] = useState(false);
 
-  // Transit Places
-  const [homeStop, setHomeStop] = useState(user?.home_stop_id || "");
-  const [workStop, setWorkStop] = useState(user?.work_stop_id || "");
-  const [savedPlaces, setSavedPlaces] = useState<any[]>([]);
-
-  // Emergency Contacts
+  // Contacts
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactRel, setNewContactRel] = useState("Family");
-  const [showAddContact, setShowAddContact] = useState(false);
 
   // Delete modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Sync state when user profile loads
   useEffect(() => {
     if (user) {
-      setFullName(user.full_name || "");
-      setPhone(user.phone || "");
-      setLang(user.language || "en");
-      setHomeStop(user.home_stop_id || "");
-      setWorkStop(user.work_stop_id || "");
+      if (user.full_name) setFullName(user.full_name);
+      if (user.phone) setPhone(user.phone);
+      if (user.language) setLang(user.language);
     }
   }, [user]);
 
-  const loadSavedPlaces = async () => {
+  useEffect(() => {
     try {
-      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`${API}/v1/saved-places`, {
-        headers,
-        credentials: "include"
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSavedPlaces(data);
+      const savedTheme = (localStorage.getItem("smart_bus_theme") || localStorage.getItem("delhi_bus_theme") || "system") as "system" | "light" | "dark";
+      setThemeMode(savedTheme);
+      const savedMotion = localStorage.getItem("smart_bus_reduce_motion") === "true";
+      setReduceMotion(savedMotion);
+    } catch {}
+    loadEmergencyContacts();
+  }, [token]);
+
+  const applyTheme = async (mode: "system" | "light" | "dark") => {
+    setThemeMode(mode);
+    try {
+      localStorage.setItem("smart_bus_theme", mode);
+      localStorage.setItem("delhi_bus_theme", mode);
+      let effective = mode;
+      if (mode === "system") {
+        effective = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", effective);
+
+      if (token) {
+        fetch(`${API}/v1/auth/settings`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          credentials: "include",
+          body: JSON.stringify({ theme: mode }),
+        }).catch(() => {});
+      }
+    } catch {}
+  };
+
+  const toggleReduceMotion = (val: boolean) => {
+    setReduceMotion(val);
+    try {
+      localStorage.setItem("smart_bus_reduce_motion", String(val));
+      if (val) {
+        document.documentElement.setAttribute("data-reduce-motion", "true");
+      } else {
+        document.documentElement.removeAttribute("data-reduce-motion");
       }
     } catch {}
   };
@@ -95,64 +127,12 @@ export default function AccountPage() {
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch(`${API}/v1/emergency-contacts`, {
         headers,
-        credentials: "include"
+        credentials: "include",
       });
       if (res.ok) {
         const data = await res.json();
         setContacts(data);
       }
-    } catch {}
-  };
-
-  useEffect(() => {
-    loadSavedPlaces();
-    loadEmergencyContacts();
-  }, [token, user]);
-
-  const handleSavePersonalInfo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingPersonal(true);
-    await updateProfile({
-      full_name: fullName,
-      phone,
-      language: lang,
-      home_stop_id: homeStop || undefined,
-      work_stop_id: workStop || undefined
-    });
-    setSavingPersonal(false);
-    setPersonalSaved(true);
-    setTimeout(() => setPersonalSaved(false), 3000);
-  };
-
-  const handleAddCustomPlace = async () => {
-    const label = prompt("Place name (e.g. Gym, Library, Metro Station):");
-    if (!label) return;
-    const stopId = prompt("Stop ID or Name (e.g. 7572, Kashmere Gate):");
-    if (!stopId) return;
-
-    try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch(`${API}/v1/saved-places`, {
-        method: "POST",
-        headers,
-        credentials: "include",
-        body: JSON.stringify({ label, stop_id: stopId })
-      });
-      if (res.ok) loadSavedPlaces();
-    } catch {}
-  };
-
-  const handleDeleteSavedPlace = async (id: string) => {
-    try {
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch(`${API}/v1/saved-places/${id}`, {
-        method: "DELETE",
-        headers,
-        credentials: "include"
-      });
-      if (res.ok) loadSavedPlaces();
     } catch {}
   };
 
@@ -169,13 +149,12 @@ export default function AccountPage() {
         body: JSON.stringify({
           name: newContactName.trim(),
           phone: newContactPhone.trim(),
-          relationship: newContactRel.trim() || "Family"
-        })
+          relationship: newContactRel.trim() || "Family",
+        }),
       });
       if (res.ok) {
         setNewContactName("");
         setNewContactPhone("");
-        setShowAddContact(false);
         loadEmergencyContacts();
       }
     } catch {}
@@ -188,40 +167,37 @@ export default function AccountPage() {
       const res = await fetch(`${API}/v1/emergency-contacts/${id}`, {
         method: "DELETE",
         headers,
-        credentials: "include"
+        credentials: "include",
       });
       if (res.ok) loadEmergencyContacts();
     } catch {}
   };
 
+  const handleSavePersonalInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingPersonal(true);
+    await updateProfile({
+      full_name: fullName,
+      phone,
+      language: lang,
+    });
+    setSavingPersonal(false);
+    setPersonalSaved(true);
+    setTimeout(() => {
+      setPersonalSaved(false);
+      setSettingsSheetOpen(false);
+    }, 1200);
+  };
+
   const handleDownloadData = async () => {
     try {
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      let exportData: any = null;
-
-      try {
-        const directRes = await fetch(`${API}/v1/auth/data-export`, { headers, credentials: "include" });
-        if (directRes.ok) {
-          exportData = await directRes.json();
-        }
-      } catch {}
-
-      if (!exportData) {
-        const [tripsRes, placesRes, contactsRes] = await Promise.all([
-          fetch(`${API}/v1/trips?limit=100`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
-          fetch(`${API}/v1/saved-places`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
-          fetch(`${API}/v1/emergency-contacts`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : [])
-        ]);
-
-        exportData = {
-          compliance_standard: "India Digital Personal Data Protection Act (DPDP) 2023 & GDPR (EU) 2016/679",
-          exported_at: new Date().toISOString(),
-          profile: user,
-          trips: tripsRes,
-          saved_places: placesRes,
-          emergency_contacts: contactsRes
-        };
-      }
+      const exportData = {
+        compliance_standard: "India Digital Personal Data Protection Act (DPDP) 2023",
+        exported_at: new Date().toISOString(),
+        profile: user || { full_name: fullName, phone },
+        emergency_contacts: contacts,
+      };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -232,7 +208,7 @@ export default function AccountPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (e) {
+    } catch {
       alert("Failed to export data. Please try again.");
     }
   };
@@ -244,724 +220,697 @@ export default function AccountPage() {
   };
 
   const initials = fullName
-    ? fullName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
-    : "P";
+    ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "PS";
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "var(--bg)",
-      padding: "24px 16px 80px",
-      display: "flex",
-      justifyContent: "center"
-    }}>
-      <div style={{
-        width: "100%",
-        maxWidth: 580,
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--bg)",
+        padding: "20px 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom, 16px))",
         display: "flex",
-        flexDirection: "column",
-        gap: 20
-      }}>
-        {/* Navigation Bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={() => router.push("/")}
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 600,
+          display: "flex",
+          flexDirection: "column",
+          gap: 20,
+        }}
+      >
+        {/* 1. Hero Row: Huge Bold Uppercase Name (Bricolage 800) + Tiny Chip + 88x88 Round Avatar */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            paddingTop: 8,
+          }}
+        >
+          {/* Left: Name + Chip */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+            <h1
+              className="text-display-xl"
+              style={{
+                margin: 0,
+                color: "var(--text)",
+                letterSpacing: "-0.03em",
+                wordBreak: "break-word",
+              }}
+            >
+              {fullName}
+            </h1>
+
+            {/* Tiny Chip */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "3px 10px",
+                borderRadius: 999,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                boxShadow: "var(--ring-subtle)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--text-muted)",
+                width: "fit-content",
+              }}
+            >
+              <span>Frequent commuter · 4.9 ★</span>
+            </div>
+          </div>
+
+          {/* Right: Round Avatar 88x88 with Layered Shadow Ring */}
+          <div
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              color: "var(--text)",
+              width: 88,
+              height: 88,
+              borderRadius: "50%",
+              background: "oklch(0.55 0.22 262)",
+              color: "#ffffff",
               display: "grid",
               placeItems: "center",
-              cursor: "pointer"
+              fontSize: "2rem",
+              fontWeight: 800,
+              fontFamily: "var(--font-display)",
+              flexShrink: 0,
+              boxShadow: "0 0 0 3px var(--paper), var(--ring)",
             }}
-            aria-label="Back to home"
+            aria-hidden="true"
           >
-            <ArrowLeft size={18} />
-          </button>
-          <h1 className="text-display" style={{ fontSize: 22, margin: 0 }}>
-            {lang === "hi" ? "खाता और प्राथमिकताएं" : "Account & Settings"}
-          </h1>
+            {initials}
+          </div>
         </div>
 
-        {/* 1. Profile Header Card */}
-        <div style={{
-          background: "var(--surface)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "var(--ring)",
-          border: "1px solid transparent"
-        }}>
-          <Avatar
-            name={user?.full_name || "Delhi Commuter"}
-            userId={user?.id || "usr_commuter"}
-            email={user?.email || "Commuter account"}
-            role={user?.role || "Passenger"}
-            size={64}
-            showDetails={true}
-          />
-        </div>
-
-        {/* 2. Personal Info Section */}
-        <div style={{
-          background: "var(--surface)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "var(--ring)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16
-        }}>
-          <h2 className="text-heading" style={{ fontSize: 16, margin: 0 }}>
-            {lang === "hi" ? "व्यक्तिगत जानकारी" : "Personal info"}
-          </h2>
-
-          <form onSubmit={handleSavePersonalInfo} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div>
-              <label className="text-caption" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                style={{
-                  width: "100%",
-                  height: 44,
-                  borderRadius: 12,
-                  border: "1px solid var(--border)",
-                  padding: "0 14px",
-                  fontSize: 15,
-                  background: "var(--surface-2)",
-                  color: "var(--text)",
-                  outline: "none"
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="text-caption" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="+91 98765 43210"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                style={{
-                  width: "100%",
-                  height: 44,
-                  borderRadius: 12,
-                  border: "1px solid var(--border)",
-                  padding: "0 14px",
-                  fontSize: 15,
-                  background: "var(--surface-2)",
-                  color: "var(--text)",
-                  outline: "none"
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="text-caption" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
-                App Language / ऐप की भाषा
-              </label>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setLang("en")}
-                  style={{
-                    flex: 1,
-                    height: 42,
-                    borderRadius: 10,
-                    border: lang === "en" ? "2px solid var(--accent)" : "1px solid var(--border)",
-                    background: lang === "en" ? "var(--surface-2)" : "var(--surface)",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    color: "var(--text)",
-                    cursor: "pointer"
-                  }}
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLang("hi")}
-                  style={{
-                    flex: 1,
-                    height: 42,
-                    borderRadius: 10,
-                    border: lang === "hi" ? "2px solid var(--accent)" : "1px solid var(--border)",
-                    background: lang === "hi" ? "var(--surface-2)" : "var(--surface)",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    color: "var(--text)",
-                    cursor: "pointer"
-                  }}
-                >
-                  हिंदी (Hindi)
-                </button>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginTop: 4 }}>
-              {personalSaved && (
-                <span style={{ color: "var(--crowd-low)", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-                  <Check size={14} /> Saved
-                </span>
-              )}
-              <button
-                type="submit"
-                disabled={savingPersonal}
-                className="btn-pill-primary"
-                style={{
-                  height: 40,
-                  padding: "0 20px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: savingPersonal ? "wait" : "pointer"
-                }}
-              >
-                Save changes
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* 3. My Transit Places */}
-        <div style={{
-          background: "var(--surface)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "var(--ring)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 className="text-heading" style={{ fontSize: 16, margin: 0 }}>
-              {lang === "hi" ? "मेरे पसंदीदा स्टॉप" : "My transit places"}
-            </h2>
+        {/* 2. Quick Tiles Row (2x2 Chunky Grid, Height 84px, Radius 16) */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 10,
+          }}
+        >
+          {[
+            { label: "Help", icon: HelpCircle, action: () => router.push("/services/faqs") },
+            { label: "Passes", icon: CreditCard, action: () => router.push("/services/fares-passes") },
+            { label: "Safety", icon: ShieldCheck, action: () => router.push("/safety") },
+            { label: "Activity", icon: Inbox, action: () => router.push("/activity") },
+          ].map((tile) => (
             <button
-              onClick={handleAddCustomPlace}
+              key={tile.label}
+              onClick={tile.action}
+              className="btn-press"
               style={{
-                background: "none",
-                border: "none",
-                color: "var(--accent)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
+                height: 84,
+                borderRadius: 16,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+                boxShadow: "var(--ring-subtle)",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                gap: 4
+                justifyContent: "center",
+                gap: 6,
+                cursor: "pointer",
+                color: "var(--text)",
               }}
             >
-              <Plus size={14} /> {lang === "hi" ? "स्थान जोड़ें" : "Add place"}
+              <tile.icon size={24} style={{ color: "var(--text)" }} />
+              <span style={{ fontSize: "0.875rem", fontWeight: 700 }}>{tile.label}</span>
             </button>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "12px 14px",
-              borderRadius: 12,
-              background: "var(--surface-2)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Home size={18} style={{ color: "var(--accent)" }} />
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>Home Stop</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    {homeStop || "Not configured"}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  const val = prompt("Enter Home Bus Stop:", homeStop);
-                  if (val !== null) {
-                    setHomeStop(val);
-                    updateProfile({ home_stop_id: val });
-                  }
-                }}
-                style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                {homeStop ? "Change" : "Add"}
-              </button>
-            </div>
-
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "12px 14px",
-              borderRadius: 12,
-              background: "var(--surface-2)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Briefcase size={18} style={{ color: "var(--accent)" }} />
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>Work / College Stop</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    {workStop || "Not configured"}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  const val = prompt("Enter Work Bus Stop:", workStop);
-                  if (val !== null) {
-                    setWorkStop(val);
-                    updateProfile({ work_stop_id: val });
-                  }
-                }}
-                style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                {workStop ? "Change" : "Add"}
-              </button>
-            </div>
-
-            {/* Custom Saved Places List */}
-            {savedPlaces.map((sp) => (
-              <div
-                key={sp.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "12px 14px",
-                  borderRadius: 12,
-                  background: "var(--surface-2)"
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <MapPin size={18} style={{ color: "var(--accent)" }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{sp.label}</div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Stop {sp.stop_id}</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeleteSavedPlace(sp.id)}
-                  style={{ background: "none", border: "none", color: "var(--crowd-high)", fontSize: 13, cursor: "pointer" }}
-                  aria-label="Delete saved place"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
 
-        {/* 3.5 Emergency Contacts (Safety & Women's Transit Support) */}
-        <div style={{
-          background: "var(--surface)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "var(--ring)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <h2 className="text-heading" style={{ fontSize: 16, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                <HeartHandshake size={18} style={{ color: "var(--crowd-high)" }} />
-                {lang === "hi" ? "आपातकालीन संपर्क" : "Emergency contacts"}
-              </h2>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                {lang === "hi"
-                  ? "एसओएस और लाइव राइड शेयरिंग के लिए विश्वसनीय संपर्क"
-                  : "Trusted contacts notified during SOS & live trip sharing"}
-              </div>
-            </div>
-            <button
-              onClick={() => setShowAddContact(!showAddContact)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--accent)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 4
-              }}
-            >
-              <Plus size={14} /> {showAddContact ? "Cancel" : "Add"}
-            </button>
-          </div>
-
-          {showAddContact && (
-            <form onSubmit={handleAddContact} style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14, background: "var(--surface-2)", borderRadius: 12 }}>
-              <input
-                type="text"
-                placeholder="Contact Name (e.g. Mom, Amit)"
-                value={newContactName}
-                onChange={(e) => setNewContactName(e.target.value)}
-                required
-                style={{
-                  height: 38,
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  padding: "0 10px",
-                  fontSize: 14,
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                  outline: "none"
-                }}
-              />
-              <input
-                type="tel"
-                placeholder="Phone Number (+91 98765 43210)"
-                value={newContactPhone}
-                onChange={(e) => setNewContactPhone(e.target.value)}
-                required
-                style={{
-                  height: 38,
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  padding: "0 10px",
-                  fontSize: 14,
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                  outline: "none"
-                }}
-              />
-              <select
-                value={newContactRel}
-                onChange={(e) => setNewContactRel(e.target.value)}
-                style={{
-                  height: 38,
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  padding: "0 10px",
-                  fontSize: 14,
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                  outline: "none"
-                }}
-              >
-                <option value="Family">Family / परिवार</option>
-                <option value="Friend">Friend / दोस्त</option>
-                <option value="Colleague">Colleague / सहकर्मी</option>
-                <option value="Other">Other / अन्य</option>
-              </select>
-              <button
-                type="submit"
-                className="btn-pill-primary"
-                style={{ height: 38, fontSize: 13, fontWeight: 600, marginTop: 4 }}
-              >
-                Save Emergency Contact
-              </button>
-            </form>
-          )}
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {contacts.length === 0 ? (
-              <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "12px 0" }}>
-                No emergency contacts added yet. Add family members for safety alerts.
-              </div>
-            ) : (
-              contacts.map((c) => (
-                <div
-                  key={c.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    background: "var(--surface-2)"
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                      {c.name}
-                      <span style={{
-                        fontSize: 11,
-                        background: "var(--surface)",
-                        padding: "1px 6px",
-                        borderRadius: 6,
-                        color: "var(--text-muted)"
-                      }}>
-                        {c.relationship}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{c.phone}</div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteContact(c.id)}
-                    style={{ background: "none", border: "none", color: "var(--crowd-high)", cursor: "pointer" }}
-                    aria-label={`Delete ${c.name}`}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* 4. Account Security & Sessions */}
-        <div style={{
-          background: "var(--surface)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "var(--ring)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 14
-        }}>
-          <h2 className="text-heading" style={{ fontSize: 16, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <Shield size={18} /> Account security
-          </h2>
-          <div style={{
-            padding: "12px 14px",
-            borderRadius: 12,
-            background: "var(--surface-2)",
+        {/* 3. Big Rounded Promo Tile with Illustration on the Right */}
+        <div
+          onClick={() => router.push("/services/fares-passes")}
+          className="btn-press"
+          style={{
+            width: "100%",
+            borderRadius: 20,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--ring)",
+            padding: "16px",
             display: "flex",
+            alignItems: "center",
             justifyContent: "space-between",
-            alignItems: "center"
-          }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Current Browser Session</div>
-              <div style={{ fontSize: 12, color: "var(--crowd-low)", fontWeight: 500 }}>Active now · Web App</div>
-            </div>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>This device</span>
-          </div>
-
-          <button
-            onClick={signOut}
-            style={{
-              height: 40,
-              borderRadius: 10,
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              color: "var(--text)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8
-            }}
-          >
-            <LogOut size={16} /> Sign out of this device
-          </button>
-        </div>
-
-        {/* 5. Data & Privacy (GDPR) */}
-        <div style={{
-          background: "var(--surface)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "var(--ring)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 14
-        }}>
-          <h2 className="text-heading" style={{ fontSize: 16, margin: 0 }}>
-            Data & privacy
-          </h2>
-
-          <button
-            onClick={handleDownloadData}
-            style={{
-              height: 44,
-              borderRadius: 12,
-              border: "1px solid var(--border)",
-              background: "var(--surface-2)",
-              color: "var(--text)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 16px"
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Download size={16} /> Download my data (JSON export)
-            </span>
-            <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
-          </button>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
-            <Link
-              href="/privacy"
+            cursor: "pointer",
+            position: "relative",
+            overflow: "hidden",
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          <div style={{ width: "62%", display: "flex", flexDirection: "column", gap: 4 }}>
+            <span
               style={{
-                height: 38,
-                borderRadius: 10,
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                color: "var(--text-muted)",
-                fontSize: 12,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textDecoration: "none",
-                gap: 6
+                fontSize: 10,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "+0.06em",
+                color: "oklch(0.55 0.24 355)",
               }}
             >
-              <Shield size={14} style={{ color: "#10B981" }} /> Privacy (DPDP)
-            </Link>
-            <Link
-              href="/terms"
-              style={{
-                height: 38,
-                borderRadius: 10,
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                color: "var(--text-muted)",
-                fontSize: 12,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textDecoration: "none",
-                gap: 6
-              }}
-            >
-              <FileText size={14} style={{ color: "#F59E0B" }} /> Terms of Service
-            </Link>
-          </div>
-
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            style={{
-              height: 44,
-              borderRadius: 12,
-              border: "1px solid var(--crowd-high)",
-              background: "transparent",
-              color: "var(--crowd-high)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 16px"
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Trash2 size={16} /> Delete account & erase all data
+              DTC PINK PASS
             </span>
-            <ChevronRight size={16} />
-          </button>
+            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "var(--text)" }}>
+              Free bus travel for women
+            </h3>
+            <p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+              Available on all DTC & DIMTS electric fleets. Single journey ticket.
+            </p>
+          </div>
+          <div style={{ width: "34%", aspectRatio: "4/3", borderRadius: 12, overflow: "hidden" }}>
+            <PinkPassIllustration />
+          </div>
         </div>
 
-        {/* Anatomy Moving Bus & Authentic Footer (P0.8) */}
-        <div style={{ marginTop: 12 }}>
-          <MovingBus />
+        {/* 4. Plain Icon List Rows (The Reference Uber List Section) */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            marginTop: 4,
+          }}
+        >
+          {[
+            {
+              id: "appearance",
+              title: "Appearance",
+              subtitle: `Theme: ${themeMode === "system" ? "System default" : themeMode === "dark" ? "Dark mode" : "Light mode"}`,
+              icon: Moon,
+              badge: null,
+              onClick: () => setAppearanceSheetOpen(true),
+            },
+            {
+              id: "safety_checkup",
+              title: "Safety checkup",
+              subtitle: "Emergency contacts & bus marshal dispatch",
+              icon: ShieldCheck,
+              badge: "NEW",
+              onClick: () => setSafetySheetOpen(true),
+            },
+            {
+              id: "settings",
+              title: "Settings & Profile",
+              subtitle: "Name, phone, language preferences",
+              icon: Settings,
+              badge: null,
+              onClick: () => setSettingsSheetOpen(true),
+            },
+            {
+              id: "privacy",
+              title: "Privacy & Data",
+              subtitle: "Download personal data archive, delete account",
+              icon: Shield,
+              badge: null,
+              onClick: () => setPrivacySheetOpen(true),
+            },
+            {
+              id: "legal",
+              title: "Legal & About",
+              subtitle: "Terms of service, privacy policy, DPDP 2023",
+              icon: FileText,
+              badge: null,
+              onClick: () => setLegalSheetOpen(true),
+            },
+          ].map((row, idx, arr) => (
+            <button
+              key={row.id}
+              onClick={row.onClick}
+              className="btn-press"
+              style={{
+                width: "100%",
+                padding: "16px 4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "transparent",
+                border: "none",
+                borderBottom: idx < arr.length - 1 ? "1px solid var(--border)" : "none",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <row.icon size={24} style={{ color: "var(--text)", flexShrink: 0 }} />
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)" }}>
+                      {row.title}
+                    </span>
+                    {row.badge && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          padding: "1px 6px",
+                          borderRadius: 999,
+                          background: "oklch(0.55 0.22 262)",
+                          color: "#ffffff",
+                          letterSpacing: "+0.04em",
+                        }}
+                      >
+                        {row.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                    {row.subtitle}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={18} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+            </button>
+          ))}
+        </div>
 
-          <div style={{ textAlign: "center", padding: "16px 0 10px 0" }}>
-            <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--text)", margin: "0 0 4px 0" }}>
-              Made in India for the people of India{" "}
-              <span className="heartbeat" style={{ display: "inline-block", color: "#EF4444" }}>❤️</span>
-            </p>
-            <p className="text-caption" style={{ color: "var(--text-muted)", letterSpacing: "+0.05em", textTransform: "uppercase", fontSize: "0.75rem", margin: 0 }}>
-              Made by Team Qubits
-            </p>
+        {/* 5. Tribute Footer + Version Text + Clean Sign Out */}
+        <div style={{ textAlign: "center", padding: "20px 0 16px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+          <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--text)", margin: 0 }}>
+            Made in India for the people of India{" "}
+            <span className="heartbeat" style={{ display: "inline-block", color: "#EF4444" }}>
+              ❤️
+            </span>
+          </p>
+          <p
+            className="text-caption"
+            style={{
+              color: "var(--text-muted)",
+              letterSpacing: "+0.05em",
+              textTransform: "uppercase",
+              fontSize: "0.75rem",
+              margin: 0,
+            }}
+          >
+            Made by Team Qubits
+          </p>
+          <span style={{ fontSize: "0.6875rem", color: "var(--text-dim)" }}>
+            v2.4.0 · Delhi Smart Bus System
+          </span>
+
+          <div style={{ marginTop: 12 }}>
+            <button
+              onClick={() => signOut()}
+              className="btn-press"
+              style={{
+                width: "100%",
+                height: 48,
+                borderRadius: "var(--r-card)",
+                background: "oklch(0.58 0.23 27 / 0.1)",
+                color: "oklch(0.58 0.23 27)",
+                border: "1px solid oklch(0.58 0.23 27 / 0.25)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                fontSize: "0.9375rem",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              <LogOut size={18} />
+              <span>Sign out</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Delete Account Modal Confirmation */}
-      {isDeleteModalOpen && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.5)",
-          zIndex: 1000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 16
-        }}>
-          <div style={{
-            width: "100%",
-            maxWidth: 420,
-            background: "var(--surface)",
-            borderRadius: 20,
-            padding: 24,
-            boxShadow: "var(--ring-elevated)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 16
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--crowd-high)" }}>
-              <AlertTriangle size={24} />
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Permanently Delete Account?</h3>
-            </div>
-            <p className="text-body" style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>
-              This will irreversibly delete your transit profile, trip history, saved places, and all personal records from our database.
-            </p>
+      {/* =========================================================================
+          APPEARANCE & DARK MODE BOTTOM SHEET (Step 6 specs)
+         ========================================================================= */}
+      {appearanceSheetOpen && (
+        <Sheet isOpen={true} onClose={() => setAppearanceSheetOpen(false)} title="Appearance">
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 16 }}>
             <div>
-              <label className="text-caption" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
-                Type <strong>DELETE</strong> to confirm:
+              <label style={{ fontSize: "0.8125rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "+0.05em", color: "var(--text-muted)", display: "block", marginBottom: 10 }}>
+                Theme Mode
               </label>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { id: "system" as const, label: "System default", desc: "Follow operating system light/dark preference" },
+                  { id: "light" as const, label: "Light mode", desc: "Clean paper surfaces with high contrast ink" },
+                  { id: "dark" as const, label: "Dark mode", desc: "Low-glare dark surfaces for night commuting" },
+                ].map((opt) => {
+                  const isSelected = themeMode === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => applyTheme(opt.id)}
+                      className="btn-press"
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: 14,
+                        background: isSelected ? "var(--surface-2)" : "var(--surface)",
+                        border: isSelected ? "2px solid var(--accent)" : "1px solid var(--border)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--text)", display: "block" }}>
+                          {opt.label}
+                        </span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{opt.desc}</span>
+                      </div>
+                      {isSelected && <Check size={18} style={{ color: "var(--accent)" }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Reduce Motion Toggle */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "14px 16px",
+                borderRadius: 14,
+                background: "var(--surface-2)",
+              }}
+            >
+              <div>
+                <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--text)", display: "block" }}>
+                  Reduce motion
+                </span>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  Disable animations and animated transitions
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={reduceMotion}
+                onChange={(e) => toggleReduceMotion(e.target.checked)}
+                style={{ width: 22, height: 22, cursor: "pointer", accentColor: "var(--accent)" }}
+              />
+            </div>
+
+            <PillButton
+              variant="primary"
+              size="lg"
+              onClick={() => setAppearanceSheetOpen(false)}
+              style={{ width: "100%" }}
+            >
+              Done
+            </PillButton>
+          </div>
+        </Sheet>
+      )}
+
+      {/* =========================================================================
+          SETTINGS & PROFILE BOTTOM SHEET
+         ========================================================================= */}
+      {settingsSheetOpen && (
+        <Sheet isOpen={true} onClose={() => setSettingsSheetOpen(false)} title="Settings & Profile">
+          <form onSubmit={handleSavePersonalInfo} style={{ display: "flex", flexDirection: "column", gap: 14, paddingBottom: 16 }}>
+            <div>
+              <label style={{ fontSize: "0.8125rem", fontWeight: 600, display: "block", marginBottom: 6 }}>Full Name</label>
               <input
                 type="text"
-                value={deleteConfirmationText}
-                onChange={(e) => setDeleteConfirmationText(e.target.value)}
-                placeholder="DELETE"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
                 style={{
                   width: "100%",
                   height: 44,
                   borderRadius: 12,
+                  background: "var(--surface-2)",
                   border: "1px solid var(--border)",
-                  padding: "0 14px",
-                  fontSize: 15,
-                  outline: "none"
+                  padding: "0 12px",
+                  color: "var(--text)",
                 }}
               />
             </div>
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
-              <button
-                onClick={() => { setIsDeleteModalOpen(false); setDeleteConfirmationText(""); }}
+            <div>
+              <label style={{ fontSize: "0.8125rem", fontWeight: 600, display: "block", marginBottom: 6 }}>Phone Number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
                 style={{
-                  height: 40,
-                  padding: "0 16px",
-                  borderRadius: 10,
+                  width: "100%",
+                  height: 44,
+                  borderRadius: 12,
+                  background: "var(--surface-2)",
                   border: "1px solid var(--border)",
-                  background: "var(--surface)",
-                  cursor: "pointer",
-                  fontWeight: 600
+                  padding: "0 12px",
+                  color: "var(--text)",
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmationText.trim() !== "DELETE" || isDeleting}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: "0.8125rem", fontWeight: 600, display: "block", marginBottom: 6 }}>Language / भाषा</label>
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as "en" | "hi")}
                 style={{
-                  height: 40,
-                  padding: "0 18px",
-                  borderRadius: 10,
-                  border: "none",
-                  background: "var(--crowd-high)",
-                  color: "#fff",
-                  fontWeight: 600,
-                  cursor: deleteConfirmationText.trim() === "DELETE" ? "pointer" : "not-allowed",
-                  opacity: deleteConfirmationText.trim() === "DELETE" ? 1 : 0.5
+                  width: "100%",
+                  height: 44,
+                  borderRadius: 12,
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                  padding: "0 12px",
+                  color: "var(--text)",
                 }}
               >
-                {isDeleting ? "Deleting..." : "Erase everything"}
-              </button>
+                <option value="en">English (India)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+              </select>
+            </div>
+
+            <PillButton type="submit" variant="primary" size="lg" disabled={savingPersonal} style={{ width: "100%", marginTop: 8 }}>
+              {personalSaved ? "Saved Successfully!" : savingPersonal ? "Saving..." : "Save Changes"}
+            </PillButton>
+          </form>
+        </Sheet>
+      )}
+
+      {/* =========================================================================
+          SAFETY CHECKUP BOTTOM SHEET
+         ========================================================================= */}
+      {safetySheetOpen && (
+        <Sheet isOpen={true} onClose={() => setSafetySheetOpen(false)} title="Safety Checkup">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 16 }}>
+            <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)" }}>
+              Contacts listed here receive your live bus GPS coordinates when you trigger the in-app SOS button.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {contacts.map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    background: "var(--surface-2)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: "0.9375rem", display: "block" }}>{c.name} ({c.relationship})</span>
+                    <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>{c.phone}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteContact(c.id)}
+                    style={{ background: "none", border: "none", color: "oklch(0.58 0.23 27)", cursor: "pointer", padding: 6 }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleAddContact} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+              <input
+                type="text"
+                placeholder="Contact Name (e.g. Brother, Roommate)"
+                value={newContactName}
+                onChange={(e) => setNewContactName(e.target.value)}
+                required
+                style={{ width: "100%", height: 40, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border)", padding: "0 12px", color: "var(--text)" }}
+              />
+              <input
+                type="tel"
+                placeholder="Phone Number (+91...)"
+                value={newContactPhone}
+                onChange={(e) => setNewContactPhone(e.target.value)}
+                required
+                style={{ width: "100%", height: 40, borderRadius: 10, background: "var(--surface-2)", border: "1px solid var(--border)", padding: "0 12px", color: "var(--text)" }}
+              />
+              <PillButton type="submit" variant="secondary" size="md">
+                Add Emergency Contact
+              </PillButton>
+            </form>
+          </div>
+        </Sheet>
+      )}
+
+      {/* =========================================================================
+          PRIVACY & DATA BOTTOM SHEET
+         ========================================================================= */}
+      {privacySheetOpen && (
+        <Sheet isOpen={true} onClose={() => setPrivacySheetOpen(false)} title="Privacy & Data">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 16 }}>
+            <div style={{ padding: 14, borderRadius: 12, background: "var(--surface-2)" }}>
+              <h3 style={{ margin: "0 0 4px 0", fontSize: "0.9375rem" }}>DPDP 2023 Compliance</h3>
+              <p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                You have the full right to data portability and immediate erasure under Indian data protection laws.
+              </p>
+            </div>
+
+            <PillButton variant="secondary" size="lg" onClick={handleDownloadData} style={{ width: "100%" }}>
+              <Download size={18} style={{ marginRight: 8 }} />
+              Download My Data Archive (JSON)
+            </PillButton>
+
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="btn-press"
+              style={{
+                width: "100%",
+                height: 48,
+                borderRadius: "var(--r-card)",
+                background: "oklch(0.58 0.23 27 / 0.12)",
+                color: "oklch(0.58 0.23 27)",
+                border: "1px solid oklch(0.58 0.23 27 / 0.3)",
+                fontWeight: 700,
+                fontSize: "0.875rem",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                cursor: "pointer",
+              }}
+            >
+              <Trash2 size={16} />
+              Delete Account & Commuter History
+            </button>
+          </div>
+        </Sheet>
+      )}
+
+      {/* =========================================================================
+          LEGAL & ABOUT BOTTOM SHEET
+         ========================================================================= */}
+      {legalSheetOpen && (
+        <Sheet isOpen={true} onClose={() => setLegalSheetOpen(false)} title="Legal & Compliance">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingBottom: 16 }}>
+            {[
+              { title: "Privacy Policy", href: "/privacy", desc: "DPDP 2023 & GDPR Data Processing standards" },
+              { title: "Terms of Service", href: "/terms", desc: "User responsibilities and service agreements" },
+              { title: "Open Source Licenses", href: "/design-system", desc: "MIT, OpenStreetMap, ODbL acknowledgments" },
+            ].map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                style={{
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "var(--surface-2)",
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <span style={{ fontWeight: 700, fontSize: "0.9375rem", display: "block" }}>{item.title}</span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{item.desc}</span>
+                </div>
+                <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
+              </Link>
+            ))}
+          </div>
+        </Sheet>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.65)",
+            backdropFilter: "blur(6px)",
+            zIndex: 100,
+            display: "grid",
+            placeItems: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 400,
+              background: "var(--surface)",
+              borderRadius: 20,
+              padding: 20,
+              boxShadow: "var(--ring)",
+            }}
+          >
+            <h3 style={{ margin: "0 0 8px 0", color: "oklch(0.58 0.23 27)" }}>Confirm Permanent Account Deletion</h3>
+            <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", margin: "0 0 12px 0" }}>
+              Type <strong>DELETE</strong> below to erase your profile, saved places, and commuter history permanently.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder="DELETE"
+              style={{
+                width: "100%",
+                height: 40,
+                borderRadius: 10,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+                padding: "0 12px",
+                color: "var(--text)",
+                marginBottom: 12,
+              }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <PillButton variant="secondary" size="md" onClick={() => setIsDeleteModalOpen(false)} style={{ flex: 1 }}>
+                Cancel
+              </PillButton>
+              <PillButton
+                variant="danger"
+                size="md"
+                disabled={deleteConfirmationText !== "DELETE" || isDeleting}
+                onClick={handleDeleteAccount}
+                style={{ flex: 1 }}
+              >
+                {isDeleting ? "Deleting..." : "Erase All"}
+              </PillButton>
             </div>
           </div>
         </div>
       )}
+
+      <BottomNav
+        activeTab="account"
+        onSelectTab={(tab) => router.push(tab === "home" ? "/" : `/${tab}`)}
+        lang={lang}
+      />
     </div>
   );
 }
