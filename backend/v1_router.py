@@ -336,6 +336,16 @@ def get_services_directory():
                     icon="Moon",
                     badge="24x7"
                 ),
+                ServiceItem(
+                    id="bus-anatomy",
+                    title="Bus Anatomy & Telematics",
+                    title_hi="बस संरचना और सेंसर",
+                    description="Interactive engineering cross-section of Delhi Electric Bus & AIS-140 telemetry",
+                    description_hi="दिल्ली इलेक्ट्रिक बस की इंटरएक्टिव तकनीकी संरचना, AIS-140 जीपीएस और सुरक्षा सेंसर",
+                    icon="Cpu",
+                    badge="Interactive",
+                    link="/anatomy"
+                ),
             ]
         ),
         ServiceSection(
