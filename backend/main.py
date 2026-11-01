@@ -1,17 +1,46 @@
 """Smart Public Bus Tracking - API server. Run: python -m uvicorn main:app"""
-import json, math, random, sqlite3, threading, time
+import json, math, os, random, sqlite3, threading, time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from demand import BUS_HOUR_CAPACITY, TARGET_LF, hist_speed_kmh
 from geo import Track
+from v1_router import v1_router
 
 DATA = Path(__file__).parent / "data"
-app = FastAPI(title="Smart Bus API")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(title="Smart Bus API", version="2.0.0")
+
+# Security: CORS allow-list from environment variable (no wildcard '*' in production)
+raw_origins = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000"
+)
+ALLOWED_ORIGINS = [o.strip() for o in raw_origins.split(",") if o.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+# Mount Production v1 Router
+app.include_router(v1_router)
 
 # ------------------------------------------------------------------ static data
 RAW = json.loads((DATA / "routes.json").read_text())

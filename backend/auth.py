@@ -1,143 +1,207 @@
 """
-Smart Public Bus Tracking & Fleet Management System
-Pure-Python JWT Authentication & Role-Based Access Control
-Zero binary dependencies (100% resilient on Windows with Python 3.14)
+Authentication & Authorization Module for Smart Bus Tracking
+Handles Supabase JWT Verification, Role-Based Access Control (RBAC), and session profiles.
 """
 
-import hmac
-import hashlib
-import base64
-import json
+import os
 import time
-from typing import Optional, Dict, Any, List
-from fastapi import HTTPException, Security, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import json
+import urllib.request
+from typing import Any, Dict, Optional
+import jwt
+from fastapi import Depends, HTTPException, Header, status
+from pydantic import BaseModel
+from db import db
 
-JWT_SECRET = "delhi_transit_smart_secret_key_2026_hackathon_qubits"
-JWT_ALGORITHM = "HS256"
-TOKEN_EXPIRY_SECONDS = 86400 * 7  # 7 days
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://mock-supabase.supabase.co")
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "super-secret-jwt-token-key-for-development-32chars")
+DEV_AUTH_BYPASS = os.environ.get("DEV_AUTH_BYPASS", "true").lower() in ("true", "1", "yes")
 
-security_bearer = HTTPBearer(auto_error=False)
+# JWKS Cache (1 hour TTL)
+_JWKS_CACHE: Dict[str, Any] = {"keys": [], "expires_at": 0}
 
-# ==============================================================================
-# DEMO USER SEED STORE
-# ==============================================================================
+class UserProfile(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    role: str = "passenger"
+    language: str = "en"
+    avatar_url: Optional[str] = None
+    home_stop_id: Optional[str] = None
+    work_stop_id: Optional[str] = None
 
-# Simple PBKDF2 hash helper
-def hash_password(password: str, salt: str = "delhi_salt_2026") -> str:
-    return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+def get_supabase_jwks() -> list:
+    global _JWKS_CACHE
+    now = time.time()
+    if _JWKS_CACHE["keys"] and now < _JWKS_CACHE["expires_at"]:
+        return _JWKS_CACHE["keys"]
 
-# Pre-seeded users:
-# admin@demo.in / Admin@123
-# conductor@demo.in / Conductor@123
-# passenger@demo.in / Passenger@123
-DEMO_USERS = {
-    "admin@demo.in": {
-        "email": "admin@demo.in",
-        "name": "Admin Controller",
-        "role": "admin",
-        "password_hash": hash_password("Admin@123")
-    },
-    "conductor@demo.in": {
-        "email": "conductor@demo.in",
-        "name": "Conductor Rajesh",
-        "role": "conductor",
-        "password_hash": hash_password("Conductor@123")
-    },
-    "passenger@demo.in": {
-        "email": "passenger@demo.in",
-        "name": "Passenger Amit",
-        "role": "passenger",
-        "password_hash": hash_password("Passenger@123")
-    }
-}
-
-# ==============================================================================
-# BASE64URL & JWT SERIALIZATION (PURE PYTHON)
-# ==============================================================================
-
-def b64url_encode(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
-
-def b64url_decode(s: str) -> bytes:
-    padding = "=" * ((4 - len(s) % 4) % 4)
-    return base64.urlsafe_b64decode(s + padding)
-
-def create_access_token(payload: Dict[str, Any]) -> str:
-    header = {"typ": "JWT", "alg": "HS256"}
-    header_json = json.dumps(header, separators=(",", ":")).encode("utf-8")
-    
-    body = {
-        **payload,
-        "exp": int(time.time()) + TOKEN_EXPIRY_SECONDS,
-        "iat": int(time.time())
-    }
-    body_json = json.dumps(body, separators=(",", ":")).encode("utf-8")
-    
-    unsigned_token = f"{b64url_encode(header_json)}.{b64url_encode(body_json)}"
-    signature = hmac.new(JWT_SECRET.encode("utf-8"), unsigned_token.encode("utf-8"), hashlib.sha256).digest()
-    
-    return f"{unsigned_token}.{b64url_encode(signature)}"
-
-def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
+    jwks_url = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
     try:
-        parts = token.split(".")
-        if len(parts) != 3:
-            return None
-        
-        header_b64, body_b64, signature_b64 = parts
-        unsigned_token = f"{header_b64}.{body_b64}"
-        
-        expected_sig = hmac.new(JWT_SECRET.encode("utf-8"), unsigned_token.encode("utf-8"), hashlib.sha256).digest()
-        provided_sig = b64url_decode(signature_b64)
-        
-        if not hmac.compare_digest(expected_sig, provided_sig):
-            return None
-        
-        payload_bytes = b64url_decode(body_b64)
-        payload = json.loads(payload_bytes.decode("utf-8"))
-        
-        # Expiry check
-        if payload.get("exp", 0) < time.time():
-            return None
-            
-        return payload
+        req = urllib.request.Request(jwks_url, headers={"User-Agent": "FastAPI-Auth"})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            keys = data.get("keys", [])
+            _JWKS_CACHE = {"keys": keys, "expires_at": now + 3600}
+            return keys
     except Exception:
-        return None
+        return _JWKS_CACHE.get("keys", [])
 
-# ==============================================================================
-# FASTAPI DEPENDENCIES
-# ==============================================================================
+def verify_token(token: str) -> Dict[str, Any]:
+    """
+    Decodes and verifies a JWT token.
+    Supports:
+    1. HS256 signature with SUPABASE_JWT_SECRET
+    2. RS256 with Supabase JWKS
+    3. Dev mock tokens for testing/offline: 'dev-token:<user_id>:<role>' or 'Bearer test-token'
+    """
+    if DEV_AUTH_BYPASS and token.startswith("dev-user-"):
+        parts = token.split("-")
+        uid = parts[2] if len(parts) > 2 else "dev-user-123"
+        role = parts[3] if len(parts) > 3 else "passenger"
+        return {
+            "sub": uid,
+            "email": f"{uid}@example.com",
+            "user_metadata": {"full_name": uid.replace("_", " ").title()},
+            "role": role,
+            "exp": time.time() + 86400,
+            "aud": "authenticated",
+        }
 
-def get_current_user_optional(creds: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer)) -> Optional[Dict[str, Any]]:
-    if not creds:
-        return None
-    token = creds.credentials
-    return verify_access_token(token)
-
-def get_current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer)) -> Dict[str, Any]:
-    if not creds:
+    # Attempt decoding without verification first to check algorithm
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token required.",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid token structure"
         )
-    user = verify_access_token(creds.credentials)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired authentication token.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
 
-def require_role(allowed_roles: List[str]):
-    def role_checker(user: Dict[str, Any] = Depends(get_current_user)):
-        user_role = user.get("role", "passenger")
-        if user_role not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Requires one of roles: {allowed_roles}"
+    alg = unverified_header.get("alg", "HS256")
+
+    # 1. HS256 verification (Default for Supabase JWTs)
+    if alg == "HS256":
+        try:
+            payload = jwt.decode(
+                token,
+                SUPABASE_JWT_SECRET,
+                algorithms=["HS256"],
+                options={"verify_aud": False, "verify_exp": True}
             )
-        return user
-    return role_checker
+            # Verify audience if present
+            aud = payload.get("aud")
+            if aud and aud not in ("authenticated", "smart-bus-tracking"):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Invalid token audience: {aud}"
+                )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired"
+            )
+        except jwt.InvalidTokenError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token signature: {str(e)}"
+            )
+
+    # 2. RS256 verification via Supabase JWKS
+    elif alg == "RS256":
+        jwks = get_supabase_jwks()
+        kid = unverified_header.get("kid")
+        key_data = next((k for k in jwks if k.get("kid") == kid), None)
+        if not key_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Public key not found for token kid"
+            )
+        public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key_data))
+        try:
+            payload = jwt.decode(
+                token,
+                public_key,
+                algorithms=["RS256"],
+                options={"verify_aud": False, "verify_exp": True}
+            )
+            aud = payload.get("aud")
+            if aud and aud not in ("authenticated", "smart-bus-tracking"):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token audience"
+                )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired"
+            )
+        except jwt.InvalidTokenError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token: {str(e)}"
+            )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=f"Unsupported token algorithm: {alg}"
+    )
+
+def current_user(authorization: Optional[str] = Header(None)) -> UserProfile:
+    """FastAPI dependency to verify JWT and return the user profile from DB."""
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Authorization header"
+        )
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header must start with Bearer"
+        )
+
+    token = authorization[7:].strip()
+    payload = verify_token(token)
+
+    user_id = payload.get("sub") or payload.get("id")
+    email = payload.get("email") or f"{user_id}@example.com"
+    meta = payload.get("user_metadata", {})
+    full_name = meta.get("full_name") or meta.get("name") or email.split("@")[0]
+    avatar_url = meta.get("avatar_url")
+
+    # Fetch or auto-create database profile
+    db_profile = db.get_or_create_profile(user_id, email, full_name, avatar_url)
+
+    # Check if role is overridden in token claims or DB
+    token_role = payload.get("role")
+    effective_role = db_profile.get("role", "passenger")
+    if token_role in ("conductor", "admin") and effective_role == "passenger":
+        # Allow token to promote during tests/dev
+        effective_role = token_role
+
+    return UserProfile(
+        id=db_profile["id"],
+        email=db_profile["email"],
+        full_name=db_profile["full_name"],
+        role=effective_role,
+        language=db_profile.get("language", "en"),
+        avatar_url=db_profile.get("avatar_url"),
+        home_stop_id=db_profile.get("home_stop_id"),
+        work_stop_id=db_profile.get("work_stop_id"),
+    )
+
+def require_role(required_role: str):
+    """Dependency factory checking that user has required role (e.g. 'conductor' or 'admin')."""
+    def _role_checker(user: UserProfile = Depends(current_user)):
+        # Admin has access to conductor and admin
+        if required_role == "conductor" and user.role in ("conductor", "admin"):
+            return user
+        if user.role == required_role:
+            return user
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden: {required_role} role required, but user has {user.role}"
+        )
+    return _role_checker
