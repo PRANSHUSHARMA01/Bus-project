@@ -53,18 +53,20 @@ function useSmooth(buses: Bus[]) {
   return pos;
 }
 
+// Uber Route Casing (White outer halo)
 const casing: LayerProps = {
   id: "route-casing",
   type: "line",
   layout: { "line-cap": "round", "line-join": "round" },
-  paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.85 },
+  paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.95 },
 };
 
+// Uber Route Line (Black / Charcoal route path)
 const line: LayerProps = {
   id: "route-line",
   type: "line",
   layout: { "line-cap": "round", "line-join": "round" },
-  paint: { "line-color": ["get", "color"] as unknown as string, "line-width": 5, "line-opacity": 0.95 },
+  paint: { "line-color": "#18181b", "line-width": 4.5, "line-opacity": 0.95 },
 };
 
 interface Props {
@@ -89,7 +91,7 @@ export default function BusMap({
   selectedBusId = null,
   onStopClick,
   onBusClick,
-  mapStyle = "https://tiles.openfreemap.org/styles/liberty",
+  mapStyle = "https://tiles.openfreemap.org/styles/positron",
   lang = "en",
   center = [77.215, 28.605],
   zoom = 11.6,
@@ -97,7 +99,6 @@ export default function BusMap({
   const mapRef = useRef<MapRef>(null);
   const pos = useSmooth(buses);
 
-  // Focus map on selected stop or selected bus
   useEffect(() => {
     if (selectedStop) {
       const s = stops.find((x) => x.id === selectedStop);
@@ -121,8 +122,6 @@ export default function BusMap({
     })),
   };
 
-  const routeColor = (id: string) => routes.find((r) => r.id === id)?.color ?? "#2563eb";
-
   return (
     <Map
       ref={mapRef}
@@ -134,10 +133,12 @@ export default function BusMap({
         <Layer {...casing} />
         <Layer {...line} />
       </Source>
+
+      {/* Uber monochrome stop markers */}
       {stops.map((s) => (
         <Marker key={s.id} longitude={s.lng} latitude={s.lat}>
           <div
-            className={"stop" + (s.id === selectedStop ? " sel" : "")}
+            className={`uber-stop-marker ${s.id === selectedStop ? "sel" : ""}`}
             title={lang === "hi" ? s.name_hi : s.name}
             onClick={(e) => {
               e.stopPropagation();
@@ -146,25 +147,26 @@ export default function BusMap({
           />
         </Marker>
       ))}
+
+      {/* Uber black pill bus markers with route numbers */}
       {buses.map((b) => {
         const p = pos[String(b.bus_id)] ?? [b.lng, b.lat];
-        const bg = b.broken ? "#64748b" : OCC_COLOR[b.occupancy];
         const isSelected = b.bus_id === selectedBusId;
         return (
-          <Marker key={b.bus_id} longitude={p[0]} latitude={p[1]} anchor="bottom">
+          <Marker key={b.bus_id} longitude={p[0]} latitude={p[1]} anchor="center">
             <div
-              className={`bus ${b.broken ? "broken" : ""} ${isSelected ? "selected" : ""}`}
+              className={`uber-bus-marker ${isSelected ? "selected" : ""}`}
               style={{
-                background: bg,
-                outline: isSelected ? "4px solid var(--accent)" : `3px solid ${routeColor(b.route_id)}`,
+                background: b.broken ? "#52525b" : "var(--primary)",
+                border: isSelected ? "3px solid #fff" : "2px solid #fff",
               }}
-              title={`${b.reg_no} - ${b.load_pct}% full - ${b.speed_kmh} km/h`}
+              title={`${b.reg_no} · ${b.load_pct}% full · ${b.speed_kmh} km/h`}
               onClick={(e) => {
                 e.stopPropagation();
                 onBusClick?.(b);
               }}
             >
-              {b.route_id}
+              Route {b.route_id}
             </div>
           </Marker>
         );

@@ -6,13 +6,10 @@ import {
   AlertOctagon,
   AlertTriangle,
   ArrowLeft,
-  Bus as BusIcon,
   CheckCircle2,
-  Flame,
   Minus,
   Plus,
   ShieldAlert,
-  UserCheck,
   Users,
 } from "lucide-react";
 import { Badge } from "../../components/ui/Badge";
@@ -58,7 +55,6 @@ export default function ConductorPage() {
     if (!busId) return;
     triggerHaptic();
 
-    // High frequency interaction: instant feedback
     await post("/ingest/boardings", [
       {
         bus_id: busId,
@@ -77,11 +73,11 @@ export default function ConductorPage() {
     await post("/ingest/incident", {
       bus_id: busId,
       kind: confirmIncident.kind,
-      note: `Reported by conductor on ${item?.reg_no || "bus " + busId}`,
+      note: `Reported by conductor on vehicle ${item?.reg_no || busId}`,
     });
 
     setConfirmIncident(null);
-    showToast("Reported. Control room has been notified.");
+    showToast("Incident logged with Control Room.");
   }
 
   function showToast(msg: string) {
@@ -92,10 +88,12 @@ export default function ConductorPage() {
   return (
     <div
       style={{
-        maxWidth: 540,
+        maxWidth: 480,
         margin: "0 auto",
-        padding: "16px 16px 100px",
+        padding: "16px 20px 100px",
         minHeight: "100vh",
+        background: "var(--bg)",
+        color: "var(--text)",
       }}
     >
       {/* Top Header */}
@@ -104,44 +102,68 @@ export default function ConductorPage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 16,
+          marginBottom: 20,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link
             href="/"
-            className="pill"
-            style={{ minHeight: 40, padding: "8px 12px" }}
-            aria-label="Back to passenger map"
+            className="btn-pill-secondary"
+            style={{ width: 44, height: 44, padding: 0, minHeight: 44 }}
+            aria-label="Back to home"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={18} />
           </Link>
-          <h1 className="text-title" style={{ margin: 0 }}>
-            Conductor Console
+          <h1 className="text-title" style={{ margin: 0, fontSize: 22 }}>
+            Conductor
           </h1>
         </div>
-        <Link href="/" className="pill" style={{ minHeight: 40 }}>
+        <Link href="/" className="btn-pill-secondary" style={{ minHeight: 40, padding: "0 14px", fontSize: 13 }}>
           Passenger ↗
         </Link>
       </header>
 
-      {/* Bus Selector Card */}
-      <section className="card" style={{ marginBottom: 14 }}>
-        <label
-          htmlFor="bus-selector"
+      {/* Vehicle Selector Card */}
+      <section
+        style={{
+          background: "var(--surface)",
+          borderRadius: 20,
+          boxShadow: "var(--ring)",
+          padding: 18,
+          border: "1px solid var(--line)",
+          marginBottom: 16,
+        }}
+      >
+        <span
           className="text-caption"
-          style={{ display: "block", color: "var(--text-muted)", marginBottom: 6, fontWeight: 600 }}
+          style={{
+            display: "block",
+            color: "var(--text-muted)",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            marginBottom: 8,
+          }}
         >
-          SELECT ASSIGNED VEHICLE
-        </label>
+          Assigned Bus
+        </span>
         <select
-          id="bus-selector"
           value={busId ?? ""}
           onChange={(e) => handleSelectBus(Number(e.target.value))}
-          style={{ width: "100%" }}
+          style={{
+            width: "100%",
+            height: 48,
+            borderRadius: 12,
+            border: "1px solid var(--line)",
+            background: "var(--surface-2)",
+            color: "var(--text)",
+            padding: "0 14px",
+            fontSize: 15,
+            fontWeight: 600,
+            outline: 0,
+          }}
         >
           <option value="" disabled>
-            Choose your bus…
+            Select your bus…
           </option>
           {fleet.map((f) => (
             <option key={f.bus_id} value={f.bus_id}>
@@ -149,58 +171,44 @@ export default function ConductorPage() {
             </option>
           ))}
         </select>
-        {item && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: 10,
-              paddingTop: 8,
-              borderTop: "1px solid var(--border-subtle)",
-            }}
-          >
-            <span className="text-caption" style={{ color: "var(--text-muted)" }}>
-              Assigned corridor:
-            </span>
-            <span className="badge" style={{ background: "var(--accent)" }}>
-              Route {item.route_id}
-            </span>
-          </div>
-        )}
       </section>
 
-      {/* Active Bus Telemetry & Load Ring */}
+      {/* Active Telemetry & Huge Load Display */}
       {bus && (
         <>
-          <section className="card" style={{ marginBottom: 14 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: 6,
-              }}
-            >
+          <section
+            style={{
+              background: "var(--surface)",
+              borderRadius: 20,
+              boxShadow: "var(--ring)",
+              padding: 22,
+              border: "1px solid var(--line)",
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <span className="text-caption" style={{ color: "var(--text-muted)" }}>
-                  CURRENT OCCUPANCY
+                <span
+                  className="text-caption"
+                  style={{
+                    color: "var(--text-muted)",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Onboard Count
                 </span>
                 <div
                   className="tabular-nums"
                   style={{
-                    fontSize: 52,
+                    fontSize: 56,
                     fontWeight: 800,
-                    lineHeight: 1.05,
-                    color: OCC_COLOR[bus.occupancy],
-                    marginTop: 2,
+                    lineHeight: 1,
+                    margin: "6px 0 2px",
                   }}
                 >
                   {bus.onboard}
-                  <span
-                    className="text-title"
-                    style={{ color: "var(--text-muted)", fontWeight: 500, marginLeft: 6 }}
-                  >
+                  <span style={{ fontSize: 22, color: "var(--text-muted)", fontWeight: 500, marginLeft: 6 }}>
                     / {bus.capacity}
                   </span>
                 </div>
@@ -212,143 +220,160 @@ export default function ConductorPage() {
               />
             </div>
 
-            {/* Giant Dynamic Capacity Bar */}
+            {/* Uber-style Clean Capacity Bar */}
             <div
               style={{
-                height: 18,
-                background: "var(--surface-muted)",
+                height: 14,
+                background: "var(--surface-2)",
                 borderRadius: 999,
                 overflow: "hidden",
-                margin: "12px 0 8px",
-                border: "1px solid var(--border-subtle)",
+                margin: "16px 0 10px",
               }}
               role="progressbar"
               aria-valuenow={bus.onboard}
               aria-valuemin={0}
               aria-valuemax={bus.capacity}
-              aria-label="Bus capacity level"
             >
               <div
                 style={{
                   height: "100%",
                   width: `${Math.min(100, bus.load_pct)}%`,
-                  background: OCC_COLOR[bus.occupancy],
+                  background:
+                    bus.occupancy === "High"
+                      ? "var(--accent-red)"
+                      : bus.occupancy === "Moderate"
+                      ? "var(--crowd-mod)"
+                      : "var(--primary)",
                   borderRadius: 999,
-                  transition: "width 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.3s ease-out",
+                  transition: "width 0.25s ease-out",
                 }}
               />
             </div>
 
             <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 6,
-              }}
+              className="text-caption tabular-nums"
+              style={{ display: "flex", justifyContent: "space-between", color: "var(--text-muted)" }}
             >
-              <span className="text-caption tabular-nums" style={{ color: "var(--text-muted)" }}>
-                Speed: {bus.speed_kmh} km/h
-              </span>
-              <span className="text-caption" style={{ color: "var(--text-muted)" }}>
-                Heading: {bus.towards}
-              </span>
+              <span>{bus.speed_kmh} km/h</span>
+              <span>Heading towards {bus.towards}</span>
             </div>
           </section>
 
-          {/* Large Thumb-Friendly Passenger Counter Buttons (>= 56px height) */}
-          <section className="card" style={{ marginBottom: 14 }}>
+          {/* Large Black Pill Counter Buttons (>= 56px height) */}
+          <section
+            style={{
+              background: "var(--surface)",
+              borderRadius: 20,
+              boxShadow: "var(--ring)",
+              padding: 18,
+              border: "1px solid var(--line)",
+              marginBottom: 16,
+            }}
+          >
             <span
               className="text-caption"
-              style={{ display: "block", color: "var(--text-muted)", marginBottom: 10, fontWeight: 600 }}
+              style={{
+                display: "block",
+                color: "var(--text-muted)",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
             >
-              TICKETING / PASSENGER FLOW
+              Rapid Ticketing / Boarding
             </span>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <button
-                className="btn btn-primary"
+                className="btn-pill-primary"
                 onClick={() => handleAdjustPassenger(1)}
-                style={{ minHeight: 64, fontSize: 20 }}
-                aria-label="Add 1 boarded passenger"
+                style={{ minHeight: 64, fontSize: 19 }}
               >
                 <Plus size={22} /> +1 Boarded
               </button>
               <button
-                className="btn btn-secondary"
+                className="btn-pill-secondary"
                 onClick={() => handleAdjustPassenger(-1)}
-                style={{ minHeight: 64, fontSize: 20 }}
-                aria-label="Subtract 1 alighted passenger"
+                style={{ minHeight: 64, fontSize: 19 }}
               >
                 <Minus size={22} /> −1 Alighted
               </button>
               <button
-                className="btn btn-primary"
+                className="btn-pill-primary"
                 onClick={() => handleAdjustPassenger(5)}
-                style={{ minHeight: 58, fontSize: 18 }}
-                aria-label="Add 5 boarded passengers"
+                style={{ minHeight: 56, fontSize: 17 }}
               >
                 <Plus size={20} /> +5 Rapid
               </button>
               <button
-                className="btn btn-secondary"
+                className="btn-pill-secondary"
                 onClick={() => handleAdjustPassenger(-5)}
-                style={{ minHeight: 58, fontSize: 18 }}
-                aria-label="Subtract 5 alighted passengers"
+                style={{ minHeight: 56, fontSize: 17 }}
               >
                 <Minus size={20} /> −5 Rapid
               </button>
             </div>
           </section>
 
-          {/* Incident Reporting Section */}
-          <section className="card">
+          {/* Incident Report Actions (Grey Pills) */}
+          <section
+            style={{
+              background: "var(--surface)",
+              borderRadius: 20,
+              boxShadow: "var(--ring)",
+              padding: 18,
+              border: "1px solid var(--line)",
+            }}
+          >
             <span
               className="text-caption"
-              style={{ display: "block", color: "var(--text-muted)", marginBottom: 10, fontWeight: 600 }}
+              style={{
+                display: "block",
+                color: "var(--text-muted)",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
             >
-              INCIDENT / ASSISTANCE REPORT
+              Assistance & Incidents
             </span>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
               <button
-                className="btn btn-secondary"
+                className="btn-pill-secondary"
                 onClick={() => setConfirmIncident({ kind: "breakdown", label: "Breakdown" })}
                 style={{
-                  minHeight: 54,
+                  minHeight: 52,
                   flexDirection: "column",
                   gap: 4,
-                  fontSize: 13,
-                  borderColor: "var(--border-subtle)",
+                  fontSize: 12,
                 }}
               >
-                <AlertOctagon size={18} style={{ color: "var(--red-600)" }} />
+                <AlertOctagon size={18} style={{ color: "var(--accent-red)" }} />
                 Breakdown
               </button>
               <button
-                className="btn btn-secondary"
+                className="btn-pill-secondary"
                 onClick={() => setConfirmIncident({ kind: "sos", label: "Emergency SOS" })}
                 style={{
-                  minHeight: 54,
+                  minHeight: 52,
                   flexDirection: "column",
                   gap: 4,
-                  fontSize: 13,
-                  borderColor: "var(--border-subtle)",
+                  fontSize: 12,
                 }}
               >
-                <ShieldAlert size={18} style={{ color: "var(--red-600)" }} />
+                <ShieldAlert size={18} style={{ color: "var(--accent-red)" }} />
                 Emergency
               </button>
               <button
-                className="btn btn-secondary"
+                className="btn-pill-secondary"
                 onClick={() => setConfirmIncident({ kind: "accident", label: "Accident" })}
                 style={{
-                  minHeight: 54,
+                  minHeight: 52,
                   flexDirection: "column",
                   gap: 4,
-                  fontSize: 13,
-                  borderColor: "var(--border-subtle)",
+                  fontSize: 12,
                 }}
               >
-                <AlertTriangle size={18} style={{ color: "var(--amber-600)" }} />
+                <AlertTriangle size={18} style={{ color: "var(--crowd-mod)" }} />
                 Accident
               </button>
             </div>
@@ -356,43 +381,33 @@ export default function ConductorPage() {
         </>
       )}
 
-      {!bus && busId && (
-        <div className="card" style={{ textAlign: "center", padding: "32px 16px" }}>
-          <p className="text-body" style={{ color: "var(--text-muted)" }}>
-            Waiting for real-time telemetry from vehicle {item?.reg_no || busId}…
-          </p>
-        </div>
-      )}
-
-      {/* Incident Confirmation Sheet */}
+      {/* Confirmation Dialog */}
       {confirmIncident && (
         <div
           className="dialog-backdrop"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="confirm-title"
           onClick={() => setConfirmIncident(null)}
         >
           <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
-            <h2 id="confirm-title" className="text-title" style={{ margin: "0 0 10px" }}>
+            <b className="text-title" style={{ fontSize: 18, display: "block", marginBottom: 10 }}>
               Confirm {confirmIncident.label}
-            </h2>
+            </b>
             <p className="text-body" style={{ color: "var(--text-muted)", marginBottom: 20 }}>
-              Report {confirmIncident.label.toLowerCase()} for vehicle {item?.reg_no || `bus #${busId}`} to Delhi Transport Command Centre?
+              Report {confirmIncident.label.toLowerCase()} for vehicle {item?.reg_no || busId} to Central Control Room?
             </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
-                className="btn btn-secondary"
+                className="btn-pill-secondary"
                 onClick={() => setConfirmIncident(null)}
               >
                 Cancel
               </button>
               <button
-                className="btn btn-danger"
+                className="btn-pill-primary"
+                style={{ background: "var(--accent-red)", color: "#fff" }}
                 onClick={handleConfirmReport}
                 autoFocus
               >
-                Report incident
+                Report
               </button>
             </div>
           </div>
@@ -402,27 +417,26 @@ export default function ConductorPage() {
       {/* Floating Status Toast */}
       {toastMessage && (
         <div
-          className="glass"
-          role="status"
-          aria-live="polite"
           style={{
             position: "fixed",
             bottom: 24,
             left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 100,
+            background: "var(--primary)",
+            color: "var(--on-primary)",
+            padding: "10px 20px",
+            borderRadius: 999,
+            boxShadow: "var(--ring-elevated)",
+            fontSize: 14,
+            fontWeight: 600,
             display: "flex",
             alignItems: "center",
             gap: 8,
-            padding: "10px 18px",
-            borderRadius: 999,
-            background: "var(--text)",
-            color: "var(--surface)",
-            boxShadow: "var(--ring-sheet)",
+            zIndex: 100,
           }}
         >
-          <CheckCircle2 size={16} style={{ color: "var(--crowd-low)" }} />
-          <span style={{ fontSize: 14, fontWeight: 600 }}>{toastMessage}</span>
+          <CheckCircle2 size={16} />
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

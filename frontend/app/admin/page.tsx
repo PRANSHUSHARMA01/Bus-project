@@ -2,21 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
 import {
   Activity,
-  AlertCircle,
-  AlertOctagon,
   AlertTriangle,
   ArrowRight,
-  ArrowUpRight,
   Bus as BusIcon,
-  Check,
   CheckCircle2,
   Clock,
   Gauge,
   Sliders,
-  TrendingUp,
   Users,
   Zap,
 } from "lucide-react";
@@ -48,29 +42,29 @@ function ForecastChart({
   return (
     <div>
       <svg
-        viewBox={`0 0 ${width} 140`}
+        viewBox={`0 0 ${width} 130`}
         style={{ width: "100%", overflow: "visible" }}
         role="img"
-        aria-label={`24 hour ridership forecast chart for Route ${routeId}`}
+        aria-label={`Ridership forecast chart for Route ${routeId}`}
       >
         {data.map((d, i) => {
-          const h = (d.passengers / max) * 95;
+          const h = (d.passengers / max) * 90;
           const isPeak = d === peak;
           return (
             <g key={i}>
               <rect
                 x={i * 24 + 2}
-                y={105 - h}
+                y={100 - h}
                 width={18}
                 height={h}
                 rx={4}
-                fill={isPeak ? "var(--red-600)" : color}
+                fill={isPeak ? "var(--accent-red)" : "var(--primary)"}
                 opacity={isPeak ? 1 : 0.8}
               />
               {i % 4 === 0 && (
                 <text
                   x={i * 24 + 11}
-                  y={126}
+                  y={120}
                   fontSize={10}
                   textAnchor="middle"
                   fill="var(--text-muted)"
@@ -85,36 +79,17 @@ function ForecastChart({
         {peak && (
           <text
             x={data.indexOf(peak) * 24 + 11}
-            y={98 - (peak.passengers / max) * 95}
+            y={92 - (peak.passengers / max) * 90}
             fontSize={11}
             fontWeight={700}
             textAnchor="middle"
-            fill="var(--red-600)"
+            fill="var(--accent-red)"
             className="text-mono"
           >
             {Math.round(peak.passengers)}
           </text>
         )}
       </svg>
-
-      {/* Screen Reader Table Fallback (Accessibility 1.7 & 1.8) */}
-      <table className="sr-only">
-        <caption>Hourly passenger forecast for Route {routeId}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Hour</th>
-            <th scope="col">Forecasted Passengers</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((d) => (
-            <tr key={d.hour}>
-              <td>{d.hour}:00</td>
-              <td>{Math.round(d.passengers)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }
@@ -131,9 +106,8 @@ export default function AdminPage() {
   const [busesToAdd, setBusesToAdd] = useState(2);
   const [whatIfResult, setWhatIfResult] = useState<WhatIfResult | null>(null);
   const [acceptedRecId, setAcceptedRecId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "simulation">("overview");
 
-  const currentRouteColor = routes.find((r) => r.id === selectedRouteId)?.color ?? "#2563eb";
+  const currentRouteColor = routes.find((r) => r.id === selectedRouteId)?.color ?? "#000";
   const currentForecast = forecast?.[selectedRouteId];
 
   useEffect(() => {
@@ -159,15 +133,16 @@ export default function AdminPage() {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 390px",
+        gridTemplateColumns: "minmax(0, 1fr) 380px",
         gridTemplateRows: "auto minmax(0, 1fr)",
         gap: 16,
         height: "100vh",
         padding: 16,
         background: "var(--bg)",
+        color: "var(--text)",
       }}
     >
-      {/* 5 KPI CARDS with Staged Entrance (Section 1.4 & 1.7) */}
+      {/* 5 Uber KPI Cards */}
       <section
         style={{
           gridColumn: "1 / -1",
@@ -183,74 +158,76 @@ export default function AdminPage() {
             value: `${kpis?.active_buses ?? "–"} / ${kpis?.fleet ?? "–"}`,
             desc: "100% operational",
             icon: BusIcon,
-            color: "var(--accent)",
           },
           {
             title: "On-Time Arrival",
             value: `${kpis?.on_time_pct ?? "–"}%`,
-            desc: "Within 2 min schedule",
+            desc: "Schedule compliance",
             icon: Clock,
-            color: "var(--crowd-low)",
           },
           {
             title: "Average Fleet Speed",
             value: `${kpis?.avg_speed_kmh ?? "–"} km/h`,
-            desc: "Urban corridor flow",
+            desc: "Delhi corridor flow",
             icon: Gauge,
-            color: "var(--accent)",
           },
           {
             title: "Crowded Buses",
             value: `${kpis?.crowded_buses ?? "–"}`,
             desc: ">75% capacity load",
             icon: Users,
-            color: (kpis?.crowded_buses ?? 0) > 0 ? "var(--red-600)" : "var(--crowd-low)",
+            alert: (kpis?.crowded_buses ?? 0) > 0,
           },
           {
             title: "Boardings Today",
             value: kpis?.passengers_today?.toLocaleString() ?? "–",
-            desc: "Total ticketed rides",
+            desc: "Ticketed ridership",
             icon: Activity,
-            color: "var(--accent)",
           },
-        ].map((kpi, idx) => (
-          <motion.div
+        ].map((kpi) => (
+          <div
             key={kpi.title}
-            initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ delay: idx * 0.08, duration: 0.3, ease: "easeOut" }}
-            className="card"
-            style={{ padding: "14px 18px" }}
+            style={{
+              background: "var(--surface)",
+              borderRadius: 18,
+              boxShadow: "var(--ring)",
+              border: "1px solid var(--line)",
+              padding: "16px 18px",
+            }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="text-caption" style={{ color: "var(--text-muted)", fontWeight: 600 }}>
+              <span className="text-caption" style={{ color: "var(--text-muted)", fontWeight: 700 }}>
                 {kpi.title}
               </span>
-              <kpi.icon size={16} style={{ color: kpi.color }} aria-hidden="true" />
+              <kpi.icon size={16} style={{ color: kpi.alert ? "var(--accent-red)" : "var(--text)" }} />
             </div>
             <div
               className="tabular-nums text-title"
-              style={{ fontSize: 26, margin: "6px 0 2px", color: kpi.color }}
+              style={{
+                fontSize: 26,
+                margin: "6px 0 2px",
+                color: kpi.alert ? "var(--accent-red)" : "var(--text)",
+              }}
             >
               {kpi.value}
             </div>
-            <span className="text-caption" style={{ color: "var(--text-dim)" }}>
+            <span className="text-caption" style={{ color: "var(--text-muted)" }}>
               {kpi.desc}
             </span>
-          </motion.div>
+          </div>
         ))}
       </section>
 
-      {/* Main Map Visualization Panel */}
+      {/* Main Map Panel */}
       <section
         style={{
           borderRadius: 20,
           overflow: "hidden",
           position: "relative",
           boxShadow: "var(--ring)",
+          border: "1px solid var(--line)",
           minHeight: 400,
         }}
-        aria-label="Live fleet tracking map"
       >
         <BusMap
           routes={routes}
@@ -258,16 +235,16 @@ export default function AdminPage() {
           mapStyle="https://tiles.openfreemap.org/styles/positron"
         />
         <div style={{ position: "absolute", top: 14, left: 14, zIndex: 10, display: "flex", gap: 8 }}>
-          <Link href="/" className="pill">
+          <Link href="/" className="btn-pill-secondary" style={{ minHeight: 38, padding: "0 14px", fontSize: 13 }}>
             Passenger View ↗
           </Link>
-          <Link href="/conductor" className="pill">
+          <Link href="/conductor" className="btn-pill-secondary" style={{ minHeight: 38, padding: "0 14px", fontSize: 13 }}>
             Conductor Console ↗
           </Link>
         </div>
       </section>
 
-      {/* Control Room Sidebar (>= 1024px) */}
+      {/* Control Room Sidebar */}
       <aside
         style={{
           overflowY: "auto",
@@ -276,68 +253,82 @@ export default function AdminPage() {
           flexDirection: "column",
           gap: 14,
         }}
-        aria-label="Operations sidebar"
       >
-        {/* Live Alerts Feed (Newest First with Severity Icons) */}
-        <section className="card" style={{ padding: 16 }}>
+        {/* Incident Alerts */}
+        <section
+          style={{
+            background: "var(--surface)",
+            borderRadius: 18,
+            boxShadow: "var(--ring)",
+            border: "1px solid var(--line)",
+            padding: 16,
+          }}
+        >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <b className="text-heading" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <AlertTriangle size={17} style={{ color: "var(--amber-600)" }} />
-              Live Incident Alerts
+            <b style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
+              <AlertTriangle size={16} style={{ color: "var(--accent-red)" }} />
+              Live Incidents
             </b>
-            <span className="badge" style={{ background: "var(--surface-muted)", color: "var(--text)" }}>
+            <span
+              style={{
+                padding: "2px 8px",
+                borderRadius: 999,
+                background: "var(--surface-2)",
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
               {alerts.length}
             </span>
           </div>
-          <div style={{ maxHeight: 150, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+
+          <div style={{ maxHeight: 140, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
             {alerts.length === 0 && (
               <span className="text-caption" style={{ color: "var(--text-muted)" }}>
-                All corridors running normally · zero alerts
+                Zero active corridor alerts
               </span>
             )}
-            <AnimatePresence initial={false}>
-              {alerts.slice(0, 10).map((a) => (
-                <motion.div
-                  key={a.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  className="card"
-                  style={{
-                    padding: "8px 12px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    borderRadius: 10,
-                    background:
-                      a.severity === "critical"
-                        ? "oklch(0.55 0.2 27 / 0.12)"
-                        : a.severity === "warning"
-                        ? "oklch(0.65 0.16 70 / 0.12)"
-                        : "var(--surface-muted)",
-                    color:
-                      a.severity === "critical"
-                        ? "var(--red-600)"
-                        : a.severity === "warning"
-                        ? "var(--amber-600)"
-                        : "var(--accent)",
-                  }}
-                >
-                  {a.message}
-                </motion.div>
-              ))}
-            </AnimatePresence>
+            {alerts.slice(0, 8).map((a) => (
+              <div
+                key={a.id}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: "var(--surface-2)",
+                  borderLeft: `3px solid ${
+                    a.severity === "critical"
+                      ? "var(--accent-red)"
+                      : a.severity === "warning"
+                      ? "var(--crowd-mod)"
+                      : "var(--primary)"
+                  }`,
+                }}
+              >
+                {a.message}
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* AI Fleet Allocation Recommendations */}
-        <section className="card" style={{ padding: 16 }}>
-          <b className="text-heading" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-            <Zap size={17} style={{ color: "var(--accent)" }} />
-            AI Fleet Allocation Advice
+        {/* AI Recommendations */}
+        <section
+          style={{
+            background: "var(--surface)",
+            borderRadius: 18,
+            boxShadow: "var(--ring)",
+            border: "1px solid var(--line)",
+            padding: 16,
+          }}
+        >
+          <b style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <Zap size={16} />
+            Fleet Balancing Advice
           </b>
           {recs.length === 0 && (
             <p className="text-caption" style={{ color: "var(--text-muted)", margin: 0 }}>
-              Fleet distribution is optimal for current demand.
+              Corridor allocation is optimal.
             </p>
           )}
           {recs.map((r) => {
@@ -346,20 +337,20 @@ export default function AdminPage() {
               <div
                 key={`${r.from_route}-${r.to_route}`}
                 style={{
-                  background: "var(--surface-muted)",
+                  background: "var(--surface-2)",
                   padding: 12,
-                  borderRadius: 12,
+                  borderRadius: 14,
                   marginBottom: 8,
                 }}
               >
-                <div style={{ fontWeight: 600, fontSize: 14 }}>
-                  Move {r.buses} buses: Route {r.from_route} → Route {r.to_route}
+                <div style={{ fontWeight: 700, fontSize: 14 }}>
+                  Shift {r.buses} buses: Route {r.from_route} → Route {r.to_route}
                 </div>
-                <div className="text-caption" style={{ color: "var(--text-muted)", margin: "4px 0 8px" }}>
+                <div className="text-caption" style={{ color: "var(--text-muted)", margin: "4px 0 10px" }}>
                   {r.reason}
                 </div>
                 <button
-                  className="btn btn-primary"
+                  className="btn-pill-primary"
                   onClick={() => handleAcceptRecommendation(r)}
                   disabled={isAccepted}
                   style={{
@@ -369,24 +360,26 @@ export default function AdminPage() {
                     padding: "6px 12px",
                   }}
                 >
-                  {isAccepted ? (
-                    <>
-                      <CheckCircle2 size={16} /> Reallocated
-                    </>
-                  ) : (
-                    "Accept & Reallocate"
-                  )}
+                  {isAccepted ? "Reallocated ✓" : "Accept & Shift"}
                 </button>
               </div>
             );
           })}
         </section>
 
-        {/* Demo Simulation Controls (Grouped in Simulation card per Section 1.7) */}
-        <section className="card" style={{ padding: 16 }}>
-          <b className="text-heading" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-            <Sliders size={17} style={{ color: "var(--accent)" }} />
-            Simulation Triggers
+        {/* Simulation Controls */}
+        <section
+          style={{
+            background: "var(--surface)",
+            borderRadius: 18,
+            boxShadow: "var(--ring)",
+            border: "1px solid var(--line)",
+            padding: 16,
+          }}
+        >
+          <b style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <Sliders size={16} />
+            Simulation Actions
           </b>
           {routes.map((r) => (
             <div
@@ -398,31 +391,46 @@ export default function AdminPage() {
                 marginBottom: 6,
               }}
             >
-              <span className="badge" style={{ background: r.color, width: 28, height: 28, justifyContent: "center" }}>
+              <span
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: "50%",
+                  background: "var(--primary)",
+                  color: "var(--on-primary)",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
                 {r.id}
               </span>
               <div style={{ display: "flex", gap: 6 }}>
                 <button
-                  className="btn btn-secondary"
+                  className="btn-pill-secondary"
                   onClick={() => handleTriggerSimulation("jam", r.id)}
-                  style={{ minHeight: 36, padding: "4px 10px", fontSize: 12 }}
-                  title="Throttles buses on this route to 5-8 km/h"
+                  style={{ minHeight: 34, padding: "0 10px", fontSize: 12 }}
                 >
                   Jam
                 </button>
                 <button
-                  className="btn btn-secondary"
+                  className="btn-pill-secondary"
                   onClick={() => handleTriggerSimulation("surge", r.id)}
-                  style={{ minHeight: 36, padding: "4px 10px", fontSize: 12 }}
-                  title="Adds 20-25 passengers to bus"
+                  style={{ minHeight: 34, padding: "0 10px", fontSize: 12 }}
                 >
                   Surge
                 </button>
                 <button
-                  className="btn btn-danger"
+                  className="btn-pill-primary"
                   onClick={() => handleTriggerSimulation("breakdown", r.id)}
-                  style={{ minHeight: 36, padding: "4px 10px", fontSize: 12 }}
-                  title="Halts bus and triggers emergency dispatch"
+                  style={{
+                    minHeight: 34,
+                    padding: "0 10px",
+                    fontSize: 12,
+                    background: "var(--accent-red)",
+                    color: "#fff",
+                  }}
                 >
                   Break
                 </button>
@@ -431,25 +439,33 @@ export default function AdminPage() {
           ))}
         </section>
 
-        {/* 24-Hour Ridership Forecast & Interactive What-If Simulator */}
-        <section className="card" style={{ padding: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <b className="text-heading">Demand Forecast (24h)</b>
+        {/* 24h Ridership Forecast & What-If */}
+        <section
+          style={{
+            background: "var(--surface)",
+            borderRadius: 18,
+            boxShadow: "var(--ring)",
+            border: "1px solid var(--line)",
+            padding: 16,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <b style={{ fontSize: 15 }}>24h Demand Forecast</b>
             <div style={{ display: "flex", gap: 4 }}>
               {routes.map((r) => (
                 <button
                   key={r.id}
                   onClick={() => setSelectedRouteId(r.id)}
-                  className="pill"
+                  className="btn-pill-secondary"
                   style={{
-                    minHeight: 32,
-                    padding: "2px 10px",
-                    fontSize: 12,
-                    background: selectedRouteId === r.id ? r.color : "var(--surface-muted)",
-                    color: selectedRouteId === r.id ? "#fff" : "var(--text)",
+                    minHeight: 30,
+                    padding: "0 8px",
+                    fontSize: 11,
+                    background: selectedRouteId === r.id ? "var(--primary)" : "var(--surface-2)",
+                    color: selectedRouteId === r.id ? "var(--on-primary)" : "var(--text)",
                   }}
                 >
-                  Route {r.id}
+                  {r.id}
                 </button>
               ))}
             </div>
@@ -459,8 +475,8 @@ export default function AdminPage() {
             <>
               <div className="text-caption" style={{ color: "var(--text-muted)", marginBottom: 8 }}>
                 Peak: {Math.round(currentForecast.peak.passengers)} pax/h at{" "}
-                {String(currentForecast.peak.hour).padStart(2, "0")}:00 · Buses needed:{" "}
-                {currentForecast.needed} · assigned: {currentForecast.have}
+                {String(currentForecast.peak.hour).padStart(2, "0")}:00 · Needed:{" "}
+                {currentForecast.needed} · Assigned: {currentForecast.have}
               </div>
               <ForecastChart
                 data={currentForecast.series}
@@ -470,13 +486,13 @@ export default function AdminPage() {
             </>
           )}
 
-          {/* Interactive What-If Slider */}
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border-subtle)" }}>
+          {/* What-If Slider */}
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="text-caption" style={{ fontWeight: 600 }}>
+              <span className="text-caption" style={{ fontWeight: 700 }}>
                 What-If Fleet Adjustment
               </span>
-              <span className="text-caption tabular-nums" style={{ color: "var(--accent)", fontWeight: 700 }}>
+              <span className="text-caption tabular-nums" style={{ fontWeight: 700 }}>
                 {busesToAdd >= 0 ? `+${busesToAdd}` : busesToAdd} buses
               </span>
             </div>
@@ -487,7 +503,6 @@ export default function AdminPage() {
               value={busesToAdd}
               onChange={(e) => setBusesToAdd(Number(e.target.value))}
               style={{ width: "100%", margin: "8px 0" }}
-              aria-label="What-if bus fleet adjustment slider"
             />
             {whatIfResult && (
               <div
@@ -495,25 +510,15 @@ export default function AdminPage() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  background: "var(--surface-muted)",
+                  background: "var(--surface-2)",
                   padding: "8px 12px",
                   borderRadius: 10,
                 }}
               >
                 <span>Peak Load %:</span>
                 <span>
-                  <b style={{ color: whatIfResult.load_now_pct > 100 ? "var(--red-600)" : undefined }}>
-                    {whatIfResult.load_now_pct}%
-                  </b>{" "}
-                  →{" "}
-                  <b
-                    style={{
-                      color:
-                        whatIfResult.load_after_pct > 100
-                          ? "var(--red-600)"
-                          : "var(--crowd-low)",
-                    }}
-                  >
+                  <b>{whatIfResult.load_now_pct}%</b> →{" "}
+                  <b style={{ color: whatIfResult.load_after_pct > 100 ? "var(--accent-red)" : "var(--crowd-low)" }}>
                     {whatIfResult.load_after_pct}%
                   </b>
                 </span>
