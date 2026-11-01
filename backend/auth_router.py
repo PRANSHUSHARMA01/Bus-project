@@ -147,8 +147,8 @@ async def request_otp(body: RequestOtpModel, request: Request):
 
     email_h = hash_email(body.email)
 
-    # Rate limiting: Maximum 3 requests per 10 minutes (enforced in production)
-    if IS_PROD:
+    # Rate limiting: Maximum 3 requests per 10 minutes (bypassed only if BYPASS_OTP_RATE_LIMIT=1)
+    if os.environ.get("BYPASS_OTP_RATE_LIMIT") != "1":
         recent_requests = db.count_recent_otp_requests(email_h, client_ip, window_sec=600)
         if recent_requests >= 3:
             raise HTTPException(

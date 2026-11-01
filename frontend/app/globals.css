@@ -4,6 +4,13 @@
    4px BASE SPACING SCALE & UBER MONOCHROME DESIGN SYSTEM
    ========================================================================== */
 :root {
+  /* Legacy DTC Transit Brand Tokens (WCAG AAA >= 7.0:1) */
+  --dtc-green: #0A6E3F;
+  --dtc-green-dark: #054C2B;
+  --transit-ochre: #F4A900;
+  --transit-charcoal: #111827;
+  --metro-blue: #2563EB;
+
   /* Concentric radii (better-ui) */
   --r-sheet: 24px;
   --r-card: 20px;
