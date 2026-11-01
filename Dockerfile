@@ -1,56 +1,75 @@
 # ==============================================================================
-# Stage 1: Build Frontend (Static Export)
+# Production Single-Server Dockerfile for Smart Public Bus (pranshusharma.tech)
+# Architecture: FastAPI serves built Next.js static export + API + WebSockets
 # ==============================================================================
-FROM node:22-alpine AS frontend-builder
-WORKDIR /build
 
-# Copy dependency manifests
-COPY frontend/package.json frontend/package*.json ./
-RUN npm install
+# ------------------------------------------------------------------------------
+# Stage 1: Build Next.js Static Export
+# ------------------------------------------------------------------------------
+FROM node:20-alpine AS frontend-builder
 
-# Copy frontend source and build static export (outputs to /build/out)
+WORKDIR /app/frontend
+
+# Copy frontend dependency manifests
+COPY frontend/package.json frontend/package-lock.json* ./
+
+# Install dependencies cleanly
+RUN npm ci --prefer-offline --no-audit
+
+# Copy frontend source files
 COPY frontend/ ./
+
+# Disable telemetry and build static export (outputs to /app/frontend/out)
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 RUN npm run build
 
-# ==============================================================================
-# Stage 2: Production Python Backend (Serves API + Static Frontend from same origin)
-# ==============================================================================
+# ------------------------------------------------------------------------------
+# Stage 2: Production Python Runtime
+# ------------------------------------------------------------------------------
 FROM python:3.12-slim AS runner
 
-# Create dedicated non-root user for security
-RUN groupadd -g 10001 appgroup && \
-    useradd -u 10001 -g appgroup -s /bin/sh -m appuser
+# Prevent Python from writing .pyc and buffer stdout
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8000 \
+    APP_ENV=production
 
 WORKDIR /app
 
-# Minimal runtime packages (curl for healthcheck, libpq for PostgreSQL)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl libpq5 && \
-    rm -rf /var/lib/apt/lists/*
+# Install security updates and curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python requirements
-COPY backend/requirements.txt ./
+# Install Python production dependencies
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend application source
-COPY backend/ ./
+# Copy backend application code
+COPY backend/ ./backend/
 
-# Copy compiled static output from Stage 1
-COPY --from=frontend-builder /build/out ./static
+# Copy built frontend assets into FastAPI's static serving directory
+COPY --from=frontend-builder /app/frontend/out/ ./backend/static/
 
-# Fix permissions for non-root user
-RUN chown -R appuser:appgroup /app
+# Ensure persistent data directory exists
+RUN mkdir -p /app/backend/data
+
+# Security Hardening: Create non-root system user
+RUN groupadd -g 1001 appgroup && \
+    useradd -u 1001 -g appgroup -s /bin/sh -m appuser && \
+    chown -R appuser:appgroup /app
 
 USER appuser
 
 EXPOSE 8000
 
-ENV PORT=8000 \
-    HOST=0.0.0.0 \
-    PYTHONUNBUFFERED=1
+# Docker healthcheck querying FastAPI /health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
-HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+WORKDIR /app/backend
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--proxy-headers", "--forwarded-allow-ips=*"]
+# Launch production Uvicorn server with standard ASGI loop
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "*"]

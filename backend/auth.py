@@ -208,3 +208,11 @@ def require_role(required_role: str):
             detail=f"Forbidden: {required_role} role required, but user has {user.role}"
         )
     return _role_checker
+
+def optional_user(request: Request, authorization: Optional[str] = Header(None)) -> Optional[UserProfile]:
+    """FastAPI dependency to optionally verify JWT without throwing 401 if missing."""
+    try:
+        return current_user(request=request, authorization=authorization)
+    except HTTPException:
+        return None
+

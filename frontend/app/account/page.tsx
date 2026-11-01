@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, UserProfile } from "@/lib/auth-context";
 import {
@@ -12,6 +13,7 @@ import {
   Briefcase,
   MapPin,
   Shield,
+  FileText,
   Download,
   Trash2,
   LogOut,
@@ -193,19 +195,31 @@ export default function AccountPage() {
   const handleDownloadData = async () => {
     try {
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      const [tripsRes, placesRes, contactsRes] = await Promise.all([
-        fetch(`${API}/v1/trips?limit=100`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
-        fetch(`${API}/v1/saved-places`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
-        fetch(`${API}/v1/emergency-contacts`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : [])
-      ]);
+      let exportData: any = null;
 
-      const exportData = {
-        exported_at: new Date().toISOString(),
-        profile: user,
-        trips: tripsRes,
-        saved_places: placesRes,
-        emergency_contacts: contactsRes
-      };
+      try {
+        const directRes = await fetch(`${API}/v1/auth/data-export`, { headers, credentials: "include" });
+        if (directRes.ok) {
+          exportData = await directRes.json();
+        }
+      } catch {}
+
+      if (!exportData) {
+        const [tripsRes, placesRes, contactsRes] = await Promise.all([
+          fetch(`${API}/v1/trips?limit=100`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
+          fetch(`${API}/v1/saved-places`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
+          fetch(`${API}/v1/emergency-contacts`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : [])
+        ]);
+
+        exportData = {
+          compliance_standard: "India Digital Personal Data Protection Act (DPDP) 2023 & GDPR (EU) 2016/679",
+          exported_at: new Date().toISOString(),
+          profile: user,
+          trips: tripsRes,
+          saved_places: placesRes,
+          emergency_contacts: contactsRes
+        };
+      }
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -824,6 +838,47 @@ export default function AccountPage() {
             </span>
             <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
           </button>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+            <Link
+              href="/privacy"
+              style={{
+                height: 38,
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
+                fontSize: 12,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+                gap: 6
+              }}
+            >
+              <Shield size={14} style={{ color: "#10B981" }} /> Privacy (DPDP)
+            </Link>
+            <Link
+              href="/terms"
+              style={{
+                height: 38,
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
+                fontSize: 12,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+                gap: 6
+              }}
+            >
+              <FileText size={14} style={{ color: "#F59E0B" }} /> Terms of Service
+            </Link>
+          </div>
 
           <button
             onClick={() => setIsDeleteModalOpen(true)}

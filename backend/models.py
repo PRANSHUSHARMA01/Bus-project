@@ -251,4 +251,9 @@ class HelplineItem(BaseModel):
     description_hi: str
     category: str
 
+class LegalConsentRequest(BaseModel):
+    telemetry_tracking: bool = True
+    emergency_sos_dispatch: bool = True
+    essential_cookies: bool = True
+
 

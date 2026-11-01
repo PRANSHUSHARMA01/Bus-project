@@ -14,6 +14,7 @@ test_files = [
     "test_phase_e_design_system",
     "test_phase_f_anatomy",
     "test_phase_g_safety_sos",
+    "test_phase_h_legal_deploy",
 ]
 
 total_passed = 0

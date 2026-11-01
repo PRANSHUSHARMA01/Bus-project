@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
-from auth import UserProfile, current_user, require_role
+from auth import UserProfile, current_user, optional_user, require_role
 from auth_router import create_access_token
 from db import db
 from models import (
@@ -43,6 +43,7 @@ from models import (
     SharedTripLiveTelemetry,
     SafeStopItem,
     HelplineItem,
+    LegalConsentRequest,
 )
 
 v1_router = APIRouter(prefix="/v1", tags=["v1"])
@@ -973,4 +974,113 @@ async def report_incident(req: ConductorIncidentRequest, user: UserProfile = Dep
         pass
 
     return {"ok": True, "incident": inc_record}
+
+# =====================================================================
+# Phase H: Legal, DPDP Act 2023 & GDPR Compliance Endpoints
+# =====================================================================
+
+@v1_router.get("/auth/data-export")
+async def export_user_data(user: UserProfile = Depends(current_user)):
+    """
+    DPDP Act 2023 Section 11 & GDPR Article 15/20 Data Portability:
+    Returns the complete structured JSON export of all personal data,
+    saved places, emergency contacts, ride history, arrival subscriptions,
+    and recorded consent logs associated with the authenticated account.
+    """
+    export_payload = db.get_data_export(user.id)
+    return export_payload
+
+@v1_router.post("/legal/consent")
+async def record_consent(req: LegalConsentRequest, request: Request, user: Optional[UserProfile] = Depends(optional_user)):
+    """
+    DPDP Act 2023 Section 6 & GDPR Article 7:
+    Records passenger consent preferences for GPS telematics tracking,
+    emergency SOS automated dispatch, and essential cookies.
+    """
+    client_ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    user_id = user.id if user else None
+
+    consent_record = db.record_user_consent(
+        user_id=user_id,
+        telemetry_tracking=req.telemetry_tracking,
+        emergency_sos_dispatch=req.emergency_sos_dispatch,
+        essential_cookies=req.essential_cookies,
+        ip=client_ip,
+        user_agent=user_agent
+    )
+    return {
+        "ok": True,
+        "consent": consent_record,
+        "compliance_notice": "Consent recorded under India Digital Personal Data Protection Act 2023 Section 6."
+    }
+
+@v1_router.get("/legal/privacy")
+async def get_privacy_policy_meta():
+    """
+    Returns statutory privacy policy parameters and data fiduciary disclosures.
+    """
+    return {
+        "title": "Privacy Policy & Data Fiduciary Disclosure",
+        "title_hi": "गोपनीयता नीति एवं डेटा न्यासी प्रकटीकरण",
+        "effective_date": "2026-11-01",
+        "jurisdiction": "National Capital Territory of Delhi, India",
+        "statutory_frameworks": [
+            "India Digital Personal Data Protection Act (DPDP Act 2023)",
+            "Information Technology (Intermediary Guidelines & Digital Media Ethics Code) Rules 2021",
+            "EU General Data Protection Regulation (GDPR) Regulation (EU) 2016/679"
+        ],
+        "data_fiduciary": {
+            "name": "Delhi Smart Public Bus Transit Project",
+            "partnership": "Government of NCT of Delhi (Open Transit Data Initiative)",
+            "grievance_officer": {
+                "name": "Pranshu Sharma",
+                "designation": "Data Protection & Grievance Officer",
+                "email": "pranshusharma01@gmail.com",
+                "location": "New Delhi, Delhi NCR, India"
+            }
+        },
+        "retention_schedule": {
+            "telemetry_gps": "Anonymized rolling purge after 90 days",
+            "emergency_sos_packets": "180 days for Delhi Police PCR & DTC safety audits",
+            "ticketing_ledger": "3 years statutory compliance per transport audit rules",
+            "account_profile": "Immediately deleted on user deletion request (Right to Erasure)"
+        }
+    }
+
+@v1_router.get("/legal/terms")
+async def get_terms_meta():
+    """
+    Returns transit terms of service and AIS-140 emergency dispatch limits.
+    """
+    return {
+        "title": "Terms of Transit Service & Dispatch Conditions",
+        "title_hi": "परिवहन सेवा की शर्तें एवं प्रेषण नियम",
+        "effective_date": "2026-11-01",
+        "operator_notice": "Smart Public Bus provides real-time open transit telemetry in coordination with Delhi Transport Corporation (DTC) and Delhi Integrated Multi-Modal Transit System (DIMTS).",
+        "emergency_dispatch_notice": "Silent SOS and 112 emergency calls connect passengers to official Delhi Police Emergency and DTC Command Control Centre (CCC). False alarms are buffered for 5 seconds.",
+        "ticketing_terms": "Digital conductor tickets and UPI QR payments are officially synchronized with onboard fare inspection standards.",
+        "arbitration_venue": "Courts of New Delhi, India"
+    }
+
+@v1_router.get("/legal/licenses")
+async def get_open_source_licenses():
+    """
+    Returns third-party open-source components and transit data attributions.
+    """
+    return {
+        "open_transit_data": {
+            "provider": "Government of National Capital Territory of Delhi (Transport Department)",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+            "attribution": "Real-time bus schedules, stop geo-coordinates, and route definitions powered by Delhi Open Transit Data."
+        },
+        "software_dependencies": [
+            {"name": "FastAPI", "license": "MIT", "usage": "High-performance asynchronous backend & WebSocket engine"},
+            {"name": "Next.js", "license": "MIT", "usage": "React framework for client interface and SSR"},
+            {"name": "SQLite / aiosqlite", "license": "Public Domain", "usage": "Zero-configuration persistent relational database"},
+            {"name": "Lucide React", "license": "ISC", "usage": "Geometric accessible transit iconography"},
+            {"name": "Playwright", "license": "Apache 2.0", "usage": "End-to-end multi-viewport browser verification"},
+            {"name": "OpenStreetMap & Leaflet", "license": "ODbL / BSD-2-Clause", "usage": "Base map tile layers and spatial rendering"}
+        ]
+    }
 

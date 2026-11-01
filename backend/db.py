@@ -147,6 +147,17 @@ class Database:
             created_at TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS user_consents (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            telemetry_tracking INTEGER NOT NULL DEFAULT 1,
+            emergency_sos_dispatch INTEGER NOT NULL DEFAULT 1,
+            essential_cookies INTEGER NOT NULL DEFAULT 1,
+            ip_hash TEXT,
+            user_agent TEXT,
+            consented_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS recent_searches (
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -286,6 +297,19 @@ class Database:
             conn.close()
             return dict(row) if row else None
 
+    def get_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Returns user profile or None."""
+        conn = self.get_conn()
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute("SELECT * FROM profiles WHERE id = %s", (user_id,))
+            row = cur.fetchone()
+        else:
+            cur.execute("SELECT * FROM profiles WHERE id = ?", (user_id,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
     def delete_account_data(self, user_id: str):
         """GDPR compliant user deletion: removes profile and cascade personal data."""
         conn = self.get_conn()
@@ -293,9 +317,11 @@ class Database:
         tables = [
             "saved_places",
             "trips",
+            "trip_shares",
             "notifications_subscriptions",
             "emergency_contacts",
             "recent_searches",
+            "user_consents",
             "sessions",
             "profiles",
             "users",
@@ -1086,6 +1112,90 @@ class Database:
                 "upi_collection": d.get("upi_collection", 0),
             }
         return {"total_tickets": 0, "total_collection": 0, "cash_collection": 0, "upi_collection": 0}
+
+    # -------------------------------------------------------------
+    # Legal, DPDP Act 2023 & GDPR Compliance Methods
+    # -------------------------------------------------------------
+    def record_user_consent(
+        self,
+        user_id: Optional[str],
+        telemetry_tracking: bool = True,
+        emergency_sos_dispatch: bool = True,
+        essential_cookies: bool = True,
+        ip: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Records DPDP Act 2023 / GDPR compliant consent log."""
+        conn = self.get_conn()
+        cur = conn.cursor()
+        cid = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:16] if ip else None
+
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO user_consents (id, user_id, telemetry_tracking, emergency_sos_dispatch, essential_cookies, ip_hash, user_agent, consented_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *
+            """, (cid, user_id, 1 if telemetry_tracking else 0, 1 if emergency_sos_dispatch else 0, 1 if essential_cookies else 0, ip_hash, user_agent, now))
+            row = cur.fetchone()
+            conn.commit()
+            conn.close()
+            return dict(row)
+        else:
+            cur.execute("""
+                INSERT INTO user_consents (id, user_id, telemetry_tracking, emergency_sos_dispatch, essential_cookies, ip_hash, user_agent, consented_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (cid, user_id, 1 if telemetry_tracking else 0, 1 if emergency_sos_dispatch else 0, 1 if essential_cookies else 0, ip_hash, user_agent, now))
+            conn.commit()
+            cur.execute("SELECT * FROM user_consents WHERE id = ?", (cid,))
+            row = cur.fetchone()
+            conn.close()
+            return dict(row)
+
+    def get_user_consents(self, user_id: str) -> List[Dict[str, Any]]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute("SELECT * FROM user_consents WHERE user_id = %s ORDER BY consented_at DESC", (user_id,))
+        else:
+            cur.execute("SELECT * FROM user_consents WHERE user_id = ? ORDER BY consented_at DESC", (user_id,))
+        rows = cur.fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def get_data_export(self, user_id: str) -> Dict[str, Any]:
+        """Generates full DPDP Act 2023 Sec 11 & GDPR Art 15/20 data portability archive."""
+        profile = self.get_profile(user_id) or {}
+        places = self.get_saved_places(user_id)
+        contacts = self.get_emergency_contacts(user_id)
+        trips = self.get_user_trips(user_id, limit=500)
+        subscriptions = self.get_subscriptions(user_id)
+        consents = self.get_user_consents(user_id)
+
+        now = datetime.now(timezone.utc).isoformat()
+        return {
+            "compliance_standard": "India Digital Personal Data Protection Act (DPDP) 2023 & GDPR (EU) 2016/679",
+            "data_fiduciary": {
+                "organization": "Delhi Smart Public Bus Transit Project",
+                "partner": "Government of NCT of Delhi (Open Transit Data)",
+                "grievance_officer": "Pranshu Sharma (New Delhi, India)",
+                "email": "pranshusharma01@gmail.com",
+                "jurisdiction": "National Capital Territory of Delhi, India"
+            },
+            "exported_at": now,
+            "user_id": user_id,
+            "profile": profile,
+            "saved_places": places,
+            "emergency_contacts": contacts,
+            "trips": trips,
+            "subscriptions": subscriptions,
+            "consent_records": consents,
+            "retention_policy": {
+                "telemetry_gps": "Anonymized, purged after 90 days",
+                "transit_tickets": "Retained for 3 years per statutory DTC audit regulations",
+                "account_data": "Deleted immediately upon user erasure request"
+            }
+        }
 
 db = Database()
 

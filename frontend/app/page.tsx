@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import BusMap from "../components/BusMap";
 import { SharedTripTracker } from "../components/ui/SharedTripTracker";
+import { CookieBanner } from "../components/ui/CookieBanner";
 import { ArrivalCard } from "../components/ui/ArrivalCard";
 import { Badge } from "../components/ui/Badge";
 import { BottomNav, NavTab } from "../components/ui/BottomNav";

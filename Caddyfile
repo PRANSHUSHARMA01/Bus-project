@@ -1,43 +1,27 @@
 # ==============================================================================
-# Caddyfile for Smart Public Bus Tracking (pranshusharma.tech)
+# Caddyfile for Smart Public Bus (Automatic Let's Encrypt TLS)
+# Domain: pranshusharma.tech
 # ==============================================================================
 
-{
-    email pranshusharma5136@gmail.com
-    admin off
-}
-
-# Redirect www to apex domain
-www.pranshusharma.tech {
-    redir https://pranshusharma.tech{uri} permanent
-}
-
-# Primary production site
-pranshusharma.tech {
+pranshusharma.tech, www.pranshusharma.tech {
+    # Encode with Zstandard and Gzip
     encode zstd gzip
 
-    # Reverse proxy to FastAPI application with WebSocket upgrade support
-    reverse_proxy app:8000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
-    }
-
-    # HTTP Security Headers
+    # Hardened Security Headers
     header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "geolocation=(self), notifications=(self)"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; img-src 'self' data: blob: https:; connect-src 'self' https://pranshusharma.tech wss://pranshusharma.tech ws: wss: https://*.openfreemap.org https://openfreemap.org https://tiles.openfreemap.org https://*.tile.openstreetmap.org https://*.cloudflare.com https://*.fastly.net; worker-src 'self' blob:; child-src blob:; frame-ancestors 'none';"
+        Permissions-Policy "camera=(), microphone=(self), geolocation=(self)"
         -Server
     }
-}
 
-# Local / Direct IP HTTP fallback for health checks and local dev
-:80 {
-    encode zstd gzip
-    reverse_proxy app:8000
+    # Proxy all traffic to FastAPI on 127.0.0.1:8000
+    # Caddy handles WebSockets automatically
+    reverse_proxy 127.0.0.1:8000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
 }

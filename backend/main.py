@@ -626,7 +626,7 @@ if STATIC_DIR.exists():
             return FileResponse(html_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
         # 3. Dynamic client route fallback (e.g. /t/abc, /trip/123 -> index.html)
-        client_spa_prefixes = ("t", "trip", "track", "route", "bus")
+        client_spa_prefixes = ("t", "trip", "track", "route", "bus", "legal", "terms", "privacy")
         if first_segment in client_spa_prefixes:
             index_file = STATIC_DIR / "index.html"
             if index_file.exists():
