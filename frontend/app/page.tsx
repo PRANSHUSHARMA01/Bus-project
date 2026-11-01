@@ -35,6 +35,7 @@ import { Badge } from "../components/ui/Badge";
 import { BottomNav, NavTab } from "../components/ui/BottomNav";
 import { Carousel } from "../components/ui/Carousel";
 import { EmptyState } from "../components/ui/EmptyState";
+import { LocationSheet } from "../components/ui/LocationSheet";
 import { ModeTabs, ModeTab } from "../components/ui/ModeTabs";
 import { PromoBanner } from "../components/ui/PromoBanner";
 import { SearchPill } from "../components/ui/SearchPill";
@@ -59,7 +60,7 @@ function kmDist(a: Stop, lat: number, lng: number) {
 }
 
 export default function UberPassengerApp() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateProfile } = useAuth();
   const router = useRouter();
 
   // App view state
@@ -829,42 +830,18 @@ export default function UberPassengerApp() {
           INTERACTIVE SHEETS (Section 4 — No Dead Buttons)
          ========================================================================= */}
 
-      {/* 1. Location Selection Sheet */}
-      <Sheet
+      {/* 1. Location Selection Sheet (Phase 4: GPS + nearest calculation + outside NCR) */}
+      <LocationSheet
         isOpen={locationSheetOpen}
         onClose={() => setLocationSheetOpen(false)}
-        title={lang === "hi" ? "स्थान चुनें" : "Choose location"}
-        icon={<MapPin size={20} style={{ color: "var(--link-blue)" }} />}
-      >
-        <button
-          onClick={handleLocateNearest}
-          className="btn-pill-primary"
-          style={{ width: "100%", marginBottom: 16 }}
-        >
-          <MapPin size={16} />
-          <span>{lang === "hi" ? "जीपीएस से नज़दीकी स्टॉप खोजें" : "Use GPS (Nearest stop)"}</span>
-        </button>
-        <div style={{ maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-          {stops.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => handleSelectStop(s.id)}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "12px 14px",
-                borderRadius: 12,
-                background: s.id === selectedStopId ? "var(--surface-2)" : "transparent",
-                fontWeight: s.id === selectedStopId ? 700 : 500,
-                textAlign: "left",
-              }}
-            >
-              <span>{stopName(s)}</span>
-              {s.id === selectedStopId && <CheckCircle2 size={16} style={{ color: "var(--crowd-low)" }} />}
-            </button>
-          ))}
-        </div>
-      </Sheet>
+        onSelectStop={(sid) => {
+          handleSelectStop(sid);
+          updateProfile({ home_stop_id: sid });
+        }}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        selectedStopId={selectedStopId}
+        lang={lang}
+      />
 
       {/* 2. Live Alerts Sheet */}
       <Sheet
