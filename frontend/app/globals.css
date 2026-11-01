@@ -31,16 +31,21 @@
 
   /* Semantic OKLCH Primitives (better-colors) */
   --ink: oklch(0.18 0.02 260);
+  --paper: oklch(0.99 0.005 90);
   --saffron: oklch(0.80 0.17 75);
   --magenta: oklch(0.62 0.24 355);
   --electric-blue: oklch(0.55 0.22 262);
   --green: oklch(0.70 0.18 150);
-  --cream: oklch(0.97 0.02 90);
+  --leaf-green: oklch(0.70 0.18 150);
+  --sky: oklch(0.88 0.07 235);
+  --cream: oklch(0.97 0.025 90);
+  --danger: oklch(0.58 0.23 27);
+  --danger-red: oklch(0.58 0.23 27);
 
   /* Semantic Roles */
-  --bg: oklch(0.99 0 0);
+  --bg: var(--paper);
   --surface: oklch(1 0 0);
-  --surface-2: oklch(0.96 0.01 90);
+  --surface-2: oklch(0.965 0.004 90);
   --surface-3: oklch(0.92 0.01 90);
   --text: var(--ink);
   --text-muted: oklch(0.46 0.02 260);
@@ -64,16 +69,18 @@
   --ring-elevated: 0 0 0 1px oklch(0 0 0 / 0.08), 0 4px 16px oklch(0 0 0 / 0.1), 0 16px 36px oklch(0 0 0 / 0.08);
 
   /* Typography (better-typography) */
+  --font-display: var(--font-bricolage, "Bricolage Grotesque"), var(--font-inter, Inter), sans-serif;
   --font-sans: var(--font-inter, Inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-deva: var(--font-devanagari, "Noto Sans Devanagari"), system-ui, sans-serif;
   --font-mono: var(--font-mono, "JetBrains Mono"), monospace;
 }
 
 [data-theme="dark"] {
-  --bg: oklch(0.14 0 0);
-  --surface: oklch(0.2 0 0);
-  --surface-2: oklch(0.25 0 0);
-  --surface-3: oklch(0.3 0 0);
+  --bg: oklch(0.12 0.01 260);
+  --paper: oklch(0.14 0.01 260);
+  --surface: oklch(0.18 0.01 260);
+  --surface-2: oklch(0.23 0.01 260);
+  --surface-3: oklch(0.28 0.01 260);
   --text: oklch(0.98 0 0);
   --text-muted: oklch(0.7 0 0);
   --text-dim: oklch(0.55 0 0);
@@ -91,10 +98,11 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: oklch(0.14 0 0);
-    --surface: oklch(0.2 0 0);
-    --surface-2: oklch(0.25 0 0);
-    --surface-3: oklch(0.3 0 0);
+    --bg: oklch(0.12 0.01 260);
+    --paper: oklch(0.14 0.01 260);
+    --surface: oklch(0.18 0.01 260);
+    --surface-2: oklch(0.23 0.01 260);
+    --surface-3: oklch(0.28 0.01 260);
     --text: oklch(0.98 0 0);
     --text-muted: oklch(0.7 0 0);
     --text-dim: oklch(0.55 0 0);
@@ -107,6 +115,79 @@
     --ring: 0 0 0 1px oklch(1 0 0 / 0.12);
     --ring-subtle: 0 0 0 1px oklch(1 0 0 / 0.08);
     --ring-elevated: 0 0 0 1px oklch(1 0 0 / 0.16), 0 8px 32px oklch(0 0 0 / 0.6);
+  }
+}
+
+.text-display-xl {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 9vw, 3rem);
+  line-height: 1.02;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.text-display {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.text-title {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.text-heading {
+  font-size: 1.125rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.text-body {
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.text-caption {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+/* Scroll fade layer under sticky headers */
+.scroll-fade-top {
+  position: absolute;
+  bottom: -32px;
+  left: 0;
+  right: 0;
+  height: 32px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--paper) 0%, transparent 100%);
+  z-index: 10;
+}
+
+/* Attention Pulse for SOS Badge (2 loops only, disabled on reduced-motion) */
+@keyframes sosPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.badge-sos-pulse {
+  animation: sosPulse 1.2s ease-in-out 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-sos-pulse {
+    animation: none !important;
   }
 }
 

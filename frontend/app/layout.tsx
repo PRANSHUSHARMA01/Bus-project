@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_Devanagari, JetBrains_Mono } from "next/font/google";
+import { Inter, Noto_Sans_Devanagari, JetBrains_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["700", "800"],
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -64,9 +71,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${devanagari.variable} ${jetbrainsMono.variable} antialiased`}
+      className={`${inter.variable} ${bricolage.variable} ${devanagari.variable} ${jetbrainsMono.variable} antialiased`}
+      suppressHydrationWarning
     >
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}else{document.documentElement.setAttribute("data-theme","light");}}catch(e){}})();`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

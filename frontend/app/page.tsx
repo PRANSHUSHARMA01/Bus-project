@@ -33,6 +33,7 @@ import {
   X,
   Copy,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import BusMap from "../components/BusMap";
 import { SharedTripTracker } from "../components/ui/SharedTripTracker";
@@ -421,11 +422,20 @@ export default function UberPassengerApp() {
       id: "live_map",
       label: lang === "hi" ? "लाइव मैप" : "Live map",
       icon: Map,
-      badge: `${buses.length || 128}`,
+      badge: `${buses.length || 193}`,
+      badgeType: "live",
       onClick: () => {
         setViewMode("map");
         setSheetSnap("half");
       },
+    },
+    {
+      id: "safety",
+      label: lang === "hi" ? "महिला सुरक्षा" : "Women's safety",
+      icon: ShieldAlert,
+      badge: "SOS",
+      badgeType: "sos",
+      onClick: () => router.push("/safety"),
     },
     {
       id: "nearest",
@@ -433,6 +443,16 @@ export default function UberPassengerApp() {
       icon: MapPin,
       badge: "GPS",
       onClick: handleLocateNearest,
+    },
+    {
+      id: "seats",
+      label: lang === "hi" ? "सीट खोजें" : "Seat finder",
+      icon: Users,
+      badge: "NEW",
+      badgeType: "new",
+      onClick: () => {
+        router.push("/services?tab=seats");
+      },
     },
     {
       id: "routeA",
@@ -453,40 +473,10 @@ export default function UberPassengerApp() {
       onClick: () => openRouteTracker("102"),
     },
     {
-      id: "safety",
-      label: lang === "hi" ? "महिला सुरक्षा" : "Women's safety",
-      icon: ShieldAlert,
-      badge: "SOS",
-      onClick: () => setSafetySheetOpen(true),
-    },
-    {
-      id: "seats",
-      label: lang === "hi" ? "सीट खोजें" : "Seat finder",
-      icon: Users,
-      badge: "AI",
-      onClick: () => {
-        const best = buses.find((b) => b.occupancy === "Low");
-        if (best) {
-          setTrackingBusId(best.bus_id);
-          setViewMode("map");
-          setSheetSnap("half");
-          flashToast(lang === "hi" ? `बस ${best.reg_no} में सीटें उपलब्ध हैं` : `Found seats on Bus ${best.reg_no}`);
-        } else {
-          flashToast(lang === "hi" ? "सीट उपलब्धता जांची जा रही है" : "Checking seat availability on current routes");
-        }
-      },
-    },
-    {
-      id: "night",
-      label: lang === "hi" ? "नाइट बसें" : "Night buses",
-      icon: Moon,
-      onClick: () => flashToast(lang === "hi" ? "नाइट बस सेवाएं रात 11:30 बजे तक सक्रिय हैं" : "Night corridors active until 23:30 from NDLS & Kashmere Gate"),
-    },
-    {
-      id: "seniors",
-      label: lang === "hi" ? "वरिष्ठ नागरिक" : "Seniors priority",
-      icon: HeartHandshake,
-      onClick: () => flashToast(lang === "hi" ? "सामने की 6 सीटें वरिष्ठ नागरिकों के लिए आरक्षित हैं" : "Front 6 seats reserved for senior citizens on all fleets"),
+      id: "all_services",
+      label: lang === "hi" ? "सभी सेवाएं" : "All services",
+      icon: Sparkles,
+      onClick: () => router.push("/services"),
     },
   ];
 
