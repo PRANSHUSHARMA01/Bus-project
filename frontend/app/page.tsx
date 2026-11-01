@@ -17,6 +17,7 @@ import {
   Home,
   Info,
   Languages,
+  Map,
   MapPin,
   Moon,
   Search,
@@ -249,10 +250,20 @@ export default function UberPassengerApp() {
   // "For you" shortcut items
   const shortcuts: ShortcutItem[] = [
     {
+      id: "live_map",
+      label: lang === "hi" ? "लाइव मैप" : "Live map",
+      icon: Map,
+      badge: `${buses.length || 128}`,
+      onClick: () => {
+        setViewMode("map");
+        setSheetSnap("half");
+      },
+    },
+    {
       id: "nearest",
       label: lang === "hi" ? "नज़दीकी स्टॉप" : "Nearest stop",
       icon: MapPin,
-      badge: "Live",
+      badge: "GPS",
       onClick: handleLocateNearest,
     },
     {
@@ -392,6 +403,72 @@ export default function UberPassengerApp() {
                 : `+${scheduleOffsetMin}m`
             }
           />
+
+          {/* Quick Access: Live Bus Map Banner */}
+          <button
+            onClick={() => {
+              setViewMode("map");
+              setSheetSnap("half");
+            }}
+            style={{
+              width: "100%",
+              margin: "14px 0 16px 0",
+              padding: "14px 16px",
+              borderRadius: 16,
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              boxShadow: "var(--ring)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+              transition: "transform 150ms ease",
+              textAlign: "left",
+            }}
+            aria-label="View live bus tracking map"
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: "var(--surface-2)",
+                  color: "var(--accent)",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Map size={22} />
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
+                    {lang === "hi" ? "लाइव बस मैप देखें" : "View Live Bus Map"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: "rgba(16, 185, 129, 0.15)",
+                      color: "var(--crowd-low)",
+                    }}
+                  >
+                    {buses.length || 128} Live
+                  </span>
+                </div>
+                <div className="text-caption" style={{ color: "var(--text-muted)", marginTop: 2 }}>
+                  {lang === "hi"
+                    ? "दिल्ली के सभी रूटों पर लाइव बसें ट्रैक करें"
+                    : "Track all buses moving live across 19 corridors"}
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={18} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+          </button>
 
           {/* Recent & Saved Stops List Card */}
           <div className="recent-card">

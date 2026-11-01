@@ -17,8 +17,8 @@ ap.add_argument("--tick", type=float, default=1.0)
 args = ap.parse_args()
 
 DATA = Path(__file__).parent / "data"
-RAW = json.loads((DATA / "routes.json").read_text())
-FLEET = json.loads((DATA / "fleet.json").read_text())
+RAW = json.loads((DATA / "routes.json").read_text(encoding="utf-8"))
+FLEET = json.loads((DATA / "fleet.json").read_text(encoding="utf-8"))
 
 ROUTES = {}
 for r in RAW["routes"]:

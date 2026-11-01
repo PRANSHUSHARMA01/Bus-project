@@ -1,182 +1,770 @@
 [
   {
     "bus_id": 1,
-    "reg_no": "DL1PB2824",
+    "reg_no": "DL1PD1409",
     "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 2,
-    "reg_no": "DL1PD5506",
+    "reg_no": "DL1PB5012",
     "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 3,
-    "reg_no": "DL1PD4657",
+    "reg_no": "DL1PC3286",
     "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 4,
-    "reg_no": "DL1PD2679",
+    "reg_no": "DL1PD9935",
     "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 5,
-    "reg_no": "DL1PB9935",
+    "reg_no": "DL1PD7912",
     "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 6,
-    "reg_no": "DL1PD7912",
-    "route_id": "427",
+    "reg_no": "DL1PD1488",
+    "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 7,
-    "reg_no": "DL1PD1488",
-    "route_id": "427",
+    "reg_no": "DL1PD4582",
+    "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 8,
-    "reg_no": "DL1PD4582",
-    "route_id": "427",
+    "reg_no": "DL1PC9279",
+    "route_id": "502",
     "capacity": 60
   },
   {
     "bus_id": 9,
-    "reg_no": "DL1PD9279",
+    "reg_no": "DL1PD4257",
     "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 10,
-    "reg_no": "DL1PB1434",
+    "reg_no": "DL1DL4611",
     "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 11,
-    "reg_no": "DL1PB4257",
-    "route_id": "102",
+    "reg_no": "DL1DL5557",
+    "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 12,
-    "reg_no": "DL1PB9928",
-    "route_id": "102",
+    "reg_no": "DL1PD3615",
+    "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 13,
-    "reg_no": "DL1PC4611",
-    "route_id": "102",
+    "reg_no": "DL1DL6574",
+    "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 14,
-    "reg_no": "DL1PC5557",
-    "route_id": "102",
+    "reg_no": "DL1PB3547",
+    "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 15,
-    "reg_no": "DL1PD3615",
-    "route_id": "102",
+    "reg_no": "DL1PC6514",
+    "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 16,
-    "reg_no": "DL1PB7924",
-    "route_id": "534",
+    "reg_no": "DL1PD2519",
+    "route_id": "427",
     "capacity": 60
   },
   {
     "bus_id": 17,
-    "reg_no": "DL1PC5552",
-    "route_id": "534",
+    "reg_no": "DL1DL2584",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 18,
-    "reg_no": "DL1PD4527",
-    "route_id": "534",
+    "reg_no": "DL1PB6635",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 19,
-    "reg_no": "DL1PC2674",
-    "route_id": "534",
+    "reg_no": "DL1PB1711",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 20,
-    "reg_no": "DL1PD7224",
-    "route_id": "534",
+    "reg_no": "DL1DL9785",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 21,
-    "reg_no": "DL1PD6881",
-    "route_id": "615",
+    "reg_no": "DL1PD7201",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 22,
-    "reg_no": "DL1PC5333",
-    "route_id": "615",
+    "reg_no": "DL1PD5803",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 23,
-    "reg_no": "DL1PD8527",
-    "route_id": "615",
+    "reg_no": "DL1PB4150",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 24,
-    "reg_no": "DL1PB3045",
-    "route_id": "615",
+    "reg_no": "DL1PD1750",
+    "route_id": "102",
     "capacity": 60
   },
   {
     "bus_id": 25,
-    "reg_no": "DL1PC2291",
-    "route_id": "615",
+    "reg_no": "DL1PC5741",
+    "route_id": "534",
     "capacity": 60
   },
   {
     "bus_id": 26,
-    "reg_no": "DL1PB5803",
-    "route_id": "764",
+    "reg_no": "DL1PD4814",
+    "route_id": "534",
     "capacity": 60
   },
   {
     "bus_id": 27,
-    "reg_no": "DL1PB6925",
-    "route_id": "764",
+    "reg_no": "DL1PD7227",
+    "route_id": "534",
     "capacity": 60
   },
   {
     "bus_id": 28,
-    "reg_no": "DL1PB4150",
-    "route_id": "764",
+    "reg_no": "DL1PB8428",
+    "route_id": "534",
     "capacity": 60
   },
   {
     "bus_id": 29,
-    "reg_no": "DL1PB2139",
-    "route_id": "764",
+    "reg_no": "DL1PB3664",
+    "route_id": "534",
     "capacity": 60
   },
   {
     "bus_id": 30,
-    "reg_no": "DL1PD4733",
+    "reg_no": "DL1PB6820",
+    "route_id": "534",
+    "capacity": 60
+  },
+  {
+    "bus_id": 31,
+    "reg_no": "DL1PC5374",
+    "route_id": "534",
+    "capacity": 60
+  },
+  {
+    "bus_id": 32,
+    "reg_no": "DL1PD3803",
+    "route_id": "534",
+    "capacity": 60
+  },
+  {
+    "bus_id": 33,
+    "reg_no": "DL1PC3677",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 34,
+    "reg_no": "DL1DL7216",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 35,
+    "reg_no": "DL1PB4598",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 36,
+    "reg_no": "DL1PB1916",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 37,
+    "reg_no": "DL1PC1525",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 38,
+    "reg_no": "DL1PB7572",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 39,
+    "reg_no": "DL1PB2084",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 40,
+    "reg_no": "DL1PC6155",
+    "route_id": "615",
+    "capacity": 60
+  },
+  {
+    "bus_id": 41,
+    "reg_no": "DL1PC9179",
     "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 42,
+    "reg_no": "DL1DL8517",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 43,
+    "reg_no": "DL1PC5339",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 44,
+    "reg_no": "DL1PC5040",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 45,
+    "reg_no": "DL1PB8019",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 46,
+    "reg_no": "DL1DL6930",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 47,
+    "reg_no": "DL1PC3266",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 48,
+    "reg_no": "DL1DL2489",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 49,
+    "reg_no": "DL1PD2796",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 50,
+    "reg_no": "DL1PC3621",
+    "route_id": "764",
+    "capacity": 60
+  },
+  {
+    "bus_id": 51,
+    "reg_no": "DL1DL2040",
+    "route_id": "73",
+    "capacity": 60
+  },
+  {
+    "bus_id": 52,
+    "reg_no": "DL1DL7252",
+    "route_id": "73",
+    "capacity": 60
+  },
+  {
+    "bus_id": 53,
+    "reg_no": "DL1DL9669",
+    "route_id": "73",
+    "capacity": 60
+  },
+  {
+    "bus_id": 54,
+    "reg_no": "DL1PB1188",
+    "route_id": "73",
+    "capacity": 60
+  },
+  {
+    "bus_id": 55,
+    "reg_no": "DL1PD9797",
+    "route_id": "73",
+    "capacity": 60
+  },
+  {
+    "bus_id": 56,
+    "reg_no": "DL1PB6573",
+    "route_id": "73",
+    "capacity": 60
+  },
+  {
+    "bus_id": 57,
+    "reg_no": "DL1PD5808",
+    "route_id": "78",
+    "capacity": 60
+  },
+  {
+    "bus_id": 58,
+    "reg_no": "DL1DL3591",
+    "route_id": "78",
+    "capacity": 60
+  },
+  {
+    "bus_id": 59,
+    "reg_no": "DL1DL1053",
+    "route_id": "78",
+    "capacity": 60
+  },
+  {
+    "bus_id": 60,
+    "reg_no": "DL1PB9201",
+    "route_id": "78",
+    "capacity": 60
+  },
+  {
+    "bus_id": 61,
+    "reg_no": "DL1PC9317",
+    "route_id": "78",
+    "capacity": 60
+  },
+  {
+    "bus_id": 62,
+    "reg_no": "DL1PD5889",
+    "route_id": "78",
+    "capacity": 60
+  },
+  {
+    "bus_id": 63,
+    "reg_no": "DL1PC3504",
+    "route_id": "761",
+    "capacity": 60
+  },
+  {
+    "bus_id": 64,
+    "reg_no": "DL1PB3646",
+    "route_id": "761",
+    "capacity": 60
+  },
+  {
+    "bus_id": 65,
+    "reg_no": "DL1PD6310",
+    "route_id": "761",
+    "capacity": 60
+  },
+  {
+    "bus_id": 66,
+    "reg_no": "DL1DL1319",
+    "route_id": "761",
+    "capacity": 60
+  },
+  {
+    "bus_id": 67,
+    "reg_no": "DL1PD6947",
+    "route_id": "761",
+    "capacity": 60
+  },
+  {
+    "bus_id": 68,
+    "reg_no": "DL1PB4923",
+    "route_id": "761",
+    "capacity": 60
+  },
+  {
+    "bus_id": 69,
+    "reg_no": "DL1PD4946",
+    "route_id": "543A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 70,
+    "reg_no": "DL1PD2403",
+    "route_id": "543A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 71,
+    "reg_no": "DL1DL2133",
+    "route_id": "543A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 72,
+    "reg_no": "DL1PC3103",
+    "route_id": "543A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 73,
+    "reg_no": "DL1DL3705",
+    "route_id": "543A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 74,
+    "reg_no": "DL1PB9645",
+    "route_id": "543A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 75,
+    "reg_no": "DL1DL4470",
+    "route_id": "721",
+    "capacity": 60
+  },
+  {
+    "bus_id": 76,
+    "reg_no": "DL1PC6107",
+    "route_id": "721",
+    "capacity": 60
+  },
+  {
+    "bus_id": 77,
+    "reg_no": "DL1DL7118",
+    "route_id": "721",
+    "capacity": 60
+  },
+  {
+    "bus_id": 78,
+    "reg_no": "DL1DL9479",
+    "route_id": "721",
+    "capacity": 60
+  },
+  {
+    "bus_id": 79,
+    "reg_no": "DL1DL2982",
+    "route_id": "721",
+    "capacity": 60
+  },
+  {
+    "bus_id": 80,
+    "reg_no": "DL1PC4681",
+    "route_id": "721",
+    "capacity": 60
+  },
+  {
+    "bus_id": 81,
+    "reg_no": "DL1PD6539",
+    "route_id": "623",
+    "capacity": 60
+  },
+  {
+    "bus_id": 82,
+    "reg_no": "DL1PD4770",
+    "route_id": "623",
+    "capacity": 60
+  },
+  {
+    "bus_id": 83,
+    "reg_no": "DL1PC1117",
+    "route_id": "623",
+    "capacity": 60
+  },
+  {
+    "bus_id": 84,
+    "reg_no": "DL1PD1964",
+    "route_id": "623",
+    "capacity": 60
+  },
+  {
+    "bus_id": 85,
+    "reg_no": "DL1PC2104",
+    "route_id": "623",
+    "capacity": 60
+  },
+  {
+    "bus_id": 86,
+    "reg_no": "DL1PD6413",
+    "route_id": "623",
+    "capacity": 60
+  },
+  {
+    "bus_id": 87,
+    "reg_no": "DL1PD9423",
+    "route_id": "861A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 88,
+    "reg_no": "DL1PC5562",
+    "route_id": "861A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 89,
+    "reg_no": "DL1DL4510",
+    "route_id": "861A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 90,
+    "reg_no": "DL1PC8744",
+    "route_id": "861A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 91,
+    "reg_no": "DL1PC8749",
+    "route_id": "861A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 92,
+    "reg_no": "DL1DL4119",
+    "route_id": "861A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 93,
+    "reg_no": "DL1PD2588",
+    "route_id": "144",
+    "capacity": 60
+  },
+  {
+    "bus_id": 94,
+    "reg_no": "DL1DL6804",
+    "route_id": "144",
+    "capacity": 60
+  },
+  {
+    "bus_id": 95,
+    "reg_no": "DL1DL7735",
+    "route_id": "144",
+    "capacity": 60
+  },
+  {
+    "bus_id": 96,
+    "reg_no": "DL1DL1887",
+    "route_id": "144",
+    "capacity": 60
+  },
+  {
+    "bus_id": 97,
+    "reg_no": "DL1PD1993",
+    "route_id": "144",
+    "capacity": 60
+  },
+  {
+    "bus_id": 98,
+    "reg_no": "DL1DL6559",
+    "route_id": "144",
+    "capacity": 60
+  },
+  {
+    "bus_id": 99,
+    "reg_no": "DL1PD5073",
+    "route_id": "192",
+    "capacity": 60
+  },
+  {
+    "bus_id": 100,
+    "reg_no": "DL1PC4116",
+    "route_id": "192",
+    "capacity": 60
+  },
+  {
+    "bus_id": 101,
+    "reg_no": "DL1DL3296",
+    "route_id": "192",
+    "capacity": 60
+  },
+  {
+    "bus_id": 102,
+    "reg_no": "DL1DL4006",
+    "route_id": "192",
+    "capacity": 60
+  },
+  {
+    "bus_id": 103,
+    "reg_no": "DL1PB8579",
+    "route_id": "192",
+    "capacity": 60
+  },
+  {
+    "bus_id": 104,
+    "reg_no": "DL1PC2235",
+    "route_id": "192",
+    "capacity": 60
+  },
+  {
+    "bus_id": 105,
+    "reg_no": "DL1DL2604",
+    "route_id": "AIRPORT",
+    "capacity": 60
+  },
+  {
+    "bus_id": 106,
+    "reg_no": "DL1PD9856",
+    "route_id": "AIRPORT",
+    "capacity": 60
+  },
+  {
+    "bus_id": 107,
+    "reg_no": "DL1PD2528",
+    "route_id": "AIRPORT",
+    "capacity": 60
+  },
+  {
+    "bus_id": 108,
+    "reg_no": "DL1PC3724",
+    "route_id": "AIRPORT",
+    "capacity": 60
+  },
+  {
+    "bus_id": 109,
+    "reg_no": "DL1DL8956",
+    "route_id": "AIRPORT",
+    "capacity": 60
+  },
+  {
+    "bus_id": 110,
+    "reg_no": "DL1DL4502",
+    "route_id": "AIRPORT",
+    "capacity": 60
+  },
+  {
+    "bus_id": 111,
+    "reg_no": "DL1PC1960",
+    "route_id": "A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 112,
+    "reg_no": "DL1PD7209",
+    "route_id": "A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 113,
+    "reg_no": "DL1PD7396",
+    "route_id": "A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 114,
+    "reg_no": "DL1PC8454",
+    "route_id": "A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 115,
+    "reg_no": "DL1PC7930",
+    "route_id": "A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 116,
+    "reg_no": "DL1PB8973",
+    "route_id": "A",
+    "capacity": 60
+  },
+  {
+    "bus_id": 117,
+    "reg_no": "DL1PD4111",
+    "route_id": "B",
+    "capacity": 60
+  },
+  {
+    "bus_id": 118,
+    "reg_no": "DL1PC4566",
+    "route_id": "B",
+    "capacity": 60
+  },
+  {
+    "bus_id": 119,
+    "reg_no": "DL1PD9883",
+    "route_id": "B",
+    "capacity": 60
+  },
+  {
+    "bus_id": 120,
+    "reg_no": "DL1PD6138",
+    "route_id": "B",
+    "capacity": 60
+  },
+  {
+    "bus_id": 121,
+    "reg_no": "DL1PD1821",
+    "route_id": "B",
+    "capacity": 60
+  },
+  {
+    "bus_id": 122,
+    "reg_no": "DL1PB8811",
+    "route_id": "B",
+    "capacity": 60
+  },
+  {
+    "bus_id": 123,
+    "reg_no": "DL1PB9701",
+    "route_id": "C",
+    "capacity": 60
+  },
+  {
+    "bus_id": 124,
+    "reg_no": "DL1PD1931",
+    "route_id": "C",
+    "capacity": 60
+  },
+  {
+    "bus_id": 125,
+    "reg_no": "DL1PB2312",
+    "route_id": "C",
+    "capacity": 60
+  },
+  {
+    "bus_id": 126,
+    "reg_no": "DL1PD2122",
+    "route_id": "C",
+    "capacity": 60
+  },
+  {
+    "bus_id": 127,
+    "reg_no": "DL1PB2113",
+    "route_id": "C",
+    "capacity": 60
+  },
+  {
+    "bus_id": 128,
+    "reg_no": "DL1PB4853",
+    "route_id": "C",
     "capacity": 60
   }
 ]
