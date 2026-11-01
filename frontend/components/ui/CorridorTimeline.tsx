@@ -18,6 +18,7 @@ import { StopRow } from "./StopRow";
 interface CorridorTimelineProps {
   route: Route;
   bus?: Bus | null;
+  allBuses?: Bus[];
   selectedStopId?: string | null;
   onSelectStop?: (stopId: string) => void;
   onSetDestination?: (stopId: string) => void;
@@ -41,11 +42,13 @@ interface StopDetail {
   isDestination: boolean;
   etaMin: number | null;
   clockTime: string | null;
+  liveBus?: Bus | null;
 }
 
 export function CorridorTimeline({
   route,
   bus,
+  allBuses,
   selectedStopId,
   onSelectStop,
   onSetDestination,
@@ -88,6 +91,30 @@ export function CorridorTimeline({
     if (!route.stops || route.stops.length === 0) return [];
     const totalStops = route.stops.length;
     const now = new Date();
+
+    // Map each bus on this corridor to its closest stop
+    const busList = allBuses && allBuses.length > 0 ? allBuses : bus ? [bus] : [];
+    const busByStopId: Record<string, Bus> = {};
+    busList.forEach((b) => {
+      let closestIdx = 0;
+      let minDist = Infinity;
+      route.stops.forEach((st, sIdx) => {
+        const dLat = (st.lat - b.lat) * 111.0;
+        const dLng = (st.lng - b.lng) * 111.0 * Math.cos((st.lat * Math.PI) / 180);
+        const d = Math.sqrt(dLat * dLat + dLng * dLng);
+        if (d < minDist) {
+          minDist = d;
+          closestIdx = sIdx;
+        }
+      });
+      const targetStop = route.stops[closestIdx];
+      if (targetStop) {
+        // Tracked bus takes priority if multiple buses share stop
+        if (!busByStopId[targetStop.id] || (bus && String(b.bus_id) === String(bus.bus_id))) {
+          busByStopId[targetStop.id] = b;
+        }
+      }
+    });
 
     return route.stops.map((st, idx) => {
       const isTerminal = idx === 0 || idx === totalStops - 1;
@@ -132,6 +159,7 @@ export function CorridorTimeline({
 
       const isYou = st.id === selectedStopId;
       const isDestination = st.id === finalDestId;
+      const liveBusAtStop = busByStopId[st.id] ?? null;
 
       // ETA computation for upcoming and next stops
       let etaMin: number | null = null;
@@ -169,9 +197,10 @@ export function CorridorTimeline({
         isDestination,
         etaMin,
         clockTime,
+        liveBus: liveBusAtStop,
       };
     });
-  }, [route.stops, lang, nextStopIndex, selectedStopId, finalDestId]);
+  }, [route.stops, lang, nextStopIndex, selectedStopId, finalDestId, allBuses, bus]);
 
   // Filter for Key Stops: Metro, Terminal, Interchange, You, Destination, Next
   const visibleStops = useMemo(() => {
@@ -319,6 +348,15 @@ export function CorridorTimeline({
               secondaryName={item.secondaryName}
               stepKm={item.stepKm}
               stepMin={item.stepMin}
+              liveBus={
+                item.liveBus
+                  ? {
+                      route_id: item.liveBus.route_id,
+                      reg_no: item.liveBus.reg_no,
+                      speed_kmh: item.liveBus.speed_kmh,
+                    }
+                  : null
+              }
               isExpanded={expandedStopId === item.stop.id}
               onToggleExpand={() => toggleExpand(item.stop.id)}
               onSelectStop={onSelectStop}

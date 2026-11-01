@@ -49,6 +49,7 @@ export interface StopRowProps {
   onSetDestination?: (stopId: string) => void;
   onAlert?: (message: string) => void;
   candidateBuses?: CandidateBusInfo[];
+  liveBus?: { route_id: string; reg_no?: string; speed_kmh?: number } | null;
 }
 
 export const StopRow = React.forwardRef<HTMLLIElement, StopRowProps>(function StopRow(
@@ -78,6 +79,7 @@ export const StopRow = React.forwardRef<HTMLLIElement, StopRowProps>(function St
     onSetDestination,
     onAlert,
     candidateBuses,
+    liveBus,
   },
   ref
 ) {
@@ -300,7 +302,38 @@ export const StopRow = React.forwardRef<HTMLLIElement, StopRowProps>(function St
 
           {/* Status Chips */}
           <div className="stop-row-chips" aria-hidden="true">
-            {isNext && (
+            {liveBus && (
+              <span
+                className="stop-chip"
+                style={{
+                  background: "#18181b",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: "0.6875rem",
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                }}
+              >
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#22c55e",
+                    display: "inline-block",
+                  }}
+                />
+                <span>Bus {liveBus.route_id}</span>
+                {liveBus.reg_no && (
+                  <span style={{ opacity: 0.8, fontSize: "0.625rem" }}>· {liveBus.reg_no}</span>
+                )}
+              </span>
+            )}
+            {isNext && !liveBus && (
               <span className="stop-chip stop-chip-next">
                 {isHindi ? "अगला स्टॉप" : "Next stop"}
               </span>

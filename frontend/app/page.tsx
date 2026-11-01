@@ -45,6 +45,7 @@ import { Sheet } from "../components/ui/Sheet";
 import { ShortcutGrid, ShortcutItem } from "../components/ui/ShortcutGrid";
 import { Skeleton } from "../components/ui/Skeleton";
 import { StopRow } from "../components/ui/StopRow";
+import { RecentStopRow } from "../components/ui/RecentStopRow";
 import { Toast } from "../components/ui/Toast";
 import { TopBar } from "../components/ui/TopBar";
 import { TripPlannerView, TripOption } from "../components/ui/TripPlannerView";
@@ -186,9 +187,27 @@ export default function UberPassengerApp() {
   const recentStops = useMemo(() => {
     if (stops.length === 0) return [];
     const activeStops = stops.filter((s) => s.routes && s.routes.length > 0);
-    const hubs = ["Kashmere Gate", "Mehrauli", "Old Delhi", "Nizamuddin", "Anand Vihar", "Rohini", "Connaught Place", "Nehru Place"];
-    const matched = activeStops.filter((s) => hubs.some((h) => s.name.toLowerCase().includes(h.toLowerCase())));
-    return (matched.length >= 3 ? matched : activeStops).slice(0, 3);
+    const hubs = [
+      "Kashmere Gate",
+      "New Delhi Railway",
+      "Connaught Place",
+      "Mehrauli",
+      "Old Delhi",
+      "Nizamuddin",
+      "Anand Vihar",
+      "Rohini",
+    ];
+    const picked: Stop[] = [];
+    for (const h of hubs) {
+      const match = activeStops.find(
+        (s) =>
+          s.name.toLowerCase().includes(h.toLowerCase()) &&
+          !picked.some((p) => p.id === s.id)
+      );
+      if (match) picked.push(match);
+      if (picked.length >= 3) break;
+    }
+    return picked.length >= 3 ? picked : activeStops.slice(0, 3);
   }, [stops]);
 
   function handleSelectStop(id: string) {
@@ -509,27 +528,18 @@ export default function UberPassengerApp() {
 
           {/* Recent & Saved Stops List Card */}
           <div className="recent-card">
-            <ol className="stop-timeline-list" style={{ paddingBottom: 0 }} aria-label={lang === "hi" ? "हाल के स्टॉप" : "Recent stops"}>
-              {recentStops.map((st, sIdx) => {
-                const liveArr = arrivals?.find((a) => a.stops_away <= 3) ?? null;
-                return (
-                  <StopRow
-                    key={st.id}
-                    stop={st}
-                    index={sIdx}
-                    isFirst={sIdx === 0}
-                    isLast={sIdx === recentStops.length - 1}
-                    arrival={liveArr}
-                    isExpanded={expandedRecentStopId === st.id}
-                    onToggleExpand={() => setExpandedRecentStopId((prev) => (prev === st.id ? null : st.id))}
-                    onSelectStop={(id) => openStopTracker(id)}
-                    onSetDestination={(id) => handlePlanTripTo(id)}
-                    onAlert={(msg) => flashToast(msg)}
-                    lang={lang}
-                  />
-                );
-              })}
-            </ol>
+            {recentStops.map((st) => {
+              const liveArr = arrivals?.find((a) => a.stops_away <= 3) ?? null;
+              return (
+                <RecentStopRow
+                  key={st.id}
+                  stop={st}
+                  arrival={liveArr}
+                  onClick={() => openStopTracker(st.id)}
+                  lang={lang}
+                />
+              );
+            })}
           </div>
 
           {/* "For You" Section Header & 76px Circular Shortcuts */}
@@ -723,6 +733,7 @@ export default function UberPassengerApp() {
                   <CorridorTimeline
                     route={trackingRoute}
                     bus={trackingBus}
+                    allBuses={buses.filter((b) => b.route_id === trackingRoute.id)}
                     selectedStopId={selectedStopId}
                     onSelectStop={(id) => {
                       setSelectedStopId(id);
