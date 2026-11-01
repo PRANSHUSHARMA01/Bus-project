@@ -103,6 +103,27 @@ class Database:
             created_at TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS conductor_duties (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            bus_id INTEGER NOT NULL,
+            route_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'active',
+            started_at TEXT NOT NULL,
+            ended_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS conductor_tickets (
+            id TEXT PRIMARY KEY,
+            duty_id TEXT,
+            bus_id INTEGER NOT NULL,
+            conductor_id TEXT,
+            stop_id TEXT,
+            fare INTEGER NOT NULL,
+            payment_method TEXT NOT NULL DEFAULT 'cash',
+            issued_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS sos_events (
             id TEXT PRIMARY KEY,
             user_id TEXT,
@@ -215,7 +236,7 @@ class Database:
             conn.close()
             return None
 
-        user_fields = [k for k in fields if k in ("full_name", "language", "avatar_url", "phone", "updated_at")]
+        user_fields = [k for k in fields if k in ("full_name", "language", "avatar_url", "phone", "role", "updated_at")]
         if user_fields:
             if is_postgres():
                 u_clause = ", ".join([f"{f} = %s" for f in user_fields])
@@ -843,6 +864,124 @@ class Database:
             conn.commit()
         conn.close()
         return True
+
+    # -------------------------------------------------------------
+    # Phase D: Conductor & Driver Duty Management
+    # -------------------------------------------------------------
+    def start_conductor_duty(self, user_id: str, bus_id: int, route_id: str) -> Dict[str, Any]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
+        # End any prior active duty for this conductor
+        if is_postgres():
+            cur.execute("UPDATE conductor_duties SET status = 'ended', ended_at = %s WHERE user_id = %s AND status = 'active'", (now, user_id))
+        else:
+            cur.execute("UPDATE conductor_duties SET status = 'ended', ended_at = ? WHERE user_id = ? AND status = 'active'", (now, user_id))
+
+        duty_id = str(uuid.uuid4())
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO conductor_duties (id, user_id, bus_id, route_id, status, started_at)
+                VALUES (%s, %s, %s, %s, 'active', %s) RETURNING *
+            """, (duty_id, user_id, bus_id, route_id, now))
+            row = cur.fetchone()
+            conn.commit()
+        else:
+            cur.execute("""
+                INSERT INTO conductor_duties (id, user_id, bus_id, route_id, status, started_at)
+                VALUES (?, ?, ?, ?, 'active', ?)
+            """, (duty_id, user_id, bus_id, route_id, now))
+            conn.commit()
+            cur.execute("SELECT * FROM conductor_duties WHERE id = ?", (duty_id,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row)
+
+    def end_conductor_duty(self, duty_id: str, user_id: str) -> bool:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
+        if is_postgres():
+            cur.execute("UPDATE conductor_duties SET status = 'ended', ended_at = %s WHERE id = %s AND user_id = %s", (now, duty_id, user_id))
+            updated = cur.rowcount > 0
+            conn.commit()
+        else:
+            cur.execute("UPDATE conductor_duties SET status = 'ended', ended_at = ? WHERE id = ? AND user_id = ?", (now, duty_id, user_id))
+            updated = cur.rowcount > 0
+            conn.commit()
+        conn.close()
+        return updated
+
+    def get_active_conductor_duty(self, user_id: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute("SELECT * FROM conductor_duties WHERE user_id = %s AND status = 'active' ORDER BY started_at DESC LIMIT 1", (user_id,))
+            row = cur.fetchone()
+        else:
+            cur.execute("SELECT * FROM conductor_duties WHERE user_id = ? AND status = 'active' ORDER BY started_at DESC LIMIT 1", (user_id,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def record_conductor_ticket(
+        self,
+        bus_id: int,
+        fare: int,
+        payment_method: str = "cash",
+        conductor_id: Optional[str] = None,
+        stop_id: Optional[str] = None,
+        duty_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        tid = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO conductor_tickets (id, duty_id, bus_id, conductor_id, stop_id, fare, payment_method, issued_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *
+            """, (tid, duty_id, bus_id, conductor_id, stop_id, fare, payment_method, now))
+            row = cur.fetchone()
+            conn.commit()
+        else:
+            cur.execute("""
+                INSERT INTO conductor_tickets (id, duty_id, bus_id, conductor_id, stop_id, fare, payment_method, issued_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (tid, duty_id, bus_id, conductor_id, stop_id, fare, payment_method, now))
+            conn.commit()
+            cur.execute("SELECT * FROM conductor_tickets WHERE id = ?", (tid,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row)
+
+    def get_conductor_shift_stats(self, conductor_id: Optional[str] = None, bus_id: Optional[int] = None) -> Dict[str, Any]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        query = "SELECT COUNT(*) as total_tickets, COALESCE(SUM(fare), 0) as total_collection, " \
+                "COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN fare ELSE 0 END), 0) as cash_collection, " \
+                "COALESCE(SUM(CASE WHEN payment_method = 'upi' THEN fare ELSE 0 END), 0) as upi_collection " \
+                "FROM conductor_tickets WHERE 1=1"
+        params = []
+        if conductor_id:
+            query += " AND conductor_id = ?" if not is_postgres() else " AND conductor_id = %s"
+            params.append(conductor_id)
+        if bus_id:
+            query += " AND bus_id = ?" if not is_postgres() else " AND bus_id = %s"
+            params.append(bus_id)
+
+        cur.execute(query, tuple(params))
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            d = dict(row)
+            return {
+                "total_tickets": d.get("total_tickets", 0),
+                "total_collection": d.get("total_collection", 0),
+                "cash_collection": d.get("cash_collection", 0),
+                "upi_collection": d.get("upi_collection", 0),
+            }
+        return {"total_tickets": 0, "total_collection": 0, "cash_collection": 0, "upi_collection": 0}
 
 db = Database()
 

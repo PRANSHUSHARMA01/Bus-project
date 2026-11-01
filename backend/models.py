@@ -139,3 +139,49 @@ class EmergencyContactResponse(BaseModel):
     is_verified: int = 0
     created_at: str
 
+# -------------------------------------------------------------
+# Phase D: Conductor & Driver Duty Models
+# -------------------------------------------------------------
+class ConductorPinAuthRequest(BaseModel):
+    staff_id: str = Field(min_length=2, max_length=50)
+    pin: str = Field(min_length=4, max_length=8)
+
+class ConductorDutyRequest(BaseModel):
+    bus_id: int
+    route_id: Optional[str] = None
+
+class ConductorDutyResponse(BaseModel):
+    id: str
+    user_id: str
+    bus_id: int
+    route_id: str
+    status: str
+    started_at: str
+    ended_at: Optional[str] = None
+
+class ConductorTicketRequest(BaseModel):
+    bus_id: int
+    fare: int = Field(ge=5, le=100)
+    payment_method: str = Field(default="cash", pattern=r"^(cash|upi)$")
+    stop_id: Optional[str] = None
+
+class ConductorTicketResponse(BaseModel):
+    id: str
+    duty_id: Optional[str] = None
+    bus_id: int
+    fare: int
+    payment_method: str
+    stop_id: Optional[str] = None
+    issued_at: str
+    onboard: int
+
+class ConductorLoadPresetRequest(BaseModel):
+    bus_id: int
+    preset: str = Field(pattern=r"^(empty|seats_free|standing|packed)$")
+
+class ConductorIncidentRequest(BaseModel):
+    bus_id: int
+    kind: str = Field(pattern=r"^(breakdown|sos|accident|flat_tire|route_deviation|traffic_jam)$")
+    note: Optional[str] = ""
+
+

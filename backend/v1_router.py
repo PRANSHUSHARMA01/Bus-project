@@ -4,12 +4,21 @@ Production-ready endpoints for Accounts, Profiles, Trips, Saved Places, Subscrip
 """
 
 import math
+import time
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from auth import UserProfile, current_user, require_role
+from auth_router import create_access_token
 from db import db
 from models import (
+    ConductorDutyRequest,
+    ConductorDutyResponse,
+    ConductorIncidentRequest,
+    ConductorLoadPresetRequest,
+    ConductorPinAuthRequest,
+    ConductorTicketRequest,
+    ConductorTicketResponse,
     EmergencyContactRequest,
     EmergencyContactResponse,
     EndTripRequest,
@@ -496,3 +505,224 @@ def plan_trip(
         from_stop_id=from_stop_id,
         live_buses=live_list
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase D: Conductor & Driver App Endpoints
+# ---------------------------------------------------------------------------
+@v1_router.post("/conductor/auth/pin")
+def conductor_pin_auth(req: ConductorPinAuthRequest, response: Response):
+    """
+    Staff / Conductor quick login via Staff Badge ID + 4-digit PIN.
+    Issues a JWT access token with role 'conductor'.
+    """
+    if len(req.pin) < 4:
+        raise HTTPException(status_code=400, detail="PIN must be at least 4 digits")
+
+    clean_id = req.staff_id.strip().upper()
+    email = f"{clean_id.lower().replace('-', '_')}@pranshusharma.tech"
+    user_row = db.get_or_create_user(email, full_name=f"Conductor ({clean_id})")
+    db.update_profile(user_row["id"], {"role": "conductor"})
+    
+    token = create_access_token({
+        "id": user_row["id"],
+        "email": email,
+        "role": "conductor",
+        "language": "en"
+    })
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=True
+    )
+
+    return {
+        "status": "authenticated",
+        "access_token": token,
+        "user": {
+            "id": user_row["id"],
+            "email": email,
+            "full_name": f"Conductor ({clean_id})",
+            "role": "conductor"
+        },
+        "staff_id": clean_id
+    }
+
+@v1_router.post("/conductor/duty/start", response_model=ConductorDutyResponse)
+def start_duty(req: ConductorDutyRequest, user: UserProfile = Depends(require_role("conductor"))):
+    """Starts active duty on a chosen bus."""
+    from main import FLEET
+    bus = FLEET.get(req.bus_id)
+    if not bus:
+        raise HTTPException(status_code=404, detail=f"Bus {req.bus_id} not found in fleet")
+    route_id = req.route_id or str(bus["route_id"])
+    duty = db.start_conductor_duty(user.id, req.bus_id, route_id)
+    return ConductorDutyResponse(**duty)
+
+@v1_router.post("/conductor/duty/end")
+def end_duty(req: Optional[dict] = None, user: UserProfile = Depends(require_role("conductor"))):
+    """Ends the conductor's active duty shift."""
+    duty = db.get_active_conductor_duty(user.id)
+    if not duty:
+        return {"ok": True, "message": "No active duty found"}
+    db.end_conductor_duty(duty["id"], user.id)
+    return {"ok": True, "duty_id": duty["id"], "status": "ended"}
+
+@v1_router.get("/conductor/duty/active")
+def get_active_duty(user: UserProfile = Depends(require_role("conductor"))):
+    """Gets conductor's active duty session and current shift ticketing stats."""
+    duty = db.get_active_conductor_duty(user.id)
+    stats = db.get_conductor_shift_stats(conductor_id=user.id)
+    return {
+        "active_duty": duty,
+        "stats": stats
+    }
+
+def ensure_live_bus(bus_id: int):
+    from main import LIVE, FLEET
+    if bus_id not in LIVE and bus_id in FLEET:
+        f = FLEET[bus_id]
+        LIVE[bus_id] = {
+            "bus_id": bus_id,
+            "route_id": str(f["route_id"]),
+            "lat": 28.6315,
+            "lng": 77.2167,
+            "speed_kmh": 22.0,
+            "seen": time.time(),
+            "onboard": 15,
+            "towards": f.get("towards", "Central Terminal"),
+            "next_stop": None,
+            "eta_next_min": 3,
+            "progress": 0.25,
+            "segment_idx": 1
+        }
+    return LIVE.get(bus_id)
+
+@v1_router.post("/conductor/ticket", response_model=ConductorTicketResponse)
+async def issue_ticket(req: ConductorTicketRequest, user: UserProfile = Depends(require_role("conductor"))):
+    """
+    Issues a cash or UPI bus ticket, increments live passenger load (+1),
+    records ticket sale, and broadcasts updated telemetry over WebSockets.
+    """
+    from main import LIVE, FLEET, ws_manager, db_run, bus_view
+    st = ensure_live_bus(req.bus_id)
+    if not st:
+        raise HTTPException(status_code=404, detail=f"Bus {req.bus_id} not found in fleet")
+
+    cap = FLEET[req.bus_id]["capacity"]
+    st["onboard"] = max(0, min(int(cap * 1.4), st["onboard"] + 1))
+
+    duty = db.get_active_conductor_duty(user.id)
+    duty_id = duty["id"] if duty else None
+
+    ticket = db.record_conductor_ticket(
+        bus_id=req.bus_id,
+        fare=req.fare,
+        payment_method=req.payment_method,
+        conductor_id=user.id,
+        stop_id=req.stop_id,
+        duty_id=duty_id
+    )
+
+    now = time.time()
+    db_run("insert into boardings values (?,?,?,?,?)", (now, req.bus_id, req.stop_id or "live", 1, 0))
+
+    try:
+        await ws_manager.broadcast({
+            "type": "buses_update",
+            "timestamp": now,
+            "count": 1,
+            "buses": [bus_view(st)]
+        })
+    except Exception:
+        pass
+
+    return ConductorTicketResponse(
+        id=ticket["id"],
+        duty_id=ticket.get("duty_id"),
+        bus_id=ticket["bus_id"],
+        fare=ticket["fare"],
+        payment_method=ticket["payment_method"],
+        stop_id=ticket.get("stop_id"),
+        issued_at=ticket["issued_at"],
+        onboard=st["onboard"]
+    )
+
+@v1_router.post("/conductor/load/preset")
+async def set_load_preset(req: ConductorLoadPresetRequest, user: UserProfile = Depends(require_role("conductor"))):
+    """
+    Sets quick crowd presets: 'empty' (0%), 'seats_free' (35%), 'standing' (75%), 'packed' (105%).
+    Instantly updates live state and broadcasts to passengers.
+    """
+    from main import LIVE, FLEET, ws_manager, bus_view
+    st = ensure_live_bus(req.bus_id)
+    if not st:
+        raise HTTPException(status_code=404, detail=f"Bus {req.bus_id} not found")
+
+    cap = FLEET[req.bus_id]["capacity"]
+    preset_factors = {
+        "empty": 0.0,
+        "seats_free": 0.35,
+        "standing": 0.75,
+        "packed": 1.05
+    }
+    factor = preset_factors.get(req.preset, 0.5)
+    st["onboard"] = max(0, min(int(cap * 1.4), int(cap * factor)))
+
+    try:
+        await ws_manager.broadcast({
+            "type": "buses_update",
+            "timestamp": time.time(),
+            "count": 1,
+            "buses": [bus_view(st)]
+        })
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "bus_id": req.bus_id,
+        "onboard": st["onboard"],
+        "preset": req.preset
+    }
+
+@v1_router.post("/conductor/incident")
+async def report_incident(req: ConductorIncidentRequest, user: UserProfile = Depends(require_role("conductor"))):
+    """
+    Reports in-vehicle incidents: breakdown, SOS, accident, flat_tire, route_deviation, traffic_jam.
+    Dispatches to Control Room and broadcasts alert over WebSockets.
+    """
+    from main import INCIDENTS, SIM, LIVE, ws_manager
+    now = time.time()
+    st = LIVE.get(req.bus_id)
+
+    if req.kind == "breakdown":
+        SIM["broken"][req.bus_id] = now + 3600
+    elif req.kind == "sos":
+        lat = st["lat"] if st else 28.6315
+        lng = st["lng"] if st else 77.2167
+        db.record_sos(lat=lat, lng=lng, user_id=user.id, bus_id=req.bus_id)
+
+    inc_record = {
+        "id": f"inc_{int(now)}_{req.bus_id}",
+        "bus_id": req.bus_id,
+        "kind": req.kind,
+        "note": req.note or f"Reported by conductor on bus {req.bus_id}",
+        "timestamp": now,
+        "reporter_id": user.id
+    }
+    INCIDENTS.append(inc_record)
+
+    try:
+        await ws_manager.broadcast({
+            "type": "incident_alert",
+            "incident": inc_record
+        })
+    except Exception:
+        pass
+
+    return {"ok": True, "incident": inc_record}
+
