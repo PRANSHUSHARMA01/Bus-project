@@ -240,12 +240,13 @@ export function MovingBus({ compact = false }: MovingBusProps) {
       style={{
         width: "100%",
         background: "var(--surface)",
-        borderRadius: "var(--r-card)", // 20px concentric card
+        borderRadius: 28, // Card radius 28 (art radius 20 + padding 8)
         boxShadow: "var(--ring)",
         border: "1px solid transparent",
-        padding: "16px",
+        padding: 8,
         overflow: "hidden",
         position: "relative",
+        containerType: "inline-size",
       }}
       role="region"
       aria-label="Interactive isometric Delhi electric bus figure"
@@ -256,14 +257,15 @@ export function MovingBus({ compact = false }: MovingBusProps) {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      {/* 1. Full-Bleed Illustration Stage (concentric 16px radius inside card) */}
+      {/* 1. Full-Bleed Illustration Stage (art radius 20 inside card) */}
       <div
         onClick={toggleDoors}
         style={{
           width: "100%",
-          height: compact ? "185px" : "240px",
+          aspectRatio: compact ? "16/10" : "6/5",
+          maxHeight: compact ? 200 : 260,
           position: "relative",
-          borderRadius: 16,
+          borderRadius: 20,
           background: "var(--surface-2)",
           overflow: "hidden",
           cursor: "pointer",
@@ -678,17 +680,27 @@ export function MovingBus({ compact = false }: MovingBusProps) {
         </svg>
       </div>
 
-      {/* 2. Simplified Clean Card Chrome (Section 7) */}
-      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-        {/* Title & Status Pill Row */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+      {/* 2. Concentric Info Block (Step 2 specs) */}
+      <div style={{ padding: "16px 8px 8px 8px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Row 1: Title & Status Pill */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
           <h3
             className="text-heading"
+            title="Delhi electric commuter"
             style={{
               margin: 0,
-              fontSize: "0.9375rem",
+              fontSize: "1.0625rem",
               fontWeight: 600,
               color: "var(--text)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
@@ -698,16 +710,16 @@ export function MovingBus({ compact = false }: MovingBusProps) {
           <div
             className="tabular-nums"
             style={{
-              height: 24,
-              padding: "0 8px",
+              height: 28,
+              padding: "0 10px 0 8px",
               borderRadius: "var(--r-pill)",
               background: "var(--surface-2)",
-              border: "1px solid var(--border)",
+              boxShadow: "var(--ring-subtle)",
               display: "inline-flex",
               alignItems: "center",
-              gap: 5,
-              fontSize: "0.75rem",
-              fontWeight: 600,
+              gap: 6,
+              fontSize: "0.8125rem",
+              fontWeight: 500,
               color: "var(--text)",
               whiteSpace: "nowrap",
               flexShrink: 0,
@@ -715,64 +727,136 @@ export function MovingBus({ compact = false }: MovingBusProps) {
           >
             <span
               style={{
-                width: 6,
-                height: 6,
+                width: 8,
+                height: 8,
                 borderRadius: "50%",
                 background: phase === "stopped" ? "var(--crowd-mod)" : "var(--crowd-low)",
+                flexShrink: 0,
               }}
             />
             <span>
-              {phase === "stopped" ? "At stop · Doors open" : `Cruising · ${speed} km/h`}
+              {phase === "stopped" ? (
+                "At stop · Doors open"
+              ) : (
+                <>
+                  <span className="status-prefix">Cruising · </span>
+                  <span>{speed} km/h</span>
+                </>
+              )}
             </span>
           </div>
         </div>
 
-        {/* Caption & Interaction Hint */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span className="text-caption" style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-            👆 Tap the bus to toggle doors · Drag to adjust speed
+        {/* Row 2: Caption (left) & Seat count (right) */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span
+            className="text-caption"
+            style={{
+              color: "var(--text-muted)",
+              fontSize: "0.8125rem",
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span style={{ fontSize: "1rem" }} aria-hidden="true">👆</span>
+            <span>Tap the bus to open doors</span>
           </span>
+
           <span
             className="tabular-nums"
             style={{
-              fontSize: "0.75rem",
-              fontWeight: 600,
+              fontSize: "0.8125rem",
+              fontWeight: 500,
               color: "var(--text-muted)",
               whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
-            {occupiedSeats} of {totalSeats} seats · {loadPercent}%
+            {occupiedSeats} of {totalSeats} seats
           </span>
         </div>
 
-        {/* 8px Occupancy Progress Bar */}
-        <div
-          style={{
-            width: "100%",
-            height: 8,
-            borderRadius: 4,
-            background: "var(--surface-2)",
-            overflow: "hidden",
-          }}
-          role="progressbar"
-          aria-valuenow={loadPercent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
+        {/* Row 3: Occupancy Bar with Label */}
+        <div>
           <div
             style={{
-              width: `${loadPercent}%`,
-              height: "100%",
-              borderRadius: 4,
-              background:
-                loadPercent < 50
-                  ? "var(--crowd-low)"
-                  : loadPercent < 80
-                  ? "var(--crowd-mod)"
-                  : "var(--crowd-high)",
-              transition: "width 300ms ease-out",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 4,
             }}
-          />
+          >
+            <span
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color:
+                  loadPercent < 50
+                    ? "var(--crowd-low)"
+                    : loadPercent < 80
+                    ? "var(--crowd-mod)"
+                    : "var(--crowd-high)",
+              }}
+            >
+              {loadPercent < 50
+                ? "Seats free"
+                : loadPercent < 80
+                ? "Getting full"
+                : "Crowded"}
+            </span>
+            <span
+              className="tabular-nums"
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "var(--text-muted)",
+              }}
+            >
+              {loadPercent}%
+            </span>
+          </div>
+
+          <div
+            style={{
+              width: "100%",
+              height: 8,
+              borderRadius: "var(--r-pill)",
+              background: "var(--surface-2)",
+              overflow: "hidden",
+            }}
+            role="progressbar"
+            aria-valuenow={loadPercent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Bus occupancy: ${loadPercent}%`}
+          >
+            <div
+              style={{
+                width: `${loadPercent}%`,
+                height: "100%",
+                borderRadius: "var(--r-pill)",
+                background:
+                  loadPercent < 50
+                    ? "var(--crowd-low)"
+                    : loadPercent < 80
+                    ? "var(--crowd-mod)"
+                    : "var(--crowd-high)",
+                transition: "width 300ms ease-out",
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

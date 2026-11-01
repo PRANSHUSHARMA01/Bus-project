@@ -191,6 +191,13 @@
   }
 }
 
+/* Anatomy Moving Bus container query */
+@container (max-width: 340px) {
+  .status-prefix {
+    display: none !important;
+  }
+}
+
 /* ==========================================================================
    GLOBAL RESET & FRAME (Fix horizontal overflow & brown strip)
    ========================================================================== */
