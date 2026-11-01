@@ -1,10 +1,13 @@
 """Smart Public Bus Tracking - API server. Run: python -m uvicorn main:app"""
-import json, math, os, random, sqlite3, threading, time
+import asyncio, json, math, os, random, sqlite3, threading, time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from demand import BUS_HOUR_CAPACITY, TARGET_LF, hist_speed_kmh
 from geo import Track
@@ -13,14 +16,12 @@ from v1_router import v1_router
 DATA = Path(__file__).parent / "data"
 app = FastAPI(title="Smart Bus API", version="2.0.0")
 
-# Security: CORS allow-list from environment variable (no wildcard '*' in production)
+# Security: CORS allow-list (same-origin production requires 0 CORS, dev uses configured origins)
 raw_origins = os.environ.get(
     "ALLOWED_ORIGINS",
-    "https://pranshusharma.tech,https://www.pranshusharma.tech,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000"
+    "https://pranshusharma.tech,https://www.pranshusharma.tech,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,http://127.0.0.1:8080,http://localhost:8000"
 )
 ALLOWED_ORIGINS = [o.strip() for o in raw_origins.split(",") if o.strip()]
-
-from fastapi.middleware.gzip import GZipMiddleware
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
@@ -32,19 +33,89 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Security Headers Middleware
+# Optional rate limiter setup
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+    limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+except Exception:
+    limiter = None
+
+# Comprehensive HTTP Security Headers Middleware
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    if request.url.scheme == "https":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Permissions-Policy"] = "geolocation=(self), notifications=(self)"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://api.mapbox.com; "
+        "img-src 'self' data: blob: https:; "
+        "connect-src 'self' https://pranshusharma.tech wss://pranshusharma.tech ws: wss: "
+        "https://*.openfreemap.org https://openfreemap.org https://tiles.openfreemap.org "
+        "https://*.tile.openstreetmap.org https://*.cloudflare.com https://*.fastly.net; "
+        "worker-src 'self' blob:; "
+        "child-src blob:; "
+        "frame-ancestors 'none';"
+    )
+    if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     return response
 
-# Mount Production v1 Router
+# Mount Production v1 Router at both /v1 and /api/v1
 app.include_router(v1_router)
+app.include_router(v1_router, prefix="/api")
+
+# ------------------------------------------------------------------ Realtime WebSocket Manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+        self._lock = threading.Lock()
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        with self._lock:
+            self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        with self._lock:
+            if websocket in self.active_connections:
+                self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        with self._lock:
+            conns = list(self.active_connections)
+        dead = []
+        for connection in conns:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                dead.append(connection)
+        with self._lock:
+            for d in dead:
+                if d in self.active_connections:
+                    self.active_connections.remove(d)
+
+ws_manager = ConnectionManager()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+    except Exception:
+        ws_manager.disconnect(websocket)
 
 # ------------------------------------------------------------------ static data
 RAW = json.loads((DATA / "routes.json").read_text(encoding="utf-8"))
@@ -170,10 +241,17 @@ def fresh():
     return [s for s in LIVE.values() if now - s.get("seen", 0) < 30]
 
 @app.get("/health")
+@app.get("/api/v1/health")
 def health():
-    return {"ok": True, "buses_live": len(fresh())}
+    return {"status": "ok", "app": "Smart Public Bus Tracking", "version": "2.0.0", "buses_live": len(fresh())}
+
+@app.get("/ready")
+@app.get("/api/v1/ready")
+def ready():
+    return {"ready": True, "buses_live": len(fresh()), "timestamp": time.time()}
 
 @app.get("/buses/live")
+@app.get("/api/v1/buses/live")
 def buses_live(route: str = None, bbox: str = None):
     b_list = fresh()
     if route:
@@ -187,10 +265,12 @@ def buses_live(route: str = None, bbox: str = None):
     return [bus_view(s) for s in b_list]
 
 @app.get("/fleet")
+@app.get("/api/v1/fleet")
 def fleet():
     return [{**f, "route_id": ASSIGN[b], "route_name": ROUTES[ASSIGN[b]]["name"]} for b, f in FLEET.items()]
 
 @app.get("/routes")
+@app.get("/api/v1/routes")
 def routes():
     out = []
     for r in ROUTES.values():
@@ -206,6 +286,7 @@ for sid, s in STOPS.items():
     PRECOMPUTED_STOPS.append({"id": sid, **s, "routes": r_list})
 
 @app.get("/stops")
+@app.get("/api/v1/stops")
 def stops():
     return PRECOMPUTED_STOPS
 
@@ -233,6 +314,7 @@ def eta_for(st, stop_id):
     return {"eta_min": round(minutes, 1), "distance_m": round(ahead), "stops_away": between, "direction": direction}
 
 @app.get("/stops/{stop_id}/arrivals")
+@app.get("/api/v1/stops/{stop_id}/arrivals")
 def arrivals(stop_id: str):
     out = []
     live_buses = fresh()
@@ -300,6 +382,7 @@ def nearest_stop(route_id, progress):
     return STOPS[min(route["stops"], key=lambda s: abs(s["d"] - d))["id"]]["name"]
 
 @app.get("/alerts")
+@app.get("/api/v1/alerts")
 def alerts():
     now, out, slow_routes = time.time(), [], set()
     live = fresh()
@@ -461,3 +544,53 @@ def sim_flags():
             "surge": [r for r, t in SIM["surge"].items() if t > now],
             "broken": [b for b, t in SIM["broken"].items() if t > now],
             "assign": ASSIGN}
+
+# ------------------------------------------------------------------ Static Frontend & SPA Fallback
+STATIC_DIR = Path(__file__).parent / "static"
+
+if STATIC_DIR.exists():
+    next_static_dir = STATIC_DIR / "_next"
+    if next_static_dir.exists():
+        app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
+
+    @app.get("/", include_in_schema=False)
+    async def serve_root():
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+        return {"status": "ok", "app": "Smart Public Bus Tracking", "version": "2.0.0"}
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa_or_static(full_path: str):
+        # Do not intercept API, health, docs, or WebSocket paths
+        api_prefixes = (
+            "api", "v1", "buses", "routes", "stops", "fleet",
+            "admin", "sim", "ingest", "alerts", "health", "ready",
+            "docs", "openapi.json", "ws"
+        )
+        first_segment = full_path.split("/")[0]
+        if first_segment in api_prefixes:
+            raise HTTPException(status_code=404, detail="API route not found")
+
+        # 1. Exact static file match (e.g. favicon.ico, manifest.webmanifest, sw.js)
+        target_file = (STATIC_DIR / full_path).resolve()
+        if target_file.is_relative_to(STATIC_DIR) and target_file.is_file():
+            headers = {}
+            if "_next" in full_path or any(full_path.endswith(ext) for ext in [".js", ".css", ".png", ".jpg", ".webp", ".svg", ".woff2"]):
+                headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif full_path.endswith(".html"):
+                headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            return FileResponse(target_file, headers=headers)
+
+        # 2. Page route with .html extension (e.g. /activity -> activity.html)
+        clean_path = full_path.rstrip("/")
+        html_file = (STATIC_DIR / f"{clean_path}.html").resolve()
+        if html_file.is_relative_to(STATIC_DIR) and html_file.is_file():
+            return FileResponse(html_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+        # 3. Dynamic client route fallback (e.g. /t/abc, /trip/123 -> index.html)
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+        raise HTTPException(status_code=404, detail="Page not found")

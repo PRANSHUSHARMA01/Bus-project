@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
-export const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+export const API =
+  process.env.NEXT_PUBLIC_API_URL !== undefined
+    ? process.env.NEXT_PUBLIC_API_URL
+    : typeof window !== "undefined" && window.location.port === "3000"
+    ? "http://127.0.0.1:8000"
+    : "";
 
 export async function get<T = any>(path: string): Promise<T> {
   const r = await fetch(API + path);

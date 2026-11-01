@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Smart Public Bus Tracking - Production Infrastructure on AWS (Single Origin EC2 + Caddy + PostgreSQL + S3)'
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: 'pranshusharma.tech'
+    Description: 'Custom domain for the smart bus tracking platform'
+
+  InstanceType:
+    Type: String
+    Default: 't3.small'
+    Description: 'EC2 Instance Type'
+
+Resources:
+  # 1. S3 Backup Bucket with Encryption & 30-Day Lifecycle
+  BackupBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'smartbus-backups-${DomainName}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireAfter30Days
+            Status: Enabled
+            ExpirationInDays: 30
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # 2. IAM Role & Instance Profile for SSM, S3 & SES
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: smartbus-cfn-ec2-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: SmartBusAppPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt BackupBucket.Arn
+                  - !Sub '${BackupBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: '*'
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: smartbus-cfn-ec2-profile
+      Roles:
+        - !Ref EC2InstanceRole
+
+  # 3. Security Group (Port 80/443 Open, Port 22 Closed - SSM used)
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow HTTP and HTTPS traffic for Smart Bus App'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: 'HTTP for Let Encrypt and redirect'
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: 'HTTPS for production application'
+
+  # 4. EC2 Instance
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+      ImageId: 'ami-0522ab6e1ddcc7055' # Ubuntu 24.04 LTS ap-south-1
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: false
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          apt-get update
+          apt-get install -y ca-certificates curl gnupg lsb-release
+          mkdir -p /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          systemctl enable docker
+          systemctl start docker
+          mkdir -p /opt/smartbus
+          mkdir -p /var/lib/smartbus/postgres_data
+      Tags:
+        - Key: Name
+          Value: smartbus-production
+
+  # 5. Elastic IP
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref EC2Instance
+
+Outputs:
+  ElasticIPAddress:
+    Description: 'Public Elastic IP Address - Configure DNS A record at registrar'
+    Value: !Ref ElasticIP
+
+  BackupBucketName:
+    Description: 'S3 Bucket for Automated Nightly Backups'
+    Value: !Ref BackupBucket

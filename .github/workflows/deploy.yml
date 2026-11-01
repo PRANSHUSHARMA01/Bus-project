@@ -1,0 +1,123 @@
+name: Build, Audit & Deploy to AWS EC2
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  test_and_audit:
+    name: Lint, Test & Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package.json
+
+      - name: Frontend Dependency Install & Audit
+        run: |
+          cd frontend
+          npm ci || npm install
+          npm audit --audit-level=high || true
+
+      - name: Frontend Typecheck & Static Export Build
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Backend Dependency Install & Audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pip-audit pytest
+          pip-audit --desc on || true
+
+      - name: Test Single-Origin FastAPI Serving
+        run: |
+          mkdir -p backend/static
+          cp -r frontend/out/* backend/static/
+          cd backend
+          python -c "
+          from fastapi.testclient import TestClient
+          from main import app
+          client = TestClient(app)
+          assert client.get('/health').status_code == 200
+          assert client.get('/api/v1/health').status_code == 200
+          assert client.get('/').status_code == 200
+          assert client.get('/activity').status_code == 200
+          assert client.get('/api/v1/routes').status_code == 200
+          "
+
+  deploy:
+    name: Build & Push to Amazon ECR, Deploy to EC2
+    needs: test_and_audit
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION || 'ap-south-1' }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: GitHubActionsSmartBusDeploy
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Tag Container Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: smartbus
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Deploy to EC2 via AWS SSM Run Command (Zero SSH keys needed)
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: smartbus
+          IMAGE_TAG: ${{ github.sha }}
+          INSTANCE_ID: ${{ secrets.AWS_EC2_INSTANCE_ID }}
+        run: |
+          aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands="[
+              \"cd /opt/smartbus\",
+              \"aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY\",
+              \"export IMAGE_TAG=$IMAGE_TAG\",
+              \"export ECR_REGISTRY=$ECR_REGISTRY\",
+              \"PREV_TAG=$(docker inspect --format='{{.Config.Image}}' smartbus-app 2>/dev/null || echo '')\",
+              \"docker compose -f docker-compose.prod.yml pull app simulator\",
+              \"docker compose -f docker-compose.prod.yml up -d --remove-orphans\",
+              \"sleep 10\",
+              \"if curl -f http://127.0.0.1:8000/health; then echo 'Deployment successful!'; else echo 'Health check failed! Rolling back...'; docker compose -f docker-compose.prod.yml rollback || true; exit 1; fi\"
+            ]" \
+            --output text

@@ -1,61 +1,90 @@
-version: "3.8"
-
 services:
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    restart: always
-    environment:
-      - PORT=8000
-      - HOST=0.0.0.0
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://smart-bus-tracking.vercel.app,http://localhost:3000}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
-      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
-      - DEV_AUTH_BYPASS=${DEV_AUTH_BYPASS:-false}
-    volumes:
-      - ./backend/data:/app/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    networks:
-      - transit_net
-
-  simulator:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: python simulator.py --api http://api:8000 --hour 9
-    depends_on:
-      api:
-        condition: service_healthy
-    restart: always
-    networks:
-      - transit_net
-
   caddy:
     image: caddy:2-alpine
-    restart: always
+    container_name: smartbus-caddy
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      - DOMAIN=${DOMAIN:-localhost}
     volumes:
-      - ./backend/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - api
-    networks:
-      - transit_net
+      - app
 
-networks:
-  transit_net:
-    driver: bridge
+  app:
+    image: ${ECR_REGISTRY:-smartbus}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartbus-app
+    restart: unless-stopped
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-smartbus}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smartbus_db}
+      - ALLOWED_ORIGINS=https://pranshusharma.tech,https://www.pranshusharma.tech
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-south-1}
+      - S3_BACKUP_BUCKET=${S3_BACKUP_BUCKET:-smartbus-backups-pranshusharma}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: postgres:16-alpine
+    container_name: smartbus-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-smartbus}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-smartbus_db}
+    volumes:
+      - /var/lib/smartbus/postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartbus} -d ${POSTGRES_DB:-smartbus_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  simulator:
+    image: ${ECR_REGISTRY:-smartbus}:${IMAGE_TAG:-latest}
+    container_name: smartbus-simulator
+    restart: unless-stopped
+    command: ["python", "simulator.py", "--hour", "9", "--api", "http://app:8000"]
+    depends_on:
+      app:
+        condition: service_healthy
+
+  backup:
+    image: postgres:16-alpine
+    container_name: smartbus-backup
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=${POSTGRES_USER:-smartbus}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-smartbus_db}
+      - S3_BUCKET=${S3_BACKUP_BUCKET:-smartbus-backups-pranshusharma}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-south-1}
+    entrypoint: |
+      sh -c '
+      apk add --no-cache aws-cli
+      while true; do
+        sleep 86400
+        DATE=$$(date +%Y%m%d_%H%M%S)
+        pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER $$POSTGRES_DB | gzip > /tmp/backup_$$DATE.sql.gz
+        aws s3 cp /tmp/backup_$$DATE.sql.gz s3://$$S3_BUCKET/db/backup_$$DATE.sql.gz --sse AES256
+        rm -f /tmp/backup_$$DATE.sql.gz
+      done'
+    depends_on:
+      - db
 
 volumes:
   caddy_data:

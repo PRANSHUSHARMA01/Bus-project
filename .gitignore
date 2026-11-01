@@ -7,3 +7,5 @@ backend/data/app.db
 *.env.local
 __pycache__/
 *.pyc
+frontend/out/
+backend/static/

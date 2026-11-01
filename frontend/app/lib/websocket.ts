@@ -13,8 +13,14 @@ class WebSocketClient {
   private pingInterval: any = null;
 
   constructor() {
-    const host = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws";
-    this.url = host;
+    if (process.env.NEXT_PUBLIC_WS_URL) {
+      this.url = process.env.NEXT_PUBLIC_WS_URL;
+    } else if (typeof window !== "undefined") {
+      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      this.url = `${proto}//${window.location.host}/ws`;
+    } else {
+      this.url = "ws://localhost:8000/ws";
+    }
   }
 
   public connect() {
