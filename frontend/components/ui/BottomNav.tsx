@@ -20,7 +20,27 @@ export function BottomNav({ activeTab, onSelectTab, lang = "en" }: BottomNavProp
   ];
 
   return (
-    <nav className="floating-bottom-nav" aria-label="Main App Navigation">
+    <>
+      {/* 28px Bottom Scroll Fade Feather Layer (Step 5 specs) */}
+      <div
+        className="scroll-fade-bottom"
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          bottom: "calc(var(--nav-h) + 16px + env(safe-area-inset-bottom, 16px))",
+          left: 0,
+          right: 0,
+          height: 28,
+          pointerEvents: "none",
+          zIndex: 35,
+          background: "linear-gradient(to top, var(--paper) 0%, transparent 100%)",
+          WebkitBackdropFilter: "blur(4px)",
+          backdropFilter: "blur(4px)",
+          WebkitMaskImage: "linear-gradient(to top, black 0%, transparent 100%)",
+          maskImage: "linear-gradient(to top, black 0%, transparent 100%)",
+        }}
+      />
+      <nav className="floating-bottom-nav" aria-label="Main App Navigation">
       {items.map((item) => {
         const isActive = activeTab === item.id;
         return (
@@ -43,5 +63,6 @@ export function BottomNav({ activeTab, onSelectTab, lang = "en" }: BottomNavProp
         );
       })}
     </nav>
+    </>
   );
 }

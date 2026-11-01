@@ -614,22 +614,53 @@ export default function UberPassengerApp() {
             {greeting}
           </div>
 
-          {/* Hero Search Pill ("Where to?") */}
-          <SearchPill
-            value={searchQuery}
-            onChange={(val) => {
-              setSearchQuery(val);
-              if (!isSearchOpen) setIsSearchOpen(true);
+          {/* Sticky Hero Search Pill Row with 40px Top Scroll Fade */}
+          <div
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 30,
+              background: "var(--paper)",
+              paddingTop: 8,
+              paddingBottom: 4,
+              marginInline: -4,
+              paddingInline: 4,
             }}
-            onOpenScheduleSheet={() => setScheduleSheetOpen(true)}
-            onClickPill={() => setIsSearchOpen(true)}
-            placeholder={lang === "hi" ? "कहाँ जाना है?" : "Where to?"}
-            scheduleLabel={
-              scheduleOffsetMin === 0
-                ? lang === "hi" ? "समय सारणी" : "Schedule"
-                : `+${scheduleOffsetMin}m`
-            }
-          />
+          >
+            <SearchPill
+              value={searchQuery}
+              onChange={(val) => {
+                setSearchQuery(val);
+                if (!isSearchOpen) setIsSearchOpen(true);
+              }}
+              onOpenScheduleSheet={() => setScheduleSheetOpen(true)}
+              onClickPill={() => setIsSearchOpen(true)}
+              placeholder={lang === "hi" ? "कहाँ जाना है?" : "Where to?"}
+              scheduleLabel={
+                scheduleOffsetMin === 0
+                  ? lang === "hi" ? "समय सारणी" : "Schedule"
+                  : `+${scheduleOffsetMin}m`
+              }
+            />
+            {/* 40px Scroll Fade Layer under Sticky Search Row */}
+            <div
+              className="scroll-fade-top"
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                height: 40,
+                pointerEvents: "none",
+                background: "linear-gradient(to bottom, var(--paper) 0%, transparent 100%)",
+                WebkitBackdropFilter: "blur(8px)",
+                backdropFilter: "blur(8px)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+              }}
+            />
+          </div>
 
           {/* Quick Access: Live Bus Map Banner */}
           <button
