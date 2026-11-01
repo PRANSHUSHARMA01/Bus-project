@@ -93,7 +93,7 @@ export interface Recommendation {
 }
 
 export const OCC_COLOR: Record<Occupancy, string> = {
-  Low: "#16a34a",
-  Moderate: "#f59e0b",
-  High: "#dc2626",
+  Low: "#15803d",
+  Moderate: "#b45309",
+  High: "#b91c1c",
 };

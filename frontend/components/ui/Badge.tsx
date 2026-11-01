@@ -8,32 +8,22 @@ interface BadgeProps {
 }
 
 export function Badge({ occupancy, loadPct, label }: BadgeProps) {
-  const bg = OCC_COLOR[occupancy];
+  const bg = OCC_COLOR[occupancy] || OCC_COLOR.Low;
+  const displayLabel = label || occupancy;
+
   return (
     <span
-      className="badge tabular-nums"
+      className="crowd-pill tabular-nums"
       style={{
-        background: bg,
+        backgroundColor: bg,
         color: "#ffffff",
-        fontWeight: 600,
-        fontSize: 12,
       }}
       role="status"
-      aria-label={`Occupancy level: ${label || occupancy}`}
+      aria-label={`Crowd level: ${displayLabel}${loadPct !== undefined ? `, ${loadPct}% capacity` : ""}`}
     >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: "#ffffff",
-          display: "inline-block",
-          flexShrink: 0,
-        }}
-        aria-hidden="true"
-      />
-      <span>{label || occupancy}</span>
-      {loadPct !== undefined && <span>· {loadPct}%</span>}
+      <span className="crowd-pill-dot" aria-hidden="true" />
+      <span className="crowd-pill-text">{displayLabel}</span>
+      {loadPct !== undefined && <span className="crowd-pill-pct">· {loadPct}%</span>}
     </span>
   );
 }

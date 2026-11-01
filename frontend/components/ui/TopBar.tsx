@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Bell, ChevronDown } from "lucide-react";
 
 interface TopBarProps {
@@ -17,45 +18,35 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <header className="top-bar">
+      {/* Location Picker (Left) */}
       <button
         onClick={onOpenLocationSheet}
         className="location-picker-btn"
-        aria-label={`Current location: ${currentLocationName}. Tap to change location.`}
+        aria-label={`Current location: ${currentLocationName}. Tap to select bus stop.`}
       >
         <span className="location-blue-dot" aria-hidden="true" />
-        <span style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span className="location-picker-name">
           {currentLocationName}
         </span>
-        <ChevronDown size={15} style={{ color: "var(--text-muted)" }} aria-hidden="true" />
+        <ChevronDown size={15} style={{ color: "var(--text-muted)", flexShrink: 0 }} aria-hidden="true" />
       </button>
 
-      <button
-        onClick={onOpenAlertsSheet}
-        className="btn-pill-secondary"
-        style={{ minHeight: 40, padding: "0 14px", fontSize: 13, gap: 6 }}
-        aria-label={`View live network alerts. ${unreadAlertsCount} active alerts.`}
-      >
-        <Bell size={16} aria-hidden="true" />
-        <span>Alerts</span>
+      {/* Alerts Pill with 18px red circle badge offset top-right with white 1px ring */}
+      <div className="alerts-btn-wrap">
+        <button
+          onClick={onOpenAlertsSheet}
+          className="alerts-pill-btn"
+          aria-label={`View transit network alerts. ${unreadAlertsCount} unread.`}
+        >
+          <Bell size={16} aria-hidden="true" />
+          <span>Alerts</span>
+        </button>
         {unreadAlertsCount > 0 && (
-          <span
-            style={{
-              minWidth: 18,
-              height: 18,
-              padding: "0 4px",
-              borderRadius: 999,
-              background: "var(--accent-red)",
-              color: "#fff",
-              fontSize: 11,
-              fontWeight: 700,
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
+          <span className="alerts-badge-circle" aria-hidden="true">
             {unreadAlertsCount}
           </span>
         )}
-      </button>
+      </div>
     </header>
   );
 }

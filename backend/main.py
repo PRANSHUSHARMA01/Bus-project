@@ -197,6 +197,10 @@ def arrivals(stop_id: str):
         e = eta_for(st, stop_id)
         if not e:
             continue
+        # Only show buses heading towards this stop within a realistic window (<= 60 min)
+        # Buses further away on the reverse loop will arrive on their subsequent cycle
+        if e["eta_min"] > 60:
+            continue
         v = bus_view(st)
         route = ROUTES[st["route_id"]]
         towards = STOPS[route["last"] if e["direction"] == "out" else route["first"]]["name"]
@@ -205,7 +209,7 @@ def arrivals(stop_id: str):
                     "seat_prob": seat_probability(v["load_pct"] / 100), "speed_kmh": v["speed_kmh"],
                     "broken": v["broken"]})
     out.sort(key=lambda x: x["eta_min"])
-    return out[:8]
+    return out[:6]
 
 # ------------------------------------------------------------------ alerts
 def nearest_stop(route_id, progress):

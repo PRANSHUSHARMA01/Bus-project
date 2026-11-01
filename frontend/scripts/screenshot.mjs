@@ -28,20 +28,30 @@ async function run() {
     await page.click(".location-picker-btn");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(outDir, `02_location_sheet_${vp.name}.png`) });
-    await page.click('button[aria-label="Close dialog"]');
+    const closeBtn1 = await page.$('button[aria-label="Close dialog"]');
+    if (closeBtn1) await closeBtn1.click();
     await page.waitForTimeout(400);
 
     // 3. Open Alerts Sheet
-    await page.click("header button:last-child");
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: path.join(outDir, `03_alerts_sheet_${vp.name}.png`) });
-    await page.click('button[aria-label="Close dialog"]');
-    await page.waitForTimeout(400);
+    const alertsBtn = await page.$(".alerts-pill-btn");
+    if (alertsBtn) {
+      await alertsBtn.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: path.join(outDir, `03_alerts_sheet_${vp.name}.png`) });
+      const closeBtn2 = await page.$('button[aria-label="Close dialog"]');
+      if (closeBtn2) await closeBtn2.click();
+      await page.waitForTimeout(400);
+    }
 
     // 4. Open Tracking Map (click first recent stop)
-    await page.click(".recent-row");
-    await page.waitForTimeout(1200);
-    await page.screenshot({ path: path.join(outDir, `04_tracking_map_${vp.name}.png`) });
+    await page.goto("http://localhost:3000/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(600);
+    const stopRow = await page.$(".recent-row");
+    if (stopRow) {
+      await stopRow.click();
+      await page.waitForTimeout(1200);
+      await page.screenshot({ path: path.join(outDir, `04_tracking_map_${vp.name}.png`) });
+    }
 
     // 5. Conductor Page
     await page.goto("http://localhost:3000/conductor", { waitUntil: "domcontentloaded" });

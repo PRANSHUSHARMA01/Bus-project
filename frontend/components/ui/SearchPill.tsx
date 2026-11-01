@@ -22,7 +22,7 @@ export function SearchPill({
   return (
     <div className="hero-search-pill" onClick={onClickPill}>
       <div className="hero-search-input-wrap">
-        <Search size={20} style={{ color: "var(--text-muted)", flexShrink: 0 }} aria-hidden="true" />
+        <Search size={20} className="hero-search-icon" aria-hidden="true" />
         <input
           type="text"
           value={value}
@@ -37,7 +37,7 @@ export function SearchPill({
               e.stopPropagation();
               onChange("");
             }}
-            style={{ padding: 4 }}
+            className="hero-search-clear"
             aria-label="Clear search query"
           >
             <X size={16} />

@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import BusMap from "../components/BusMap";
+import { ArrivalCard } from "../components/ui/ArrivalCard";
 import { Badge } from "../components/ui/Badge";
 import { BottomNav, NavTab } from "../components/ui/BottomNav";
 import { Carousel } from "../components/ui/Carousel";
@@ -41,6 +42,7 @@ import { Sheet } from "../components/ui/Sheet";
 import { ShortcutGrid, ShortcutItem } from "../components/ui/ShortcutGrid";
 import { Skeleton } from "../components/ui/Skeleton";
 import { StopRow } from "../components/ui/StopRow";
+import { Toast } from "../components/ui/Toast";
 import { TopBar } from "../components/ui/TopBar";
 import { post, usePoll } from "../lib/api";
 import { Alert, Arrival, Bus, Route, Stop } from "../lib/types";
@@ -56,6 +58,7 @@ function kmDist(a: Stop, lat: number, lng: number) {
 
 export default function UberPassengerApp() {
   // App view state
+  const [userName, setUserName] = useState<string>("Pranshu");
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [activeMode, setActiveMode] = useState<ModeTab>("bus");
@@ -83,6 +86,8 @@ export default function UberPassengerApp() {
   // Persistence
   useEffect(() => {
     try {
+      const savedName = localStorage.getItem("user_full_name") || localStorage.getItem("user_name");
+      if (savedName) setUserName(savedName);
       const savedStop = localStorage.getItem("user_selected_stop");
       if (savedStop) setSelectedStopId(savedStop);
       const savedLang = localStorage.getItem("user_lang") as "en" | "hi";
@@ -91,6 +96,15 @@ export default function UberPassengerApp() {
       if (savedTheme) setTheme(savedTheme);
     } catch {}
   }, []);
+
+  const firstName = userName ? userName.trim().split(" ")[0] : "";
+  const greeting = firstName
+    ? lang === "hi"
+      ? `नमस्ते, ${firstName}`
+      : `Hi, ${firstName}`
+    : lang === "hi"
+    ? "नमस्ते"
+    : "Hi there";
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -342,9 +356,9 @@ export default function UberPassengerApp() {
             lang={lang}
           />
 
-          {/* Greeting */}
+          {/* Greeting (Dynamic user first name) */}
           <div className="text-title" style={{ fontSize: 24, fontWeight: 700, margin: "14px 0 12px 0" }}>
-            {lang === "hi" ? "नमस्ते, प्रांशु" : "Hi, Pranshu"}
+            {greeting}
           </div>
 
           {/* Hero Search Pill ("Where to?") */}
@@ -645,65 +659,14 @@ export default function UberPassengerApp() {
                 )}
 
                 {arrivals && arrivals.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
                     {arrivals.map((a) => (
-                      <div
+                      <ArrivalCard
                         key={a.bus_id + a.towards}
-                        onClick={() => setTrackingBusId(a.bus_id)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "14px 16px",
-                          borderRadius: 16,
-                          background: "var(--surface-2)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                          <div
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 12,
-                              background: "var(--primary)",
-                              color: "var(--on-primary)",
-                              display: "grid",
-                              placeItems: "center",
-                              fontWeight: 800,
-                              fontSize: 16,
-                              fontFamily: "var(--font-mono)",
-                            }}
-                          >
-                            {a.route_id}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 15 }}>
-                              Towards {a.towards}
-                            </div>
-                            <div className="text-caption text-mono" style={{ color: "var(--text-muted)", margin: "2px 0 4px" }}>
-                              {a.reg_no} · {(a.distance_m / 1000).toFixed(1)} km · {a.stops_away} stops
-                            </div>
-                            <Badge
-                              occupancy={a.occupancy}
-                              loadPct={a.load_pct}
-                              label={a.occupancy}
-                            />
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: "right" }}>
-                          <div className="text-display tabular-nums" style={{ fontSize: 26, margin: 0 }}>
-                            {Math.round(a.eta_min)}
-                            <span style={{ fontSize: 13, color: "var(--text-muted)", marginLeft: 2 }}>
-                              min
-                            </span>
-                          </div>
-                          <span className="text-caption" style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 2 }}>
-                            Track <ChevronRight size={14} />
-                          </span>
-                        </div>
-                      </div>
+                        arrival={a}
+                        onTrack={() => setTrackingBusId(a.bus_id)}
+                        lang={lang}
+                      />
                     ))}
                   </div>
                 )}
@@ -1099,33 +1062,11 @@ export default function UberPassengerApp() {
         </div>
       )}
 
-      {/* 8. Floating Status Toast */}
-      {toastMessage && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: "fixed",
-            top: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 100,
-            background: "var(--primary)",
-            color: "var(--on-primary)",
-            padding: "10px 20px",
-            borderRadius: 999,
-            boxShadow: "var(--ring-elevated)",
-            fontSize: 14,
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <CheckCircle2 size={16} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* 8. Floating Status Toast (Phase 1B: Fixed to bottom calc(var(--nav-h) + 16px + safe-area)) */}
+      <Toast
+        message={toastMessage}
+        onDismiss={() => setToastMessage(null)}
+      />
 
       {/* =========================================================================
           FLOATING PILL BOTTOM NAVIGATION (Detached Uber Style)

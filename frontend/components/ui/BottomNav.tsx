@@ -34,11 +34,11 @@ export function BottomNav({ activeTab, onSelectTab, lang = "en" }: BottomNavProp
               <motion.div
                 layoutId="navActiveBg"
                 className="nav-active-bg"
-                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                transition={{ duration: 0.3, bounce: 0 }}
               />
             )}
-            <item.icon size={20} aria-hidden="true" />
-            <span>{item.label}</span>
+            <item.icon size={24} className="nav-item-icon" aria-hidden="true" />
+            <span className="nav-item-label">{item.label}</span>
           </button>
         );
       })}

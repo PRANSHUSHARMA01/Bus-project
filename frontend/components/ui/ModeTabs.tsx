@@ -30,16 +30,18 @@ export function ModeTabs({ activeTab, onSelectTab, lang = "en" }: ModeTabsProps)
             role="tab"
             aria-selected={isActive}
           >
-            <tab.icon size={17} aria-hidden="true" />
-            <span>{tab.label}</span>
-            {tab.badge && <span className="badge-soon">{tab.badge}</span>}
-            {isActive && (
-              <motion.div
-                layoutId="modeTabUnderline"
-                className="mode-tab-underline"
-                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              />
-            )}
+            <div className="mode-tab-content">
+              <tab.icon size={17} aria-hidden="true" />
+              <span>{tab.label}</span>
+              {tab.badge && <span className="badge-soon">{tab.badge}</span>}
+              {isActive && (
+                <motion.div
+                  layoutId="modeTabUnderline"
+                  className="mode-tab-underline"
+                  transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                />
+              )}
+            </div>
           </button>
         );
       })}
