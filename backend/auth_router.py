@@ -147,13 +147,14 @@ async def request_otp(body: RequestOtpModel, request: Request):
 
     email_h = hash_email(body.email)
 
-    # Rate limiting: Maximum 3 requests per 10 minutes (600 seconds)
-    recent_requests = db.count_recent_otp_requests(email_h, client_ip, window_sec=600)
-    if recent_requests >= 3:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many verification attempts. Please wait 10 minutes before requesting another code."
-        )
+    # Rate limiting: Maximum 3 requests per 10 minutes (enforced in production)
+    if IS_PROD:
+        recent_requests = db.count_recent_otp_requests(email_h, client_ip, window_sec=600)
+        if recent_requests >= 3:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many verification attempts. Please wait 10 minutes before requesting another code."
+            )
 
     # Generate cryptographically secure 6-digit numeric OTP
     otp_code = f"{secrets.randbelow(1000000):06d}"
