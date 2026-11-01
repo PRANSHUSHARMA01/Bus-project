@@ -12,7 +12,12 @@ export function Badge({ occupancy, loadPct, label }: BadgeProps) {
   return (
     <span
       className="badge tabular-nums"
-      style={{ background: bg }}
+      style={{
+        background: bg,
+        color: "#ffffff",
+        fontWeight: 600,
+        fontSize: 12,
+      }}
       role="status"
       aria-label={`Occupancy level: ${label || occupancy}`}
     >
@@ -21,13 +26,14 @@ export function Badge({ occupancy, loadPct, label }: BadgeProps) {
           width: 6,
           height: 6,
           borderRadius: "50%",
-          background: "#fff",
+          background: "#ffffff",
           display: "inline-block",
+          flexShrink: 0,
         }}
         aria-hidden="true"
       />
-      {label || occupancy}
-      {loadPct !== undefined && ` · ${loadPct}%`}
+      <span>{label || occupancy}</span>
+      {loadPct !== undefined && <span>· {loadPct}%</span>}
     </span>
   );
 }

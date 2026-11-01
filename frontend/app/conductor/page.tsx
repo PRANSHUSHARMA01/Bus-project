@@ -29,9 +29,13 @@ export default function ConductorPage() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("conductor_bus_id");
-      if (saved) setBusId(Number(saved));
+      if (saved) {
+        setBusId(Number(saved));
+      } else if (fleet.length > 0 && busId === null) {
+        setBusId(fleet[0].bus_id);
+      }
     } catch {}
-  }, []);
+  }, [fleet, busId]);
 
   const bus = live.find((b) => b.bus_id === busId);
   const item = fleet.find((f) => f.bus_id === busId);

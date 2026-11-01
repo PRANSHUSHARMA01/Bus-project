@@ -1,0 +1,47 @@
+"use client";
+
+import { motion } from "motion/react";
+import { Clock, Compass, Home, User } from "lucide-react";
+
+export type NavTab = "home" | "services" | "activity" | "account";
+
+interface BottomNavProps {
+  activeTab: NavTab;
+  onSelectTab: (tab: NavTab) => void;
+  lang?: "en" | "hi";
+}
+
+export function BottomNav({ activeTab, onSelectTab, lang = "en" }: BottomNavProps) {
+  const items = [
+    { id: "home" as const, label: lang === "hi" ? "होम" : "Home", icon: Home },
+    { id: "services" as const, label: lang === "hi" ? "सेवाएं" : "Services", icon: Compass },
+    { id: "activity" as const, label: lang === "hi" ? "गतिविधि" : "Activity", icon: Clock },
+    { id: "account" as const, label: lang === "hi" ? "खाता" : "Account", icon: User },
+  ];
+
+  return (
+    <nav className="floating-bottom-nav" aria-label="Main App Navigation">
+      {items.map((item) => {
+        const isActive = activeTab === item.id;
+        return (
+          <button
+            key={item.id}
+            onClick={() => onSelectTab(item.id)}
+            className={`nav-item-btn ${isActive ? "active" : ""}`}
+            aria-current={isActive ? "page" : undefined}
+          >
+            {isActive && (
+              <motion.div
+                layoutId="navActiveBg"
+                className="nav-active-bg"
+                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+              />
+            )}
+            <item.icon size={20} aria-hidden="true" />
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
