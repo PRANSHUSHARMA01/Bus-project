@@ -29,6 +29,18 @@
   --on-primary: oklch(1 0 0);
   --primary-hover: oklch(0.28 0 0);
 
+  /* Delhi Transit Design System Tokens (Phase E) */
+  --dtc-green: #0A6E3F;
+  --dtc-green-dark: #054C2B;
+  --dtc-green-light: #E8F5E9;
+  --transit-ochre: #F4A900;
+  --transit-ochre-light: #FEF3C7;
+  --transit-charcoal: #111827;
+  --transit-paper: #FFFFFF;
+  --metro-red: #DC2626;
+  --metro-yellow: #CA8A04;
+  --metro-blue: #2563EB;
+
   --accent-red: oklch(0.55 0.21 27);
   --link-blue: oklch(0.55 0.2 262);
 

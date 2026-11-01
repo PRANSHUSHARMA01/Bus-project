@@ -626,6 +626,19 @@ if STATIC_DIR.exists():
             return FileResponse(html_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
         # 3. Dynamic client route fallback (e.g. /t/abc, /trip/123 -> index.html)
+        client_spa_prefixes = ("t", "trip", "track", "route", "bus")
+        if first_segment in client_spa_prefixes:
+            index_file = STATIC_DIR / "index.html"
+            if index_file.exists():
+                return FileResponse(index_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+        # 4. Fallback to 404 page for unknown routes
+        not_found_file = STATIC_DIR / "404.html"
+        if not not_found_file.exists():
+            not_found_file = STATIC_DIR / "_not-found.html"
+        if not_found_file.exists():
+            return FileResponse(not_found_file, status_code=404, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
         index_file = STATIC_DIR / "index.html"
         if index_file.exists():
             return FileResponse(index_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
