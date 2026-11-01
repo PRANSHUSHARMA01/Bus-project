@@ -1,6 +1,6 @@
-# Production Caddyfile with Automatic TLS, Rate Limiting, and Security Headers
+# Production Caddyfile for api.pranshusharma.tech with Automatic TLS, Rate Limiting, and Security Headers
 
-{$DOMAIN:localhost} {
+api.pranshusharma.tech, {$DOMAIN:localhost} {
     # Encoding: gzip and zstd compression
     encode zstd gzip
 
@@ -14,8 +14,8 @@
         -Server
     }
 
-    # Reverse proxy to FastAPI
-    reverse_proxy api:8000 {
+    # Reverse proxy to FastAPI uvicorn daemon
+    reverse_proxy 127.0.0.1:8000 {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
         header_up X-Forwarded-For {remote_host}

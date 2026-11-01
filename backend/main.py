@@ -16,7 +16,7 @@ app = FastAPI(title="Smart Bus API", version="2.0.0")
 # Security: CORS allow-list from environment variable (no wildcard '*' in production)
 raw_origins = os.environ.get(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000"
+    "https://pranshusharma.tech,https://www.pranshusharma.tech,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000"
 )
 ALLOWED_ORIGINS = [o.strip() for o in raw_origins.split(",") if o.strip()]
 
