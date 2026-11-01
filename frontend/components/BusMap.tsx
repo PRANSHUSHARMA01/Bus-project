@@ -98,6 +98,18 @@ export default function BusMap({
 }: Props) {
   const mapRef = useRef<MapRef>(null);
   const pos = useSmooth(buses);
+  const [activeStyle, setActiveStyle] = useState(mapStyle);
+
+  useEffect(() => {
+    setActiveStyle(mapStyle);
+  }, [mapStyle]);
+
+  const handleMapError = (e: any) => {
+    if (activeStyle.includes("openfreemap.org")) {
+      console.warn("Map style load error, falling back to Carto Positron style:", e);
+      setActiveStyle("https://basemaps.cartocdn.com/gl/positron-gl-style/style.json");
+    }
+  };
 
   useEffect(() => {
     if (selectedStop) {
@@ -136,7 +148,8 @@ export default function BusMap({
       ref={mapRef}
       initialViewState={{ longitude: center[0], latitude: center[1], zoom }}
       style={{ width: "100%", height: "100%" }}
-      mapStyle={mapStyle}
+      mapStyle={activeStyle}
+      onError={handleMapError}
     >
       <Source id="routes" type="geojson" data={geo}>
         <Layer {...casing} />
