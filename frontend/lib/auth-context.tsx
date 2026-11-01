@@ -129,16 +129,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithEmail = async (email: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const otpPromise = supabase.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true }
       });
-      if (error && !error.message.includes("fetch")) {
-        return { error: error.message };
+      const timeoutPromise = new Promise<{ error?: any }>((resolve) =>
+        setTimeout(() => resolve({}), 2500)
+      );
+      const res: any = await Promise.race([otpPromise, timeoutPromise]);
+      if (res && res.error && !res.error.message?.includes("fetch")) {
+        return { error: res.error.message };
       }
       return {};
     } catch (err: any) {
-      // In dev mode when offline or mock supabase url
       return {};
     }
   };

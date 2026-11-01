@@ -1,0 +1,153 @@
+# OTP Authentication Setup & Architecture
+
+This document describes how passwordless 6-digit Email OTP and Google OAuth authentication work in **Smart Public Bus Tracking**, connecting Next.js 16 (frontend), Supabase Auth (identity provider), and FastAPI on AWS EC2 (backend).
+
+---
+
+## 1. How OTP Authentication Works (End-to-End Flow)
+
+```
+[ Rider Browser / App ]
+      │
+      │ 1. Enter email (e.g. rider@pranshusharma.tech)
+      ▼
+[ Next.js Frontend ]
+      │
+      │ 2. supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+      ▼
+[ Supabase Auth Engine ]
+      │
+      │ 3. Generates cryptographically secure 6-digit OTP
+      │    Stores HMAC hash with 600s (10 min) expiry
+      ▼
+[ SMTP / Resend Provider ]
+      │
+      │ 4. Sends branded email with 6-digit code to rider
+      ▼
+[ Rider Inbox ] ─── 5. Reads 6-digit code
+      │
+      │ 6. Types 6 digits into auto-advancing input boxes
+      ▼
+[ Next.js Frontend ]
+      │
+      │ 7. supabase.auth.verifyOtp({ email, token: "482910", type: "email" })
+      ▼
+[ Supabase Auth Engine ]
+      │
+      │ 8. Verifies HMAC hash, checks expiry, issues session:
+      │    - Short-lived Access Token (JWT, 1 hour)
+      │    - Long-lived Refresh Token (60 days)
+      ▼
+[ Next.js Frontend ]
+      │
+      │ 9. Stores tokens in secure httpOnly cookies (@supabase/ssr)
+      │    Makes API calls with header: `Authorization: Bearer <JWT>`
+      ▼
+[ AWS FastAPI Backend ]
+      │
+      │ 10. Local JWT Verification via Supabase JWKS:
+      │     - Checks signature (RS256 / HS256)
+      │     - Validates claims (`iss`, `aud: authenticated`, `exp`)
+      │     - Extracts user ID `sub`
+      │     - Loads or creates user profile in SQLite / Postgres database
+      ▼
+[ 200 OK Response with Profile & Role ]
+```
+
+---
+
+## 2. Supabase Project Configuration
+
+1. In **Supabase Dashboard** → **Authentication** → **Providers** → **Email**:
+   * Enable **Email provider**.
+   * Toggle **Confirm email** ON.
+   * Toggle **Secure email change** ON.
+   * Under **OTP Settings**:
+     * OTP expiry: `600` seconds (10 minutes).
+     * OTP length: `6` digits.
+2. Under **Rate Limits**:
+   * Email OTP send limit: `60` seconds between resends.
+   * Hourly limit: `5` OTP requests per email.
+3. In **Authentication** → **Email Templates** → **Magic Link / OTP**:
+   * Subject: `Your Smart Bus Tracking Login Code: {{ .Token }}`
+   * Content:
+     ```html
+     <h2>Your Login Code</h2>
+     <p>Enter this 6-digit code to sign in to Smart Public Bus Tracking:</p>
+     <h1 style="font-size: 32px; letter-spacing: 4px; font-family: monospace;">{{ .Token }}</h1>
+     <p>This code expires in 10 minutes. If you did not request this, you can ignore this email.</p>
+     ```
+
+---
+
+## 3. Custom SMTP & Domain Verification (Resend)
+
+To prevent login codes from ending up in spam, use Resend with custom domain `pranshusharma.tech`:
+
+1. Sign up at [Resend.com](https://resend.com) (Free tier includes 3,000 emails/month).
+2. Add domain `pranshusharma.tech`.
+3. In your DNS provider (Cloudflare, GoDaddy, Namecheap), add the records given by Resend:
+   * **DKIM (CNAME)**: `resend._domainkey.pranshusharma.tech`
+   * **SPF (TXT)**: `v=spf1 include:amazonses.com ~all`
+   * **DMARC (TXT)**: `v=DMARC1; p=none;`
+4. Once verified, copy the API key and SMTP credentials to **Supabase Dashboard** → **Project Settings** → **Auth** → **SMTP Settings**:
+   * Sender email: `login@pranshusharma.tech`
+   * Sender name: `Smart Bus Tracking`
+   * Host: `smtp.resend.com`
+   * Port: `465` (SSL)
+   * User: `resend`
+   * Password: `<your_resend_api_key>`
+
+---
+
+## 4. Google OAuth Configuration
+
+1. Go to **Google Cloud Console** → **APIs & Services** → **Credentials**.
+2. Create **OAuth 2.0 Client IDs**:
+   * Application type: **Web application**.
+   * Name: `Smart Bus Tracking Production`.
+   * Authorized JavaScript origins:
+     * `https://pranshusharma.tech`
+     * `https://www.pranshusharma.tech`
+     * `http://localhost:3000` (for local development)
+   * Authorized redirect URIs:
+     * `https://<your-supabase-project>.supabase.co/auth/v1/callback`
+3. Copy **Client ID** and **Client Secret** into **Supabase** → **Authentication** → **Providers** → **Google**.
+
+---
+
+## 5. Backend FastAPI Token Verification (`backend/auth.py`)
+
+FastAPI verifies incoming JWT tokens on every request without calling external services for each hit:
+
+```python
+from auth import current_user, require_role, UserProfile
+
+@app.get("/v1/me", response_model=ProfileResponse)
+def get_my_profile(user: UserProfile = Depends(current_user)):
+    # Returns authenticated rider profile
+    return user
+
+@app.post("/admin/reallocate")
+def reallocate_bus(user: UserProfile = Depends(require_role("admin"))):
+    # Only users with admin role can access
+    pass
+```
+
+### Claims Verified:
+* `aud`: Must be `authenticated`.
+* `exp`: Must be in the future (rejects expired tokens with `401 Unauthorized`).
+* `sub`: User UUID generated by Supabase.
+* `role`: User role (`passenger`, `conductor`, `admin`).
+
+---
+
+## 6. Verification Checklist
+
+- [x] Login screen renders 6 numeric boxes with `autoComplete="one-time-code"`.
+- [x] Auto-advancing digit focus and paste support.
+- [x] 30-second resend countdown timer.
+- [x] Invalid token structure rejected with `401 Unauthorized`.
+- [x] Expired tokens rejected with `401 Unauthorized`.
+- [x] Conductor / Admin endpoints enforce role claims with `403 Forbidden`.
+- [x] Security headers (CSP, FrameGuard, NoSniff) enforced in `middleware.ts`.
