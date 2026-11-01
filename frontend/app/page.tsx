@@ -69,7 +69,13 @@ export default function UberPassengerApp() {
   // App view state
   const [userName, setUserName] = useState<string>("Pranshu");
   const [lang, setLang] = useState<"en" | "hi">("en");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("user_theme");
+      if (saved === "dark" || saved === "light") return saved;
+    }
+    return "light";
+  });
   const [activeMode, setActiveMode] = useState<ModeTab>("bus");
   const [activeNav, setActiveNav] = useState<NavTab>("home");
   const [viewMode, setViewMode] = useState<"home" | "map">("home");
@@ -79,6 +85,7 @@ export default function UberPassengerApp() {
   const [trackingBusId, setTrackingBusId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [expandedRecentStopId, setExpandedRecentStopId] = useState<string | null>(null);
   const [sheetSnap, setSheetSnap] = useState<"peek" | "half" | "full">("half");
 
   // Active sheets
@@ -161,7 +168,7 @@ export default function UberPassengerApp() {
   }, [stops, selectedStopId]);
 
   const selectedStop = stops.find((s) => s.id === selectedStopId) || stops[0];
-  const trackingBus = buses.find((b) => b.bus_id === trackingBusId);
+  const trackingBus = buses.find((b) => trackingBusId !== null && String(b.bus_id) === String(trackingBusId));
   const trackingRoute = routes.find((r) => r.id === trackingBus?.route_id);
 
   const stopName = (s: Stop) => (lang === "hi" ? s.name_hi : s.name);
@@ -502,18 +509,27 @@ export default function UberPassengerApp() {
 
           {/* Recent & Saved Stops List Card */}
           <div className="recent-card">
-            {recentStops.map((st) => {
-              const liveArr = arrivals?.find((a) => a.stops_away <= 3) ?? null;
-              return (
-                <StopRow
-                  key={st.id}
-                  stop={st}
-                  arrival={liveArr}
-                  onClick={() => openStopTracker(st.id)}
-                  lang={lang}
-                />
-              );
-            })}
+            <ol className="stop-timeline-list" style={{ paddingBottom: 0 }} aria-label={lang === "hi" ? "हाल के स्टॉप" : "Recent stops"}>
+              {recentStops.map((st, sIdx) => {
+                const liveArr = arrivals?.find((a) => a.stops_away <= 3) ?? null;
+                return (
+                  <StopRow
+                    key={st.id}
+                    stop={st}
+                    index={sIdx}
+                    isFirst={sIdx === 0}
+                    isLast={sIdx === recentStops.length - 1}
+                    arrival={liveArr}
+                    isExpanded={expandedRecentStopId === st.id}
+                    onToggleExpand={() => setExpandedRecentStopId((prev) => (prev === st.id ? null : st.id))}
+                    onSelectStop={(id) => openStopTracker(id)}
+                    onSetDestination={(id) => handlePlanTripTo(id)}
+                    onAlert={(msg) => flashToast(msg)}
+                    lang={lang}
+                  />
+                );
+              })}
+            </ol>
           </div>
 
           {/* "For You" Section Header & 76px Circular Shortcuts */}

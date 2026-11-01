@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { Bus, Route, Stop } from "../../lib/types";
+import { StopRow } from "./StopRow";
 
 interface CorridorTimelineProps {
   route: Route;
@@ -290,420 +291,44 @@ export function CorridorTimeline({
       {/* 2. Vertical Journey Timeline Ordered List */}
       <ol
         ref={listRef}
-        aria-label={lang === "hi" ? "रूट के स्टॉप की सूची" : "Corridor stops timeline"}
-        style={{ listStyle: "none", margin: 0, padding: 0 }}
+        className="stop-timeline-list"
+        aria-label={lang === "hi" ? "रूट के स्टॉप की सूची" : "Stops on this route"}
       >
         {visibleStops.map((item, rowIdx) => {
           const isNext = item.state === "next";
-          const isPassed = item.state === "passed";
-          const isExpanded = expandedStopId === item.stop.id;
           const isFirst = rowIdx === 0;
           const isLast = rowIdx === visibleStops.length - 1;
 
-          // Staged entrance animation for first 8 rows
-          const animationDelay = rowIdx < 8 ? `${rowIdx * 100}ms` : "0ms";
-
           return (
-            <li
+            <StopRow
               key={item.stop.id}
               ref={isNext ? nextStopRef : null}
-              aria-current={isNext ? "step" : undefined}
-              className={`timeline-row ${isNext ? "timeline-row-next" : ""} ${isPassed ? "timeline-row-passed" : ""}`}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "24px minmax(0, 1fr) auto",
-                columnGap: 12,
-                minHeight: 56,
-                padding: "8px 10px",
-                borderRadius: 12,
-                background: isNext ? "var(--surface-2)" : isExpanded ? "var(--surface)" : "transparent",
-                border: isExpanded ? "1px solid var(--border)" : "1px solid transparent",
-                position: "relative",
-                cursor: "pointer",
-                transition: "background 150ms ease-out",
-                animation: rowIdx < 8 ? `timelineFadeIn 300ms ease-out ${animationDelay} backwards` : "none",
+              stop={item.stop}
+              index={rowIdx}
+              isFirst={isFirst}
+              isLast={isLast}
+              state={item.state}
+              isTerminal={item.isTerminal}
+              isMetro={item.isMetro}
+              isInterchange={item.isInterchange}
+              isYou={item.isYou}
+              isDestination={item.isDestination}
+              etaMin={item.etaMin}
+              clockTime={item.clockTime}
+              primaryName={item.primaryName}
+              secondaryName={item.secondaryName}
+              stepKm={item.stepKm}
+              stepMin={item.stepMin}
+              isExpanded={expandedStopId === item.stop.id}
+              onToggleExpand={() => toggleExpand(item.stop.id)}
+              onSelectStop={onSelectStop}
+              onSetDestination={(id) => {
+                setDestinationStopId(id);
+                onSetDestination?.(id);
               }}
-              onClick={() => toggleExpand(item.stop.id)}
-            >
-              {/* RAIL COLUMN (24px) */}
-              <div
-                style={{
-                  position: "relative",
-                  width: 24,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  paddingTop: 4,
-                }}
-              >
-                {/* Upper Rail Segment */}
-                {!isFirst && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      bottom: "calc(100% - 10px)",
-                      width: 2,
-                      background: isPassed || isNext ? "var(--text)" : "var(--border)",
-                      zIndex: 1,
-                    }}
-                  />
-                )}
-
-                {/* Lower Rail Segment */}
-                {!isLast && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 16,
-                      bottom: 0,
-                      width: 2,
-                      background: isPassed ? "var(--text)" : "var(--border)",
-                      zIndex: 1,
-                    }}
-                  />
-                )}
-
-                {/* Live Bus Marker Badge on Rail (if bus is here) */}
-                {isNext && bus && (
-                  <div
-                    className="timeline-bus-pill"
-                    style={{
-                      position: "absolute",
-                      top: -12,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      background: "#18181b",
-                      color: "#fff",
-                      borderRadius: 999,
-                      padding: "2px 6px",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      zIndex: 4,
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 3,
-                      whiteSpace: "nowrap",
-                    }}
-                    title={`${bus.reg_no} · ${bus.speed_kmh} km/h`}
-                  >
-                    <Navigation size={10} style={{ transform: "rotate(45deg)" }} />
-                    <span>{bus.route_id}</span>
-                  </div>
-                )}
-
-                {/* Stop Node */}
-                <div
-                  className={`timeline-node ${isNext ? "node-pulse" : ""}`}
-                  style={{
-                    width: item.isTerminal ? 16 : 12,
-                    height: item.isTerminal ? 16 : 12,
-                    borderRadius: "50%",
-                    background: item.isYou
-                      ? "var(--accent)"
-                      : item.isDestination
-                      ? "#18181b"
-                      : isNext
-                      ? "#18181b"
-                      : isPassed
-                      ? "var(--surface-3)"
-                      : "var(--surface)",
-                    border: item.isYou
-                      ? "2px solid #fff"
-                      : item.isDestination
-                      ? "2px solid #fff"
-                      : isNext
-                      ? "2px solid #fff"
-                      : isPassed
-                      ? "2px solid var(--surface-3)"
-                      : "2px solid var(--text-muted)",
-                    boxShadow: "0 0 0 1px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1)",
-                    zIndex: 2,
-                    display: "grid",
-                    placeItems: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.isTerminal && (
-                    <Flag size={8} style={{ color: item.isDestination ? "#fff" : "inherit" }} />
-                  )}
-                  {item.isMetro && !item.isTerminal && (
-                    <Train size={7} style={{ color: isNext ? "#fff" : "inherit" }} />
-                  )}
-                </div>
-              </div>
-
-              {/* TEXT COLUMN */}
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                {/* Primary Title + Status Chips */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <span
-                    style={{
-                      fontSize: "0.9375rem",
-                      lineHeight: 1.4,
-                      fontWeight: isNext || item.isYou ? 700 : 500,
-                      color: isPassed ? "var(--text-muted)" : "var(--text)",
-                      textWrap: "balance",
-                    }}
-                  >
-                    {item.primaryName}
-                  </span>
-
-                  {/* You Chip */}
-                  {item.isYou && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: "var(--accent)",
-                        color: "#fff",
-                        padding: "1px 6px",
-                        borderRadius: 999,
-                      }}
-                    >
-                      {lang === "hi" ? "आप" : "You"}
-                    </span>
-                  )}
-
-                  {/* Destination Chip */}
-                  {item.isDestination && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: "#18181b",
-                        color: "#fff",
-                        padding: "1px 6px",
-                        borderRadius: 999,
-                      }}
-                    >
-                      {lang === "hi" ? "गंतव्य" : "Drop here"}
-                    </span>
-                  )}
-
-                  {/* Next Stop Chip */}
-                  {isNext && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: "rgba(16, 185, 129, 0.15)",
-                        color: "var(--crowd-low)",
-                        padding: "1px 6px",
-                        borderRadius: 999,
-                      }}
-                    >
-                      {lang === "hi" ? "अगला स्टॉप" : "Next stop"}
-                    </span>
-                  )}
-                </div>
-
-                {/* Secondary Caption & Tags */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginTop: 3,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {item.secondaryName && (
-                    <span className="text-caption" style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}>
-                      {item.secondaryName}
-                    </span>
-                  )}
-
-                  {item.isMetro && (
-                    <span
-                      className="tag-chip"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 3,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        background: "var(--surface-3)",
-                        color: "var(--text)",
-                        padding: "2px 7px 2px 5px",
-                        borderRadius: 999,
-                        height: 20,
-                      }}
-                    >
-                      <Train size={11} />
-                      <span>Metro</span>
-                    </span>
-                  )}
-
-                  {item.isTerminal && (
-                    <span
-                      className="tag-chip"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 3,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        background: "var(--surface-3)",
-                        color: "var(--text)",
-                        padding: "2px 7px 2px 5px",
-                        borderRadius: 999,
-                        height: 20,
-                      }}
-                    >
-                      <Flag size={11} />
-                      <span>{lang === "hi" ? "टर्मिनल" : "Terminal"}</span>
-                    </span>
-                  )}
-                </div>
-
-                {/* INLINE EXPANDED PANEL */}
-                {isExpanded && (
-                  <div
-                    style={{
-                      marginTop: 12,
-                      paddingTop: 10,
-                      borderTop: "1px solid var(--border)",
-                      animation: "panelExpand 200ms ease-out",
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                      <span className="text-caption" style={{ color: "var(--text-muted)", fontSize: 11 }}>
-                        {lang === "hi" ? "दूरी और समय:" : "Segment:"} <b>{item.stepKm} km</b> · ~{item.stepMin} min
-                      </span>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onSelectStop?.(item.stop.id);
-                          onNotify?.(lang === "hi" ? `बोर्डिंग स्टॉप सेट: ${item.primaryName}` : `Boarding stop set: ${item.primaryName}`);
-                        }}
-                        style={{
-                          minHeight: 38,
-                          padding: "0 12px",
-                          borderRadius: 999,
-                          background: item.isYou ? "var(--accent)" : "var(--surface-2)",
-                          color: item.isYou ? "#fff" : "var(--text)",
-                          border: "none",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 5,
-                          cursor: "pointer",
-                        }}
-                      >
-                        <MapPin size={13} />
-                        <span>{lang === "hi" ? "मेरा स्टॉप सेट करें" : "Set as my stop"}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDestinationStopId(item.stop.id);
-                          onSetDestination?.(item.stop.id);
-                          onNotify?.(lang === "hi" ? `गंतव्य सेट: ${item.primaryName}` : `Destination set: ${item.primaryName}`);
-                        }}
-                        style={{
-                          minHeight: 38,
-                          padding: "0 12px",
-                          borderRadius: 999,
-                          background: item.isDestination ? "#18181b" : "var(--surface-2)",
-                          color: item.isDestination ? "#fff" : "var(--text)",
-                          border: "none",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 5,
-                          cursor: "pointer",
-                        }}
-                      >
-                        <Flag size={13} />
-                        <span>{lang === "hi" ? "गंतव्य सेट करें" : "Set as destination"}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onNotify?.(lang === "hi" ? `अलर्ट सेट: ${item.primaryName}` : `Arrival notification set for ${item.primaryName}`);
-                        }}
-                        style={{
-                          minHeight: 38,
-                          padding: "0 12px",
-                          borderRadius: 999,
-                          background: "var(--surface-2)",
-                          color: "var(--text)",
-                          border: "none",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 5,
-                          cursor: "pointer",
-                        }}
-                      >
-                        <Bell size={13} />
-                        <span>{lang === "hi" ? "आगमन अलर्ट" : "Alert me"}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT COLUMN (ETA / Clock / Passed) */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  justifyContent: "flex-start",
-                  paddingTop: 2,
-                }}
-              >
-                {isPassed ? (
-                  <span
-                    className="text-caption"
-                    style={{ color: "var(--text-muted)", fontSize: "0.8125rem", fontWeight: 500 }}
-                  >
-                    {lang === "hi" ? "छूट गया" : "Passed"}
-                  </span>
-                ) : item.etaMin !== null ? (
-                  <div style={{ textAlign: "right" }}>
-                    <div
-                      className="tabular-nums"
-                      style={{
-                        fontSize: isNext ? "1.125rem" : "0.9375rem",
-                        fontWeight: 600,
-                        color: isNext ? "var(--text)" : "var(--text)",
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {item.etaMin} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-muted)" }}>min</span>
-                    </div>
-                    {item.clockTime && (
-                      <div
-                        className="text-caption tabular-nums"
-                        style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}
-                      >
-                        {item.clockTime}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-
-                {/* Expand Indicator */}
-                <div style={{ marginTop: 4, color: "var(--text-muted)" }}>
-                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                </div>
-              </div>
-            </li>
+              onAlert={onNotify}
+              lang={lang}
+            />
           );
         })}
       </ol>
