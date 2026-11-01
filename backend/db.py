@@ -93,6 +93,16 @@ class Database:
             fired_at TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS emergency_contacts (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            relationship TEXT DEFAULT 'Family',
+            is_verified INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS sos_events (
             id TEXT PRIMARY KEY,
             user_id TEXT,
@@ -205,6 +215,17 @@ class Database:
             conn.close()
             return None
 
+        user_fields = [k for k in fields if k in ("full_name", "language", "avatar_url", "phone", "updated_at")]
+        if user_fields:
+            if is_postgres():
+                u_clause = ", ".join([f"{f} = %s" for f in user_fields])
+                u_vals = [updates[f] for f in user_fields] + [user_id]
+                cur.execute(f"UPDATE users SET {u_clause} WHERE id = %s", u_vals)
+            else:
+                u_clause = ", ".join([f"{f} = ?" for f in user_fields])
+                u_vals = [updates[f] for f in user_fields] + [user_id]
+                cur.execute(f"UPDATE users SET {u_clause} WHERE id = ?", u_vals)
+
         if is_postgres():
             set_clause = ", ".join([f"{f} = %s" for f in fields])
             values = [updates[f] for f in fields] + [user_id]
@@ -227,14 +248,23 @@ class Database:
         """GDPR compliant user deletion: removes profile and cascade personal data."""
         conn = self.get_conn()
         cur = conn.cursor()
-        tables = ["saved_places", "trips", "notifications_subscriptions", "recent_searches", "profiles"]
+        tables = [
+            "saved_places",
+            "trips",
+            "notifications_subscriptions",
+            "emergency_contacts",
+            "recent_searches",
+            "sessions",
+            "profiles",
+            "users",
+        ]
         if is_postgres():
             for t in tables:
-                cur.execute(f"DELETE FROM {t} WHERE user_id = %s" if t != "profiles" else f"DELETE FROM profiles WHERE id = %s", (user_id,))
+                cur.execute(f"DELETE FROM {t} WHERE user_id = %s" if t not in ("profiles", "users") else f"DELETE FROM {t} WHERE id = %s", (user_id,))
             conn.commit()
         else:
             for t in tables:
-                cur.execute(f"DELETE FROM {t} WHERE user_id = ?" if t != "profiles" else f"DELETE FROM profiles WHERE id = ?", (user_id,))
+                cur.execute(f"DELETE FROM {t} WHERE user_id = ?" if t not in ("profiles", "users") else f"DELETE FROM {t} WHERE id = ?", (user_id,))
             conn.commit()
         conn.close()
 
@@ -417,6 +447,58 @@ class Database:
             conn.commit()
         else:
             cur.execute("DELETE FROM notifications_subscriptions WHERE id = ? AND user_id = ?", (sub_id, user_id))
+            deleted = cur.rowcount > 0
+            conn.commit()
+        conn.close()
+        return deleted
+
+    # -------------------------------------------------------------
+    # Emergency Contacts (Safety & Women's Transit Support)
+    # -------------------------------------------------------------
+    def get_emergency_contacts(self, user_id: str) -> List[Dict[str, Any]]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute("SELECT * FROM emergency_contacts WHERE user_id = %s ORDER BY created_at ASC", (user_id,))
+            rows = cur.fetchall()
+        else:
+            cur.execute("SELECT * FROM emergency_contacts WHERE user_id = ? ORDER BY created_at ASC", (user_id,))
+            rows = cur.fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def add_emergency_contact(self, user_id: str, name: str, phone: str, relationship: Optional[str] = "Family") -> Dict[str, Any]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        cid = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO emergency_contacts (id, user_id, name, phone, relationship, is_verified, created_at)
+                VALUES (%s, %s, %s, %s, %s, 0, %s) RETURNING *
+            """, (cid, user_id, name, phone, relationship or "Family", now))
+            row = cur.fetchone()
+            conn.commit()
+        else:
+            cur.execute("""
+                INSERT INTO emergency_contacts (id, user_id, name, phone, relationship, is_verified, created_at)
+                VALUES (?, ?, ?, ?, ?, 0, ?)
+            """, (cid, user_id, name, phone, relationship or "Family", now))
+            conn.commit()
+            cur.execute("SELECT * FROM emergency_contacts WHERE id = ?", (cid,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row)
+
+    def delete_emergency_contact(self, contact_id: str, user_id: str) -> bool:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute("DELETE FROM emergency_contacts WHERE id = %s AND user_id = %s", (contact_id, user_id))
+            deleted = cur.rowcount > 0
+            conn.commit()
+        else:
+            cur.execute("DELETE FROM emergency_contacts WHERE id = ? AND user_id = ?", (contact_id, user_id))
             deleted = cur.rowcount > 0
             conn.commit()
         conn.close()

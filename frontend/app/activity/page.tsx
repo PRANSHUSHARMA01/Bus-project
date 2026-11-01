@@ -20,7 +20,7 @@ import {
   Sparkles
 } from "lucide-react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+import { API } from "@/lib/api";
 
 interface Trip {
   id: string;
@@ -50,7 +50,10 @@ export default function ActivityPage() {
     async function loadTrips() {
       try {
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-        const res = await fetch(`${BACKEND_URL}/v1/me/trips?limit=50`, { headers });
+        const res = await fetch(`${API}/v1/trips?limit=50`, {
+          headers,
+          credentials: "include"
+        });
         if (res.ok) {
           const data = await res.json();
           // If empty and dev mode, provide friendly realistic demo trips

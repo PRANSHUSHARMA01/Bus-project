@@ -18,10 +18,20 @@ import {
   ChevronRight,
   Check,
   AlertTriangle,
-  ArrowLeft
+  ArrowLeft,
+  Plus,
+  HeartHandshake
 } from "lucide-react";
+import { API } from "@/lib/api";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+interface EmergencyContact {
+  id: string;
+  name: string;
+  phone: string;
+  relationship: string;
+  is_verified?: number;
+  created_at?: string;
+}
 
 export default function AccountPage() {
   const { user, token, updateProfile, signOut, deleteAccount } = useAuth();
@@ -39,6 +49,13 @@ export default function AccountPage() {
   const [workStop, setWorkStop] = useState(user?.work_stop_id || "");
   const [savedPlaces, setSavedPlaces] = useState<any[]>([]);
 
+  // Emergency Contacts
+  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
+  const [newContactName, setNewContactName] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactRel, setNewContactRel] = useState("Family");
+  const [showAddContact, setShowAddContact] = useState(false);
+
   // Delete modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
@@ -55,17 +72,38 @@ export default function AccountPage() {
     }
   }, [user]);
 
-  // Load saved places from backend
+  const loadSavedPlaces = async () => {
+    try {
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API}/v1/saved-places`, {
+        headers,
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedPlaces(data);
+      }
+    } catch {}
+  };
+
+  const loadEmergencyContacts = async () => {
+    try {
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API}/v1/emergency-contacts`, {
+        headers,
+        credentials: "include"
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setContacts(data);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
-    if (token) {
-      fetch(`${BACKEND_URL}/v1/me/saved-places`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(r => r.ok ? r.json() : [])
-        .then(data => setSavedPlaces(data))
-        .catch(() => {});
-    }
-  }, [token]);
+    loadSavedPlaces();
+    loadEmergencyContacts();
+  }, [token, user]);
 
   const handleSavePersonalInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,19 +120,91 @@ export default function AccountPage() {
     setTimeout(() => setPersonalSaved(false), 3000);
   };
 
+  const handleAddCustomPlace = async () => {
+    const label = prompt("Place name (e.g. Gym, Library, Metro Station):");
+    if (!label) return;
+    const stopId = prompt("Stop ID or Name (e.g. 7572, Kashmere Gate):");
+    if (!stopId) return;
+
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(`${API}/v1/saved-places`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({ label, stop_id: stopId })
+      });
+      if (res.ok) loadSavedPlaces();
+    } catch {}
+  };
+
+  const handleDeleteSavedPlace = async (id: string) => {
+    try {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(`${API}/v1/saved-places/${id}`, {
+        method: "DELETE",
+        headers,
+        credentials: "include"
+      });
+      if (res.ok) loadSavedPlaces();
+    } catch {}
+  };
+
+  const handleAddContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newContactName.trim() || !newContactPhone.trim()) return;
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(`${API}/v1/emergency-contacts`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({
+          name: newContactName.trim(),
+          phone: newContactPhone.trim(),
+          relationship: newContactRel.trim() || "Family"
+        })
+      });
+      if (res.ok) {
+        setNewContactName("");
+        setNewContactPhone("");
+        setShowAddContact(false);
+        loadEmergencyContacts();
+      }
+    } catch {}
+  };
+
+  const handleDeleteContact = async (id: string) => {
+    try {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(`${API}/v1/emergency-contacts/${id}`, {
+        method: "DELETE",
+        headers,
+        credentials: "include"
+      });
+      if (res.ok) loadEmergencyContacts();
+    } catch {}
+  };
+
   const handleDownloadData = async () => {
     try {
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      const [tripsRes, placesRes] = await Promise.all([
-        fetch(`${BACKEND_URL}/v1/me/trips?limit=100`, { headers }).then(r => r.ok ? r.json() : []),
-        fetch(`${BACKEND_URL}/v1/me/saved-places`, { headers }).then(r => r.ok ? r.json() : [])
+      const [tripsRes, placesRes, contactsRes] = await Promise.all([
+        fetch(`${API}/v1/trips?limit=100`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
+        fetch(`${API}/v1/saved-places`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : []),
+        fetch(`${API}/v1/emergency-contacts`, { headers, credentials: "include" }).then(r => r.ok ? r.json() : [])
       ]);
 
       const exportData = {
         exported_at: new Date().toISOString(),
         profile: user,
         trips: tripsRes,
-        saved_places: placesRes
+        saved_places: placesRes,
+        emergency_contacts: contactsRes
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
@@ -361,9 +471,27 @@ export default function AccountPage() {
           flexDirection: "column",
           gap: 16
         }}>
-          <h2 className="text-heading" style={{ fontSize: 16, margin: 0 }}>
-            {lang === "hi" ? "मेरे पसंदीदा स्टॉप" : "My transit places"}
-          </h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 className="text-heading" style={{ fontSize: 16, margin: 0 }}>
+              {lang === "hi" ? "मेरे पसंदीदा स्टॉप" : "My transit places"}
+            </h2>
+            <button
+              onClick={handleAddCustomPlace}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--accent)",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 4
+              }}
+            >
+              <Plus size={14} /> {lang === "hi" ? "स्थान जोड़ें" : "Add place"}
+            </button>
+          </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{
@@ -427,6 +555,187 @@ export default function AccountPage() {
                 {workStop ? "Change" : "Add"}
               </button>
             </div>
+
+            {/* Custom Saved Places List */}
+            {savedPlaces.map((sp) => (
+              <div
+                key={sp.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "var(--surface-2)"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <MapPin size={18} style={{ color: "var(--accent)" }} />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{sp.label}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Stop {sp.stop_id}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteSavedPlace(sp.id)}
+                  style={{ background: "none", border: "none", color: "var(--crowd-high)", fontSize: 13, cursor: "pointer" }}
+                  aria-label="Delete saved place"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 3.5 Emergency Contacts (Safety & Women's Transit Support) */}
+        <div style={{
+          background: "var(--surface)",
+          borderRadius: 20,
+          padding: 24,
+          boxShadow: "var(--ring)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <h2 className="text-heading" style={{ fontSize: 16, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <HeartHandshake size={18} style={{ color: "var(--crowd-high)" }} />
+                {lang === "hi" ? "आपातकालीन संपर्क" : "Emergency contacts"}
+              </h2>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                {lang === "hi"
+                  ? "एसओएस और लाइव राइड शेयरिंग के लिए विश्वसनीय संपर्क"
+                  : "Trusted contacts notified during SOS & live trip sharing"}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAddContact(!showAddContact)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--accent)",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 4
+              }}
+            >
+              <Plus size={14} /> {showAddContact ? "Cancel" : "Add"}
+            </button>
+          </div>
+
+          {showAddContact && (
+            <form onSubmit={handleAddContact} style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14, background: "var(--surface-2)", borderRadius: 12 }}>
+              <input
+                type="text"
+                placeholder="Contact Name (e.g. Mom, Amit)"
+                value={newContactName}
+                onChange={(e) => setNewContactName(e.target.value)}
+                required
+                style={{
+                  height: 38,
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  padding: "0 10px",
+                  fontSize: 14,
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  outline: "none"
+                }}
+              />
+              <input
+                type="tel"
+                placeholder="Phone Number (+91 98765 43210)"
+                value={newContactPhone}
+                onChange={(e) => setNewContactPhone(e.target.value)}
+                required
+                style={{
+                  height: 38,
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  padding: "0 10px",
+                  fontSize: 14,
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  outline: "none"
+                }}
+              />
+              <select
+                value={newContactRel}
+                onChange={(e) => setNewContactRel(e.target.value)}
+                style={{
+                  height: 38,
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  padding: "0 10px",
+                  fontSize: 14,
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  outline: "none"
+                }}
+              >
+                <option value="Family">Family / परिवार</option>
+                <option value="Friend">Friend / दोस्त</option>
+                <option value="Colleague">Colleague / सहकर्मी</option>
+                <option value="Other">Other / अन्य</option>
+              </select>
+              <button
+                type="submit"
+                className="btn-pill-primary"
+                style={{ height: 38, fontSize: 13, fontWeight: 600, marginTop: 4 }}
+              >
+                Save Emergency Contact
+              </button>
+            </form>
+          )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {contacts.length === 0 ? (
+              <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "12px 0" }}>
+                No emergency contacts added yet. Add family members for safety alerts.
+              </div>
+            ) : (
+              contacts.map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    background: "var(--surface-2)"
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      {c.name}
+                      <span style={{
+                        fontSize: 11,
+                        background: "var(--surface)",
+                        padding: "1px 6px",
+                        borderRadius: 6,
+                        color: "var(--text-muted)"
+                      }}>
+                        {c.relationship}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{c.phone}</div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteContact(c.id)}
+                    style={{ background: "none", border: "none", color: "var(--crowd-high)", cursor: "pointer" }}
+                    aria-label={`Delete ${c.name}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

@@ -117,6 +117,28 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             if data == "ping":
                 await websocket.send_text("pong")
+            else:
+                try:
+                    payload = json.loads(data)
+                    action = payload.get("action")
+                    if action == "snapshot":
+                        live = fresh()
+                        await websocket.send_json({
+                            "type": "connected",
+                            "buses_live": len(live),
+                            "timestamp": time.time()
+                        })
+                    elif action == "subscribe_stop":
+                        stop_id = str(payload.get("stop_id", ""))
+                        await websocket.send_json({
+                            "type": "subscribed",
+                            "stop_id": stop_id,
+                            "active": True
+                        })
+                    elif action == "ping":
+                        await websocket.send_json({"type": "pong", "timestamp": time.time()})
+                except Exception:
+                    pass
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
     except Exception:
@@ -191,7 +213,7 @@ class Incident(BaseModel):
     note: str = ""
 
 @app.post("/ingest/positions")
-def ingest_positions(pings: list[Ping]):
+async def ingest_positions(pings: list[Ping]):
     now = time.time()
     for p in pings:
         route = ROUTES.get(p.route_id)
@@ -206,6 +228,16 @@ def ingest_positions(pings: list[Ping]):
         st.update(lat=p.lat, lng=p.lng, speed_kmh=p.speed_kmh, progress=progress, seen=now)
         if p.speed_kmh >= 1: # ignore 'standing at a stop' in the average
             st["ema"] = 0.7 * st["ema"] + 0.3 * p.speed_kmh
+
+    # Broadcast position update to WebSocket subscribers
+    if ws_manager.active_connections:
+        await ws_manager.broadcast({
+            "type": "buses_update",
+            "count": len(pings),
+            "timestamp": now,
+            "buses": [bus_view(LIVE[p.bus_id]) for p in pings if p.bus_id in LIVE]
+        })
+
     return {"ok": True, "n": len(pings)}
 
 @app.post("/ingest/boardings")

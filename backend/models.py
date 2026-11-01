@@ -123,3 +123,19 @@ class ServiceSection(BaseModel):
     category: str
     category_hi: str
     services: List[ServiceItem]
+
+# Emergency Contacts Models (Women's Safety & Family Sharing)
+class EmergencyContactRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(min_length=5, max_length=20)
+    relationship: Optional[str] = Field(default="Family", max_length=50)
+
+class EmergencyContactResponse(BaseModel):
+    id: str
+    user_id: str
+    name: str
+    phone: str
+    relationship: Optional[str] = "Family"
+    is_verified: int = 0
+    created_at: str
+

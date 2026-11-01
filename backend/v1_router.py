@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from auth import UserProfile, current_user, require_role
 from db import db
 from models import (
+    EmergencyContactRequest,
+    EmergencyContactResponse,
     EndTripRequest,
     NearestStopItem,
     NearestStopsResponse,
@@ -44,12 +46,14 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 # Account & Profile Management
 # ---------------------------------------------------------------------------
 @v1_router.get("/me", response_model=ProfileResponse)
+@v1_router.get("/profile", response_model=ProfileResponse)
 def get_my_profile(user: UserProfile = Depends(current_user)):
     """Returns the authenticated user's current profile."""
     row = db.get_or_create_profile(user.id, user.email, user.full_name)
     return ProfileResponse(**row)
 
 @v1_router.patch("/me", response_model=ProfileResponse)
+@v1_router.patch("/profile", response_model=ProfileResponse)
 def update_my_profile(
     updates: ProfileUpdateRequest,
     user: UserProfile = Depends(current_user),
@@ -71,6 +75,7 @@ def update_my_profile(
     return ProfileResponse(**updated)
 
 @v1_router.delete("/me")
+@v1_router.delete("/account")
 def delete_my_account(
     user: UserProfile = Depends(current_user),
     request: Request = None
@@ -86,6 +91,7 @@ def delete_my_account(
 # Trips & Rides History (Phase 5 Activity Tab)
 # ---------------------------------------------------------------------------
 @v1_router.get("/me/trips", response_model=List[TripResponse])
+@v1_router.get("/trips", response_model=List[TripResponse])
 def get_my_trips(
     cursor: Optional[str] = Query(None, description="ISO timestamp cursor for pagination"),
     limit: int = Query(20, ge=1, le=100),
@@ -140,11 +146,13 @@ def end_trip(
 # Saved Places (Home, Work, Frequent Bus Stops)
 # ---------------------------------------------------------------------------
 @v1_router.get("/me/saved-places", response_model=List[SavedPlaceResponse])
+@v1_router.get("/saved-places", response_model=List[SavedPlaceResponse])
 def get_my_saved_places(user: UserProfile = Depends(current_user)):
     places = db.get_saved_places(user.id)
     return [SavedPlaceResponse(**p) for p in places]
 
 @v1_router.post("/me/saved-places", response_model=SavedPlaceResponse)
+@v1_router.post("/saved-places", response_model=SavedPlaceResponse)
 def add_saved_place(
     req: SavedPlaceRequest,
     user: UserProfile = Depends(current_user)
@@ -153,6 +161,7 @@ def add_saved_place(
     return SavedPlaceResponse(**place)
 
 @v1_router.delete("/me/saved-places/{place_id}")
+@v1_router.delete("/saved-places/{place_id}")
 def delete_saved_place(place_id: str, user: UserProfile = Depends(current_user)):
     deleted = db.delete_saved_place(place_id, user.id)
     if not deleted:
@@ -163,11 +172,13 @@ def delete_saved_place(place_id: str, user: UserProfile = Depends(current_user))
 # Notification Subscriptions (Arrival Alerts)
 # ---------------------------------------------------------------------------
 @v1_router.get("/me/subscriptions", response_model=List[SubscriptionResponse])
+@v1_router.get("/subscriptions", response_model=List[SubscriptionResponse])
 def get_my_subscriptions(user: UserProfile = Depends(current_user)):
     subs = db.get_subscriptions(user.id)
     return [SubscriptionResponse(**s) for s in subs]
 
 @v1_router.post("/me/subscriptions", response_model=SubscriptionResponse)
+@v1_router.post("/subscriptions", response_model=SubscriptionResponse)
 def add_subscription(
     req: SubscriptionRequest,
     user: UserProfile = Depends(current_user)
@@ -176,10 +187,37 @@ def add_subscription(
     return SubscriptionResponse(**sub)
 
 @v1_router.delete("/me/subscriptions/{sub_id}")
+@v1_router.delete("/subscriptions/{sub_id}")
 def delete_subscription(sub_id: str, user: UserProfile = Depends(current_user)):
     deleted = db.delete_subscription(sub_id, user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Subscription not found")
+    return {"status": "deleted"}
+
+# ---------------------------------------------------------------------------
+# Emergency Contacts (Safety & Women's Transit Support)
+# ---------------------------------------------------------------------------
+@v1_router.get("/me/emergency-contacts", response_model=List[EmergencyContactResponse])
+@v1_router.get("/emergency-contacts", response_model=List[EmergencyContactResponse])
+def get_my_emergency_contacts(user: UserProfile = Depends(current_user)):
+    contacts = db.get_emergency_contacts(user.id)
+    return [EmergencyContactResponse(**c) for c in contacts]
+
+@v1_router.post("/me/emergency-contacts", response_model=EmergencyContactResponse)
+@v1_router.post("/emergency-contacts", response_model=EmergencyContactResponse)
+def add_emergency_contact(
+    req: EmergencyContactRequest,
+    user: UserProfile = Depends(current_user)
+):
+    contact = db.add_emergency_contact(user.id, req.name, req.phone, req.relationship)
+    return EmergencyContactResponse(**contact)
+
+@v1_router.delete("/me/emergency-contacts/{contact_id}")
+@v1_router.delete("/emergency-contacts/{contact_id}")
+def delete_emergency_contact(contact_id: str, user: UserProfile = Depends(current_user)):
+    deleted = db.delete_emergency_contact(contact_id, user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Emergency contact not found")
     return {"status": "deleted"}
 
 # ---------------------------------------------------------------------------
