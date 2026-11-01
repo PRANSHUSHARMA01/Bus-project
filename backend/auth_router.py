@@ -37,8 +37,9 @@ def hash_code(code: str) -> str:
 
 def create_access_token(user: Dict[str, Any]) -> str:
     now = int(time.time())
+    uid = user.get("id") or user.get("sub")
     payload = {
-        "sub": user["id"],
+        "sub": uid,
         "email": user["email"],
         "role": user.get("role", "passenger"),
         "lang": user.get("language", "en"),

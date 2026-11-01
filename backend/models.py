@@ -2,7 +2,7 @@
 Pydantic Request and Response Models for Smart Bus Tracking v1 API
 """
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 # Profile Models
@@ -83,12 +83,19 @@ class SOSRequest(BaseModel):
     lat: float
     lng: float
     bus_id: Optional[int] = None
+    route_id: Optional[str] = None
     emergency_type: str = "general"
+    accuracy_m: Optional[float] = None
+    note: Optional[str] = None
+    has_audio: Optional[bool] = False
 
 class SOSResponse(BaseModel):
     id: str
+    reference_code: str
     status: str
     message: str
+    police_dispatch: str = "Delhi Police PCR 112"
+    control_room: str = "DTC Central Command & Control Centre"
     created_at: str
 
 # Nearest Stops Models
@@ -183,5 +190,65 @@ class ConductorIncidentRequest(BaseModel):
     bus_id: int
     kind: str = Field(pattern=r"^(breakdown|sos|accident|flat_tire|route_deviation|traffic_jam)$")
     note: Optional[str] = ""
+
+# -------------------------------------------------------------
+# Phase G: Women's Safety, Live Sharing & Safe Stops
+# -------------------------------------------------------------
+class TripShareRequest(BaseModel):
+    trip_id: Optional[str] = None
+    bus_id: Optional[int] = None
+    route_id: Optional[str] = None
+    hours: int = 3
+
+class TripShareResponse(BaseModel):
+    share_token: str
+    share_url: str
+    expires_at: str
+    trip_id: str
+    bus_id: int
+    route_id: str
+
+class SharedTripLiveTelemetry(BaseModel):
+    lat: float
+    lng: float
+    speed_kmh: float
+    crowd_pct: int
+    seat_chance: str
+    next_stop_name: str
+    updated_at: str
+
+class SharedTripPublicResponse(BaseModel):
+    token: str
+    trip_id: str
+    passenger_initials: str
+    bus_id: int
+    route_id: str
+    route_name: str
+    board_stop_name: str
+    status: str
+    boarded_at: str
+    expires_at: str
+    live_telemetry: Optional[SharedTripLiveTelemetry] = None
+    helplines: Dict[str, str]
+
+class SafeStopItem(BaseModel):
+    stop_id: str
+    name: str
+    name_hi: str
+    lat: float
+    lng: float
+    cctv_monitored: bool
+    metro_interchange: bool
+    police_booth_nearby: bool
+    lighting_level: str
+    active_routes: List[str]
+
+class HelplineItem(BaseModel):
+    name: str
+    name_hi: str
+    number: str
+    description: str
+    description_hi: str
+    category: str
 
 

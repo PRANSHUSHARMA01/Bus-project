@@ -10,7 +10,7 @@ import secrets
 import sqlite3
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 try:
@@ -128,9 +128,22 @@ class Database:
             id TEXT PRIMARY KEY,
             user_id TEXT,
             bus_id INTEGER,
+            route_id TEXT,
             lat REAL NOT NULL,
             lng REAL NOT NULL,
+            accuracy_m REAL,
+            reference_code TEXT,
+            note TEXT,
             status TEXT NOT NULL DEFAULT 'dispatched',
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS trip_shares (
+            id TEXT PRIMARY KEY,
+            trip_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
 
@@ -189,6 +202,14 @@ class Database:
             revoked_at REAL
         );
         """)
+
+        # Safe schema migrations for Phase G
+        for col, col_type in [("route_id", "TEXT"), ("accuracy_m", "REAL"), ("reference_code", "TEXT"), ("note", "TEXT")]:
+            try:
+                cur.execute(f"ALTER TABLE sos_events ADD COLUMN {col} {col_type}")
+            except Exception:
+                pass
+
         conn.commit()
         conn.close()
 
@@ -369,6 +390,79 @@ class Database:
             conn.close()
             return [dict(r) for r in rows]
 
+    def create_trip_share(self, trip_id: str, user_id: str, hours: int = 3) -> Dict[str, Any]:
+        """Creates or returns an active public share token for a user's trip."""
+        conn = self.get_conn()
+        cur = conn.cursor()
+        now_dt = datetime.now(timezone.utc)
+        now = now_dt.isoformat()
+        expires_at = (now_dt + timedelta(hours=hours)).isoformat()
+
+        # Check existing valid share token
+        if is_postgres():
+            cur.execute("""
+                SELECT * FROM trip_shares WHERE trip_id = %s AND user_id = %s AND expires_at > %s
+                ORDER BY created_at DESC LIMIT 1
+            """, (trip_id, user_id, now))
+        else:
+            cur.execute("""
+                SELECT * FROM trip_shares WHERE trip_id = ? AND user_id = ? AND expires_at > ?
+                ORDER BY created_at DESC LIMIT 1
+            """, (trip_id, user_id, now))
+        existing = cur.fetchone()
+        if existing:
+            conn.close()
+            return dict(existing)
+
+        # Generate new 8-char URL-safe token
+        share_id = str(uuid.uuid4())
+        token = secrets.token_urlsafe(8)
+
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO trip_shares (id, trip_id, user_id, token, expires_at, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING *
+            """, (share_id, trip_id, user_id, token, expires_at, now))
+            row = cur.fetchone()
+            conn.commit()
+            conn.close()
+            return dict(row)
+        else:
+            cur.execute("""
+                INSERT INTO trip_shares (id, trip_id, user_id, token, expires_at, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (share_id, trip_id, user_id, token, expires_at, now))
+            conn.commit()
+            cur.execute("SELECT * FROM trip_shares WHERE id = ?", (share_id,))
+            row = cur.fetchone()
+            conn.close()
+            return dict(row)
+
+    def get_shared_trip(self, token: str) -> Optional[Dict[str, Any]]:
+        """Resolves an anonymous public trip share token without requiring auth."""
+        conn = self.get_conn()
+        cur = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
+        query = """
+            SELECT ts.token, ts.expires_at, ts.created_at as shared_at,
+                   t.id as trip_id, t.user_id, t.bus_id, t.route_id,
+                   t.board_stop_id, t.alight_stop_id, t.boarded_at, t.status, t.source,
+                   coalesce(p.full_name, u.full_name, 'Passenger') as passenger_name
+            FROM trip_shares ts
+            JOIN trips t ON ts.trip_id = t.id
+            LEFT JOIN profiles p ON t.user_id = p.id
+            LEFT JOIN users u ON t.user_id = u.id
+            WHERE ts.token = ? AND ts.expires_at > ?
+        """
+        if is_postgres():
+            query_pg = query.replace("?", "%s")
+            cur.execute(query_pg, (token, now))
+        else:
+            cur.execute(query, (token, now))
+        row = cur.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
     # -------------------------------------------------------------
     # Saved Places
     # -------------------------------------------------------------
@@ -528,23 +622,33 @@ class Database:
     # -------------------------------------------------------------
     # SOS Events & Audit Log
     # -------------------------------------------------------------
-    def record_sos(self, lat: float, lng: float, user_id: Optional[str] = None, bus_id: Optional[int] = None) -> Dict[str, Any]:
+    def record_sos(
+        self,
+        lat: float,
+        lng: float,
+        user_id: Optional[str] = None,
+        bus_id: Optional[int] = None,
+        route_id: Optional[str] = None,
+        accuracy_m: Optional[float] = None,
+        note: Optional[str] = None
+    ) -> Dict[str, Any]:
         conn = self.get_conn()
         cur = conn.cursor()
         sos_id = str(uuid.uuid4())
+        ref_code = f"SOS-112-{uuid.uuid4().hex[:6].upper()}"
         now = datetime.now(timezone.utc).isoformat()
         if is_postgres():
             cur.execute("""
-                INSERT INTO sos_events (id, user_id, bus_id, lat, lng, status, created_at)
-                VALUES (%s, %s, %s, %s, %s, 'dispatched', %s) RETURNING *
-            """, (sos_id, user_id, bus_id, lat, lng, now))
+                INSERT INTO sos_events (id, user_id, bus_id, route_id, lat, lng, accuracy_m, reference_code, note, status, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'dispatched', %s) RETURNING *
+            """, (sos_id, user_id, bus_id, route_id, lat, lng, accuracy_m, ref_code, note, now))
             row = cur.fetchone()
             conn.commit()
         else:
             cur.execute("""
-                INSERT INTO sos_events (id, user_id, bus_id, lat, lng, status, created_at)
-                VALUES (?, ?, ?, ?, ?, 'dispatched', ?)
-            """, (sos_id, user_id, bus_id, lat, lng, now))
+                INSERT INTO sos_events (id, user_id, bus_id, route_id, lat, lng, accuracy_m, reference_code, note, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'dispatched', ?)
+            """, (sos_id, user_id, bus_id, route_id, lat, lng, accuracy_m, ref_code, note, now))
             conn.commit()
             cur.execute("SELECT * FROM sos_events WHERE id = ?", (sos_id,))
             row = cur.fetchone()
