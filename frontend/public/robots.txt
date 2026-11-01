@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /conductor
+Disallow: /api/
+
+Sitemap: https://pranshusharma.tech/sitemap.xml
