@@ -165,7 +165,6 @@ export default function ServicesPage() {
             }}
             role="button"
             tabIndex={0}
-            aria-label="Fares & Passes: Free bus travel for women commuters and DTC slabs"
           >
             {/* Left 58% Content */}
             <div style={{ width: "58%", zIndex: 2, display: "flex", flexDirection: "column", gap: 6 }}>

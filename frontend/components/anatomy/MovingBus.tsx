@@ -236,6 +236,7 @@ export function MovingBus({ compact = false }: MovingBusProps) {
   return (
     <div
       ref={containerRef}
+      data-testid="moving-bus-card"
       className="concentric-card"
       style={{
         width: "100%",
@@ -708,6 +709,7 @@ export function MovingBus({ compact = false }: MovingBusProps) {
           </h3>
 
           <div
+            data-testid="bus-status-pill"
             className="tabular-nums"
             style={{
               height: 28,

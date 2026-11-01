@@ -61,7 +61,6 @@ export function ServiceCard({
         outline: "none",
         transition: "transform 150ms ease, box-shadow 150ms ease",
       }}
-      aria-label={`${service.title}: ${service.subtitle}`}
     >
       {/* 1. Large Illustrated Art Area on Top (Aspect 4:3, Radius 18) */}
       <div

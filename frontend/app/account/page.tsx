@@ -92,6 +92,7 @@ export default function AccountPage() {
     setThemeMode(mode);
     try {
       localStorage.setItem("smart_bus_theme", mode);
+      localStorage.setItem("theme", mode);
       localStorage.setItem("delhi_bus_theme", mode);
       let effective = mode;
       if (mode === "system") {
@@ -513,7 +514,7 @@ export default function AccountPage() {
           >
             Made by Team Qubits
           </p>
-          <span style={{ fontSize: "0.6875rem", color: "var(--text-dim)" }}>
+          <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
             v2.4.0 · Delhi Smart Bus System
           </span>
 
@@ -525,9 +526,9 @@ export default function AccountPage() {
                 width: "100%",
                 height: 48,
                 borderRadius: "var(--r-card)",
-                background: "oklch(0.58 0.23 27 / 0.1)",
-                color: "oklch(0.58 0.23 27)",
-                border: "1px solid oklch(0.58 0.23 27 / 0.25)",
+                background: "oklch(0.50 0.24 27 / 0.12)",
+                color: "oklch(0.46 0.24 27)",
+                border: "1px solid oklch(0.46 0.24 27 / 0.3)",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",

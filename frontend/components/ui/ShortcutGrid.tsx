@@ -56,7 +56,6 @@ export function ShortcutGrid({ shortcuts }: ShortcutGridProps) {
             key={item.id}
             onClick={item.onClick}
             className="shortcut-circle-btn btn-press"
-            aria-label={accessibleName}
             style={{
               display: "flex",
               flexDirection: "column",

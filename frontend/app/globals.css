@@ -58,10 +58,10 @@
   --primary-hover: oklch(0.28 0.02 260);
   --accent: var(--electric-blue);
 
-  /* Crowd Levels */
-  --crowd-low: oklch(0.58 0.15 150);
-  --crowd-mod: oklch(0.62 0.15 70);
-  --crowd-high: oklch(0.55 0.20 27);
+  /* Crowd Levels (WCAG AA compliant contrast >= 4.5:1) */
+  --crowd-low: oklch(0.42 0.16 150);
+  --crowd-mod: oklch(0.50 0.15 70);
+  --crowd-high: oklch(0.52 0.22 27);
 
   /* Concentric Layered Shadow Rings (better-ui) */
   --ring: 0 0 0 1px oklch(0 0 0 / 0.08), 0 2px 8px oklch(0 0 0 / 0.08), 0 8px 24px oklch(0 0 0 / 0.06);
@@ -94,6 +94,10 @@
   --ring: 0 0 0 1px oklch(1 0 0 / 0.12);
   --ring-subtle: 0 0 0 1px oklch(1 0 0 / 0.08);
   --ring-elevated: 0 0 0 1px oklch(1 0 0 / 0.16), 0 8px 32px oklch(0 0 0 / 0.6);
+
+  --crowd-low: oklch(0.72 0.18 150);
+  --crowd-mod: oklch(0.75 0.16 70);
+  --crowd-high: oklch(0.65 0.22 27);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -19,7 +19,7 @@ export function ModeTabs({ activeTab, onSelectTab, lang = "en" }: ModeTabsProps)
   ];
 
   return (
-    <nav className="mode-tabs-bar" aria-label="Transit modes">
+    <nav className="mode-tabs-bar" aria-label="Transit modes" role="tablist">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (

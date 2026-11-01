@@ -41,7 +41,6 @@ export function RecentStopRow({
       type="button"
       onClick={onClick}
       className="recent-row"
-      aria-label={`${name}, ${routesText}, ${etaText}`}
     >
       <div
         style={{

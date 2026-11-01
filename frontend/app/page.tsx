@@ -683,7 +683,6 @@ export default function UberPassengerApp() {
               transition: "transform 150ms ease",
               textAlign: "left",
             }}
-            aria-label="View live bus tracking map"
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div
