@@ -1,16 +1,31 @@
 {
   "name": "Delhi Smart Public Bus Tracking",
-  "short_name": "SmartBus",
-  "description": "Live tracking, arrival prediction and fleet intelligence for Delhi public buses",
+  "short_name": "Delhi Bus",
+  "description": "Live GPS bus arrival tracking, seat occupancy, and safe routes across NCR.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#18181b",
+  "theme_color": "#2563eb",
+  "categories": ["transportation", "travel", "navigation"],
   "icons": [
     {
       "src": "/favicon.ico",
       "sizes": "64x64",
       "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Bus Map",
+      "url": "/?mode=bus",
+      "description": "View live buses moving across Delhi"
+    },
+    {
+      "name": "Services & Fares",
+      "url": "/services",
+      "description": "DTC passes, timetable and emergency numbers"
     }
   ]
 }

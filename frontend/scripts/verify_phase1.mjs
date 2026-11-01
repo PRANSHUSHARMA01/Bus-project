@@ -17,6 +17,16 @@ async function run() {
   for (const w of widths) {
     console.log(`\n--- Testing Viewport Width: ${w}px ---`);
     const page = await browser.newPage({ viewport: { width: w, height: 844 } });
+    await page.addInitScript(() => {
+      localStorage.setItem("smart_bus_user", JSON.stringify({
+        id: "pranshu_usr",
+        email: "pranshu@example.com",
+        full_name: "Pranshu",
+        role: "passenger",
+        language: "en"
+      }));
+      localStorage.setItem("smart_bus_token", "dev-user-pranshu_usr-passenger");
+    });
     await page.goto("http://localhost:3000/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
 

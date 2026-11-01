@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://smart-bus-tracking.vercel.app,http://localhost:3000}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - DEV_AUTH_BYPASS=${DEV_AUTH_BYPASS:-false}
+    volumes:
+      - ./backend/data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - transit_net
+
+  simulator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python simulator.py --api http://api:8000 --hour 9
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: always
+    networks:
+      - transit_net
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./backend/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    networks:
+      - transit_net
+
+networks:
+  transit_net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

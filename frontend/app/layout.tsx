@@ -37,6 +37,7 @@ export const viewport: Viewport = {
 };
 
 import { AuthProvider } from "@/lib/auth-context";
+import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <AuthProvider>
+          <RegisterServiceWorker />
           <main id="main-content" tabIndex={-1}>
             {children}
           </main>
