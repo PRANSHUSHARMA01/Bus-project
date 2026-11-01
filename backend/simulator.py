@@ -1,233 +1,159 @@
-"""
-Smart Public Bus Tracking & Fleet Management System
-High-Fidelity Autonomous GPS & Telemetry Simulator
-Location: Delhi, India
-"""
-
-import time
-import math
-import random
-import requests
+"""GPS + ticketing simulator. Pretends to be 18 real buses talking to the API.
+Run: python simulator.py (uses the real clock hour)
+python simulator.py --hour 9 (pin the city to 9 AM rush hour for the demo)
+python simulator.py --speedup 8 (demo clock: 8x faster than real time)"""
+import argparse, json, math, random, time
 from datetime import datetime
-from typing import List, Tuple, Dict
+from pathlib import Path
+import requests
+from demand import ROUTE_PEAK, hourly_factor, hist_speed_kmh
+from geo import Track
 
-API_BASE_URL = "http://localhost:8000"
+ap = argparse.ArgumentParser()
+ap.add_argument("--api", default="http://127.0.0.1:8000")
+ap.add_argument("--speedup", type=float, default=6.0)
+ap.add_argument("--hour", type=int, default=None)
+ap.add_argument("--tick", type=float, default=1.0)
+args = ap.parse_args()
 
-# ==============================================================================
-# ROUTE WAYPOINTS (LATITUDE, LONGITUDE) FOR ROUTES A, B, AND C
-# ==============================================================================
+DATA = Path(__file__).parent / "data"
+RAW = json.loads((DATA / "routes.json").read_text())
+FLEET = json.loads((DATA / "fleet.json").read_text())
 
-WAYPOINTS_A = [
-    (28.6667, 77.2286),  # 1. Kashmere Gate ISBT
-    (28.6603, 77.2184),  # 2. Tis Hazari Court
-    (28.6562, 77.2113),  # 3. Filmistan
-    (28.6560, 77.2049),  # 4. Sadar Bazaar
-    (28.6481, 77.2010),  # 5. Rani Jhansi Road
-    (28.6514, 77.1907),  # 6. Karol Bagh Metro
-    (28.6434, 77.1773),  # 7. Rajendra Place
-    (28.6523, 77.1457),  # 8. Moti Nagar
-]
+ROUTES = {}
+for r in RAW["routes"]:
+    latlng = [(lat, lng) for lng, lat in r["path"]]
+    one_way = r["length_m"]
+    track = Track(latlng + latlng[::-1][1:], circular=True)
+    visits = []
+    for s in r["stops"]:
+        visits.append((s["d"], s["id"], "start" if s["d"] < 1 else "mid"))
+        if 1 < s["d"] < one_way - 1:
+            visits.append((track.length - s["d"], s["id"], "mid"))
+        if s["d"] >= one_way - 1:
+            visits[-1] = (s["d"], s["id"], "end")
+    visits.sort()
+    ROUTES[r["id"]] = {"track": track, "period": track.length, "visits": visits, "n_visits": len(visits)}
 
-WAYPOINTS_B = [
-    (28.6315, 77.2167),  # 9. Connaught Place
-    (28.6310, 77.2280),  # 10. Barakhamba Road
-    (28.6258, 77.2348),  # 11. Mandi House
-    (28.6275, 77.2465),  # 12. ITO
-    (28.6235, 77.2500),  # 13. Pragati Maidan
-    (28.6127, 77.2773),  # 14. Akshardham
-    (28.6468, 77.3155),  # 15. Anand Vihar ISBT
-    (28.6545, 77.3049),  # 16. Karkardooma Court
-]
+# busy places get more passengers than quiet ones
+WEIGHT = {"cp": 2.0, "ndls": 1.8, "kashmere_gate": 1.6, "nehru_place": 1.5, "nizamuddin": 1.4,
+          "aiims": 1.4, "rajouri_garden": 1.3, "lajpat_nagar": 1.3, "karol_bagh": 1.3, "saket": 1.2}
 
-WAYPOINTS_C = [
-    (28.5672, 77.2100),  # 17. AIIMS
-    (28.5741, 77.2094),  # 18. INA Colony
-    (28.5742, 77.2243),  # 19. South Extension
-    (28.5700, 77.2400),  # 20. Lajpat Nagar
-    (28.5696, 77.2434),  # 21. Moolchand
-    (28.5745, 77.2330),  # 22. Defence Colony
-    (28.5491, 77.2533),  # 23. Nehru Place
-]
+buses = {}
+by_route = {}
+for f in FLEET:
+    by_route.setdefault(f["route_id"], []).append(f)
 
-# ==============================================================================
-# BUS AGENT CLASS WITH INTERPOLATION & DYNAMICS
-# ==============================================================================
+for rid, group in by_route.items():
+    P = ROUTES[rid]["period"]
+    for i, f in enumerate(group):
+        buses[f["bus_id"]] = {"route": rid, "s": (i / len(group)) * P + random.uniform(-400, 400),
+                              "speed": 10.0, "dwell": 0.0, "onboard": random.randint(5, 25),
+                              "cap": f["capacity"], "last_stop": None}
 
-class SimulatedBus:
-    def __init__(self, bus_id: str, route: str, waypoints: List[Tuple[float, float]], offset: float):
-        self.bus_id = bus_id
-        self.route = route
-        self.waypoints = waypoints
-        self.num_segments = len(waypoints) - 1
-        self.progress = offset % self.num_segments
-        self.forward = True
-        self.speed = 24.0
-        self.passengers = 25
-        self.lat = waypoints[0][0]
-        self.lng = waypoints[0][1]
-        self.heading = 0.0
+def poisson(lam):
+    if lam <= 0:
+        return 0
+    if lam > 30:
+        return max(0, int(random.gauss(lam, math.sqrt(lam))))
+    L, k, p = math.exp(-lam), 0, 1.0
+    while p > L:
+        k += 1
+        p *= random.random()
+    return k - 1
 
-        # Calibrate initial passengers based on corridor profile
-        if self.route == "A":
-            self.passengers = random.randint(38, 48)  # Route A is naturally dense
-        elif self.route == "B":
-            self.passengers = random.randint(22, 34)
-        else:
-            self.passengers = random.randint(12, 20)  # Route C stays light
+def expected_boardings(rid, stop_id, hour, weekend, surge):
+    """Passengers who walk up to a stop while a bus is there."""
+    route = ROUTES[rid]
+    n_buses = sum(1 for b in buses.values() if b["route"] == rid) or 1
+    speed = hist_speed_kmh(hour) / 3.6
+    lap_seconds = route["period"] / speed + route["n_visits"] * 30
+    visits_per_hour = n_buses * route["n_visits"] * 3600 / lap_seconds
+    per_visit = ROUTE_PEAK[rid] * hourly_factor(hour, weekend) / visits_per_hour
+    return per_visit * WEIGHT.get(stop_id, 1.0) * (2.2 if surge else 1.0)
 
-    def update_position(self, delta_t_hours: float):
-        # 1. Determine speed based on time of day and corridor congestion
-        current_hour = datetime.now().hour
-        is_rush_hour = current_hour in [8, 9, 10, 17, 18, 19]
+session = requests.Session()
+flags = {"jam": [], "surge": [], "broken": [], "assign": {}}
+last_flags, last_print = 0.0, 0.0
 
-        if is_rush_hour:
-            # Dense traffic around Sadar Bazaar / Connaught Place
-            base_speed = 13.0 if self.route == "A" else (16.0 if self.route == "B" else 22.0)
-        else:
-            base_speed = 28.0 if self.route != "A" else 22.0
+try:
+    requests.post(args.api + "/sim/hour", json={"hour": args.hour}, timeout=3)
+except Exception:
+    pass
 
-        # Small random speed flutter (+/- 2.5 km/h)
-        self.speed = max(6.0, base_speed + random.uniform(-2.5, 2.5))
+print(f"Simulator running: {len(buses)} buses, demo clock x{args.speedup}. Press Ctrl+C to stop.")
 
-        # 2. Approximate segment length (~1.5 km per stop)
-        segment_km = 1.5
-        progress_increment = (self.speed * delta_t_hours) / segment_km
-
-        # 3. Advance progress along path
-        if self.forward:
-            self.progress += progress_increment
-            if self.progress >= self.num_segments:
-                self.progress = self.num_segments - 0.01
-                self.forward = False  # Reverse direction at terminus
-        else:
-            self.progress -= progress_increment
-            if self.progress <= 0:
-                self.progress = 0.01
-                self.forward = True  # Loop back forward
-
-        # 4. Linear interpolation between waypoints
-        seg_idx = int(self.progress)
-        seg_fraction = self.progress - seg_idx
-        seg_idx = min(seg_idx, self.num_segments - 1)
-
-        p1 = self.waypoints[seg_idx]
-        p2 = self.waypoints[seg_idx + 1]
-
-        # Calculate interpolated coordinates
-        raw_lat = p1[0] + (p2[0] - p1[0]) * seg_fraction
-        raw_lng = p1[1] + (p2[1] - p1[1]) * seg_fraction
-
-        # 5. Calculate magnetic heading in degrees
-        d_lat = p2[0] - p1[0]
-        d_lng = p2[1] - p1[1]
-        raw_heading = math.degrees(math.atan2(d_lng, d_lat))
-        self.heading = (raw_heading + 360) % 360 if self.forward else (raw_heading + 180) % 360
-
-        # 6. Add Gaussian GPS noise (sigma = 0.00018 deg, ~18-20 meters)
-        gps_noise_lat = random.gauss(0, 0.00018)
-        gps_noise_lng = random.gauss(0, 0.00018)
-
-        self.lat = round(raw_lat + gps_noise_lat, 6)
-        self.lng = round(raw_lng + gps_noise_lng, 6)
-
-        # 7. Passenger boarding dynamics
-        # Route A gets heavily crowded (reaching 46-52 passengers); Route C stays light
-        if self.route == "A":
-            if is_rush_hour or random.random() < 0.6:
-                # Upward pressure on Route A
-                self.passengers = min(52, self.passengers + random.choice([0, 1, 2, -1]))
-            else:
-                self.passengers = max(28, min(48, self.passengers + random.choice([-1, 0, 1])))
-        elif self.route == "B":
-            self.passengers = max(18, min(44, self.passengers + random.choice([-2, -1, 0, 1, 2])))
-        elif self.route == "C":
-            # Route C stays comfortably light throughout the day
-            self.passengers = max(8, min(24, self.passengers + random.choice([-1, 0, 1])))
-
-# ==============================================================================
-# INITIALIZE 18 SIMULATED FLEET BUSES
-# ==============================================================================
-
-def create_fleet() -> List[SimulatedBus]:
-    fleet = []
-
-    # Route A (6 Buses): Staggered offsets
-    # A-01 and A-02 are close together to demonstrate bunching detection
-    offsets_a = [0.2, 0.35, 1.8, 3.2, 4.6, 5.8]
-    for i in range(6):
-        fleet.append(SimulatedBus(f"A-0{i+1}", "A", WAYPOINTS_A, offsets_a[i]))
-
-    # Route B (6 Buses): Evenly distributed
-    offsets_b = [0.1, 1.2, 2.4, 3.6, 4.8, 6.0]
-    for i in range(6):
-        fleet.append(SimulatedBus(f"B-0{i+1}", "B", WAYPOINTS_B, offsets_b[i]))
-
-    # Route C (6 Buses): Evenly distributed
-    offsets_c = [0.2, 1.1, 2.1, 3.1, 4.1, 5.1]
-    for i in range(6):
-        fleet.append(SimulatedBus(f"C-0{i+1}", "C", WAYPOINTS_C, offsets_c[i]))
-
-    return fleet
-
-# ==============================================================================
-# MAIN SIMULATION TELEMETRY TRANSMISSION LOOP
-# ==============================================================================
-
-def run_simulator():
-    print("=" * 72)
-    print("  DELHI SMART BUS FLEET SIMULATOR")
-    print("  Publishing GPS Telemetry for 18 Buses to http://localhost:8000")
-    print("  Press Ctrl+C to terminate simulation.")
-    print("=" * 72)
-
-    fleet = create_fleet()
-    tick_interval_seconds = 1.0  # 1 second refresh cycle
-    delta_t_hours = tick_interval_seconds / 3600.0
-    iteration = 0
-
+def run_loop():
+    global flags, last_flags, last_print
     while True:
-        iteration += 1
-        active_pings = 0
+        t0 = time.time()
+        now = datetime.now()
+        hour = args.hour if args.hour is not None else now.hour
+        weekend = now.weekday() >= 5
 
-        for bus in fleet:
-            bus.update_position(delta_t_hours)
-
-            # 1. Post GPS position telemetry
-            pos_payload = {
-                "bus_id": bus.bus_id,
-                "lat": bus.lat,
-                "lng": bus.lng,
-                "speed": round(bus.speed, 1),
-                "heading": round(bus.heading, 1),
-                "timestamp": datetime.now().isoformat()
-            }
-
+        if t0 - last_flags > 2: # ask the API about demo events
             try:
-                requests.post(f"{API_BASE_URL}/ingest/position", json=pos_payload, timeout=0.8)
-                active_pings += 1
+                flags = session.get(args.api + "/sim/flags", timeout=3).json()
             except Exception:
-                # Backend may still be initializing
                 pass
+            last_flags = t0
+            for bid, rid in flags.get("assign", {}).items():
+                b = buses.get(int(bid))
+                if b and b["route"] != rid: # bus reassigned by an admin
+                    b.update(route=rid, s=0.0, onboard=0, dwell=0.0, last_stop=None)
 
-            # 2. Every 5 ticks, synchronize passenger count
-            if iteration % 5 == 0:
-                boarding_payload = {
-                    "bus_id": bus.bus_id,
-                    "current_passengers": bus.passengers
-                }
-                try:
-                    requests.post(f"{API_BASE_URL}/ingest/boarding", json=boarding_payload, timeout=0.8)
-                except Exception:
-                    pass
+        pings, boardings = [], []
+        sim_dt = args.tick * args.speedup
 
-        # Terminal status summary every 10 ticks
-        if iteration % 10 == 0:
-            crowded_a = [b for b in fleet if b.route == "A" and b.passengers >= 45]
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Tick #{iteration:04d} | "
-                  f"18 Buses Live | Route A Overcrowded: {len(crowded_a)} buses | "
-                  f"Route C Average Load: ~14 pass.")
+        for bid, b in buses.items():
+            route = ROUTES[b["route"]]
+            broken = bid in flags.get("broken", [])
+            if broken:
+                b["speed"] = 0.0
+            elif b["dwell"] > 0:
+                b["dwell"] -= sim_dt
+                b["speed"] = 0.0
+            else:
+                target = hist_speed_kmh(hour) * random.uniform(0.85, 1.15)
+                if b["route"] in flags.get("jam", []):
+                    target *= 0.25
+                b["speed"] += (target - b["speed"]) * 0.35
+                ds = b["speed"] / 3.6 * sim_dt
+                for d, sid, kind in route["visits"]: # did we reach a stop this tick?
+                    ahead = (d - b["s"]) % route["period"]
+                    if 0 < ahead <= ds and b["last_stop"] != (sid, kind, d):
+                        ds = ahead
+                        b["last_stop"] = (sid, kind, d)
+                        b["dwell"] = random.uniform(20, 40)
+                        surge = b["route"] in flags.get("surge", [])
+                        alight = b["onboard"] if kind in ("start", "end") else sum(random.random() < 0.22 for _ in range(b["onboard"]))
+                        board = poisson(expected_boardings(b["route"], sid, hour, weekend, surge))
+                        board = min(board, int(b["cap"] * 1.4) - (b["onboard"] - alight))
+                        b["onboard"] += max(0, board) - alight
+                        boardings.append({"bus_id": bid, "stop_id": sid, "boarded": max(0, board), "alighted": alight})
+                        break
+                b["s"] = (b["s"] + ds) % route["period"]
 
-        time.sleep(tick_interval_seconds)
+            lat, lng = route["track"].point_at(b["s"])
+            lat += random.gauss(0, 0.00003) # ~3 m of GPS noise, like a real receiver
+            lng += random.gauss(0, 0.00003)
+            pings.append({"bus_id": bid, "route_id": b["route"], "lat": lat, "lng": lng,
+                          "speed_kmh": round(max(0.0, b["speed"] + random.gauss(0, 0.6)), 1) if b["speed"] > 0 else 0})
+
+        try:
+            session.post(args.api + "/ingest/positions", json=pings, timeout=3)
+            if boardings:
+                session.post(args.api + "/ingest/boardings", json=boardings, timeout=3)
+        except Exception as e:
+            pass
+
+        if t0 - last_print > 15:
+            loads = [round(100 * b["onboard"] / b["cap"]) for b in buses.values()]
+            print(f"hour={hour:02d} avg load {sum(loads) // len(loads)}% max {max(loads)}% jams={flags.get('jam', [])} surges={flags.get('surge', [])}")
+            last_print = t0
+
+        elapsed = time.time() - t0
+        time.sleep(max(0.0, args.tick - elapsed))
 
 if __name__ == "__main__":
-    run_simulator()
+    run_loop()

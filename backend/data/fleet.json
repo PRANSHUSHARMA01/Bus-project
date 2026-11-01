@@ -1,0 +1,110 @@
+[
+ {
+  "bus_id": 1,
+  "reg_no": "DL1PD3471",
+  "route_id": "A",
+  "capacity": 60
+ },
+ {
+  "bus_id": 2,
+  "reg_no": "DL1PD1791",
+  "route_id": "A",
+  "capacity": 60
+ },
+ {
+  "bus_id": 3,
+  "reg_no": "DL1PC9779",
+  "route_id": "A",
+  "capacity": 60
+ },
+ {
+  "bus_id": 4,
+  "reg_no": "DL1PC6991",
+  "route_id": "A",
+  "capacity": 60
+ },
+ {
+  "bus_id": 5,
+  "reg_no": "DL1PC9313",
+  "route_id": "A",
+  "capacity": 60
+ },
+ {
+  "bus_id": 6,
+  "reg_no": "DL1PC1614",
+  "route_id": "A",
+  "capacity": 60
+ },
+ {
+  "bus_id": 7,
+  "reg_no": "DL1PC8104",
+  "route_id": "B",
+  "capacity": 60
+ },
+ {
+  "bus_id": 8,
+  "reg_no": "DL1PD2144",
+  "route_id": "B",
+  "capacity": 60
+ },
+ {
+  "bus_id": 9,
+  "reg_no": "DL1PC2486",
+  "route_id": "B",
+  "capacity": 60
+ },
+ {
+  "bus_id": 10,
+  "reg_no": "DL1PD1968",
+  "route_id": "B",
+  "capacity": 60
+ },
+ {
+  "bus_id": 11,
+  "reg_no": "DL1PC4657",
+  "route_id": "B",
+  "capacity": 60
+ },
+ {
+  "bus_id": 12,
+  "reg_no": "DL1PC7499",
+  "route_id": "B",
+  "capacity": 60
+ },
+ {
+  "bus_id": 13,
+  "reg_no": "DL1PC4622",
+  "route_id": "C",
+  "capacity": 60
+ },
+ {
+  "bus_id": 14,
+  "reg_no": "DL1PC3181",
+  "route_id": "C",
+  "capacity": 60
+ },
+ {
+  "bus_id": 15,
+  "reg_no": "DL1PD7867",
+  "route_id": "C",
+  "capacity": 60
+ },
+ {
+  "bus_id": 16,
+  "reg_no": "DL1PC9858",
+  "route_id": "C",
+  "capacity": 60
+ },
+ {
+  "bus_id": 17,
+  "reg_no": "DL1PC6054",
+  "route_id": "C",
+  "capacity": 60
+ },
+ {
+  "bus_id": 18,
+  "reg_no": "DL1PC2688",
+  "route_id": "C",
+  "capacity": 60
+ }
+]

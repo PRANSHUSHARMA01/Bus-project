@@ -1,0 +1,12 @@
+{
+  "5_min_ahead": {
+    "arrivals_measured": 67,
+    "mean_abs_error_min": 2.18,
+    "within_2_min_pct": 84.6
+  },
+  "10_min_ahead": {
+    "arrivals_measured": 58,
+    "mean_abs_error_min": 2.05,
+    "within_2_min_pct": 86.8
+  }
+}
