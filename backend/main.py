@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from demand import BUS_HOUR_CAPACITY, TARGET_LF, hist_speed_kmh
 from geo import Track
 from v1_router import v1_router
+from auth_router import auth_router
 
 DATA = Path(__file__).parent / "data"
 app = FastAPI(title="Smart Bus API", version="2.0.0")
@@ -71,6 +72,10 @@ async def add_security_headers(request: Request, call_next):
 # Mount Production v1 Router at both /v1 and /api/v1
 app.include_router(v1_router)
 app.include_router(v1_router, prefix="/api")
+
+# Mount Self-Hosted Auth Router at both /api/v1/auth and /v1/auth
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/v1")
 
 # ------------------------------------------------------------------ Realtime WebSocket Manager
 class ConnectionManager:

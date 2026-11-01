@@ -3,8 +3,12 @@ Database Manager for Smart Bus Tracking
 Supports Supabase Postgres via psycopg2 or local SQLite for offline dev/tests.
 """
 
+import hashlib
+import hmac
 import os
+import secrets
 import sqlite3
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -114,6 +118,44 @@ class Database:
             ip TEXT,
             user_agent TEXT,
             created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            email_verified_at TEXT,
+            full_name TEXT,
+            avatar_url TEXT,
+            phone TEXT,
+            language TEXT NOT NULL DEFAULT 'en',
+            role TEXT NOT NULL DEFAULT 'passenger',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            deleted_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS otp_codes (
+            id TEXT PRIMARY KEY,
+            email_hash TEXT NOT NULL,
+            code_hash TEXT NOT NULL,
+            expires_at REAL NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            consumed_at REAL,
+            ip TEXT,
+            created_at REAL NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS sessions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            refresh_hash TEXT NOT NULL,
+            device TEXT,
+            ip TEXT,
+            user_agent TEXT,
+            created_at REAL NOT NULL,
+            last_used_at REAL NOT NULL,
+            expires_at REAL NOT NULL,
+            revoked_at REAL
         );
         """)
         conn.commit()
@@ -428,4 +470,297 @@ class Database:
         except Exception:
             pass
 
+    # -------------------------------------------------------------
+    # Self-Hosted Auth (Phase B): Users, OTP Codes, & Sessions
+    # -------------------------------------------------------------
+    def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        norm_email = email.strip().lower()
+        if is_postgres():
+            cur.execute("SELECT * FROM users WHERE lower(email) = %s AND deleted_at IS NULL", (norm_email,))
+            row = cur.fetchone()
+        else:
+            cur.execute("SELECT * FROM users WHERE lower(email) = ? AND deleted_at IS NULL", (norm_email,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute("SELECT * FROM users WHERE id = %s AND deleted_at IS NULL", (user_id,))
+            row = cur.fetchone()
+        else:
+            cur.execute("SELECT * FROM users WHERE id = ? AND deleted_at IS NULL", (user_id,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def get_or_create_user(self, email: str, language: str = "en", full_name: Optional[str] = None) -> Dict[str, Any]:
+        existing = self.get_user_by_email(email)
+        if existing:
+            return existing
+
+        conn = self.get_conn()
+        cur = conn.cursor()
+        user_id = f"usr_{uuid.uuid4().hex[:16]}"
+        now = datetime.now(timezone.utc).isoformat()
+        norm_email = email.strip().lower()
+        name = full_name or norm_email.split("@")[0].replace(".", " ").title()
+
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO users (id, email, full_name, language, role, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, 'passenger', %s, %s)
+                RETURNING *
+            """, (user_id, norm_email, name, language, now, now))
+            row = cur.fetchone()
+            conn.commit()
+        else:
+            cur.execute("""
+                INSERT INTO users (id, email, full_name, language, role, created_at, updated_at)
+                VALUES (?, ?, ?, ?, 'passenger', ?, ?)
+            """, (user_id, norm_email, name, language, now, now))
+            conn.commit()
+            cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+            row = cur.fetchone()
+
+        # Also sync to legacy profiles table for seamless backward compatibility
+        try:
+            self.get_or_create_profile(user_id=user_id, email=norm_email, full_name=name)
+        except Exception:
+            pass
+
+        conn.close()
+        return dict(row)
+
+    def count_recent_otp_requests(self, email_hash: str, ip: str, window_sec: int = 600) -> int:
+        """Count OTP requests for the same IP or email within the rolling rate-limit window."""
+        conn = self.get_conn()
+        cur = conn.cursor()
+        since = time.time() - window_sec
+        if is_postgres():
+            cur.execute("""
+                SELECT COUNT(*) as cnt FROM otp_codes
+                WHERE (email_hash = %s OR ip = %s) AND created_at > %s
+            """, (email_hash, ip, since))
+            row = cur.fetchone()
+            count = row["cnt"] if isinstance(row, dict) else row[0]
+        else:
+            cur.execute("""
+                SELECT COUNT(*) as cnt FROM otp_codes
+                WHERE (email_hash = ? OR ip = ?) AND created_at > ?
+            """, (email_hash, ip, since))
+            row = cur.fetchone()
+            count = row["cnt"] if isinstance(row, dict) or hasattr(row, "__getitem__") else row[0]
+        conn.close()
+        return int(count)
+
+    def record_otp_request(self, email_hash: str, code_hash: str, ip: str, expires_in_sec: int = 300) -> str:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        otp_id = str(uuid.uuid4())
+        now = time.time()
+        expires_at = now + expires_in_sec
+
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO otp_codes (id, email_hash, code_hash, expires_at, attempts, ip, created_at)
+                VALUES (%s, %s, %s, %s, 0, %s, %s)
+            """, (otp_id, email_hash, code_hash, expires_at, ip, now))
+            conn.commit()
+        else:
+            cur.execute("""
+                INSERT INTO otp_codes (id, email_hash, code_hash, expires_at, attempts, ip, created_at)
+                VALUES (?, ?, ?, ?, 0, ?, ?)
+            """, (otp_id, email_hash, code_hash, expires_at, ip, now))
+            conn.commit()
+        conn.close()
+        return otp_id
+
+    def verify_and_consume_otp(self, email_hash: str, raw_code: str, pepper: str) -> tuple[bool, str, Optional[str]]:
+        """
+        Verify code with timing-safe comparison, enforcing:
+        1. Code expiration (5 min)
+        2. Max 5 failed attempts per OTP record
+        3. Single-use invalidation
+        """
+        conn = self.get_conn()
+        cur = conn.cursor()
+        now = time.time()
+
+        # Find latest unconsumed OTP for this email hash
+        if is_postgres():
+            cur.execute("""
+                SELECT * FROM otp_codes
+                WHERE email_hash = %s AND consumed_at IS NULL
+                ORDER BY created_at DESC LIMIT 1
+            """, (email_hash,))
+            row = cur.fetchone()
+        else:
+            cur.execute("""
+                SELECT * FROM otp_codes
+                WHERE email_hash = ? AND consumed_at IS NULL
+                ORDER BY created_at DESC LIMIT 1
+            """, (email_hash,))
+            row = cur.fetchone()
+
+        if not row:
+            conn.close()
+            return False, "No active verification code found. Please request a new one.", None
+
+        rec = dict(row)
+        otp_id = rec["id"]
+
+        # Check expiration
+        if now > rec["expires_at"]:
+            conn.close()
+            return False, "Verification code has expired. Please request a new code.", None
+
+        # Check max attempts
+        if rec["attempts"] >= 5:
+            # Invalidate record
+            if is_postgres():
+                cur.execute("UPDATE otp_codes SET consumed_at = %s WHERE id = %s", (now, otp_id))
+                conn.commit()
+            else:
+                cur.execute("UPDATE otp_codes SET consumed_at = ? WHERE id = ?", (now, otp_id))
+                conn.commit()
+            conn.close()
+            return False, "Too many failed attempts. This code is invalidated. Please request a new one.", None
+
+        # Timing-safe comparison of SHA-256 hash
+        target_hash = hashlib.sha256(f"{raw_code.strip()}:{pepper}".encode()).hexdigest()
+        is_match = hmac.compare_digest(target_hash, rec["code_hash"])
+
+        if is_match:
+            # Mark consumed
+            if is_postgres():
+                cur.execute("UPDATE otp_codes SET consumed_at = %s WHERE id = %s", (now, otp_id))
+                conn.commit()
+            else:
+                cur.execute("UPDATE otp_codes SET consumed_at = ? WHERE id = ?", (now, otp_id))
+                conn.commit()
+            conn.close()
+            return True, "Verification successful.", otp_id
+        else:
+            # Increment attempts
+            new_attempts = rec["attempts"] + 1
+            if is_postgres():
+                cur.execute("UPDATE otp_codes SET attempts = %s WHERE id = %s", (new_attempts, otp_id))
+                conn.commit()
+            else:
+                cur.execute("UPDATE otp_codes SET attempts = ? WHERE id = ?", (new_attempts, otp_id))
+                conn.commit()
+            conn.close()
+            remaining = max(0, 5 - new_attempts)
+            return False, f"Invalid verification code. {remaining} attempt(s) remaining.", None
+
+    def create_session(self, user_id: str, raw_refresh_token: str, pepper: str, ip: str, user_agent: str, expires_in_days: int = 30) -> str:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        session_id = str(uuid.uuid4())
+        refresh_hash = hashlib.sha256(f"{raw_refresh_token}:{pepper}".encode()).hexdigest()
+        now = time.time()
+        expires_at = now + (expires_in_days * 86400)
+        device = (user_agent or "Browser")[:128]
+
+        if is_postgres():
+            cur.execute("""
+                INSERT INTO sessions (id, user_id, refresh_hash, device, ip, user_agent, created_at, last_used_at, expires_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (session_id, user_id, refresh_hash, device, ip, user_agent, now, now, expires_at))
+            conn.commit()
+        else:
+            cur.execute("""
+                INSERT INTO sessions (id, user_id, refresh_hash, device, ip, user_agent, created_at, last_used_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (session_id, user_id, refresh_hash, device, ip, user_agent, now, now, expires_at))
+            conn.commit()
+        conn.close()
+        return session_id
+
+    def rotate_session(self, old_raw_refresh: str, new_raw_refresh: str, pepper: str, ip: str, user_agent: str) -> tuple[bool, str, Optional[Dict[str, Any]]]:
+        """
+        Rotates refresh token for the active session. Detects reuse attacks:
+        if token was already revoked, immediately terminates all sessions for security.
+        """
+        conn = self.get_conn()
+        cur = conn.cursor()
+        old_hash = hashlib.sha256(f"{old_raw_refresh}:{pepper}".encode()).hexdigest()
+        now = time.time()
+
+        if is_postgres():
+            cur.execute("SELECT * FROM sessions WHERE refresh_hash = %s", (old_hash,))
+            row = cur.fetchone()
+        else:
+            cur.execute("SELECT * FROM sessions WHERE refresh_hash = ?", (old_hash,))
+            row = cur.fetchone()
+
+        if not row:
+            conn.close()
+            return False, "Invalid session refresh token.", None
+
+        session = dict(row)
+
+        # Detect reuse of revoked token (possible token theft)
+        if session.get("revoked_at") is not None:
+            # Revoke all sessions for this user for security
+            uid = session["user_id"]
+            if is_postgres():
+                cur.execute("UPDATE sessions SET revoked_at = %s WHERE user_id = %s", (now, uid))
+                conn.commit()
+            else:
+                cur.execute("UPDATE sessions SET revoked_at = ? WHERE user_id = ?", (now, uid))
+                conn.commit()
+            conn.close()
+            return False, "Token reuse detected. All active sessions have been invalidated for security.", None
+
+        # Check expiration
+        if now > session["expires_at"]:
+            conn.close()
+            return False, "Session expired. Please log in again.", None
+
+        # Revoke old session and issue new session
+        new_hash = hashlib.sha256(f"{new_raw_refresh}:{pepper}".encode()).hexdigest()
+        new_session_id = str(uuid.uuid4())
+        device = (user_agent or "Browser")[:128]
+        new_expires = now + (30 * 86400)
+
+        if is_postgres():
+            cur.execute("UPDATE sessions SET revoked_at = %s WHERE id = %s", (now, session["id"]))
+            cur.execute("""
+                INSERT INTO sessions (id, user_id, refresh_hash, device, ip, user_agent, created_at, last_used_at, expires_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (new_session_id, session["user_id"], new_hash, device, ip, user_agent, now, now, new_expires))
+            conn.commit()
+        else:
+            cur.execute("UPDATE sessions SET revoked_at = ? WHERE id = ?", (now, session["id"]))
+            cur.execute("""
+                INSERT INTO sessions (id, user_id, refresh_hash, device, ip, user_agent, created_at, last_used_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (new_session_id, session["user_id"], new_hash, device, ip, user_agent, now, now, new_expires))
+            conn.commit()
+
+        user = self.get_user_by_id(session["user_id"])
+        conn.close()
+        return True, "Session refreshed.", user
+
+    def revoke_session(self, raw_refresh: str, pepper: str) -> bool:
+        conn = self.get_conn()
+        cur = conn.cursor()
+        r_hash = hashlib.sha256(f"{raw_refresh}:{pepper}".encode()).hexdigest()
+        now = time.time()
+        if is_postgres():
+            cur.execute("UPDATE sessions SET revoked_at = %s WHERE refresh_hash = %s", (now, r_hash))
+            conn.commit()
+        else:
+            cur.execute("UPDATE sessions SET revoked_at = ? WHERE refresh_hash = ?", (now, r_hash))
+            conn.commit()
+        conn.close()
+        return True
+
 db = Database()
+

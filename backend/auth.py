@@ -9,12 +9,12 @@ import json
 import urllib.request
 from typing import Any, Dict, Optional
 import jwt
-from fastapi import Depends, HTTPException, Header, status
+from fastapi import Depends, HTTPException, Header, Request, status
 from pydantic import BaseModel
 from db import db
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://mock-supabase.supabase.co")
-SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "super-secret-jwt-token-key-for-development-32chars")
+JWT_SECRET = os.environ.get("JWT_SECRET") or os.environ.get("SUPABASE_JWT_SECRET", "smartbus-jwt-production-secret-key-32bytes")
 DEV_AUTH_BYPASS = os.environ.get("DEV_AUTH_BYPASS", "true").lower() in ("true", "1", "yes")
 
 # JWKS Cache (1 hour TTL)
@@ -79,23 +79,26 @@ def verify_token(token: str) -> Dict[str, Any]:
 
     alg = unverified_header.get("alg", "HS256")
 
-    # 1. HS256 verification (Default for Supabase JWTs)
+    # 1. HS256 verification (Self-hosted JWTs and Supabase HS256)
     if alg == "HS256":
         try:
             payload = jwt.decode(
                 token,
-                SUPABASE_JWT_SECRET,
+                JWT_SECRET,
                 algorithms=["HS256"],
                 options={"verify_aud": False, "verify_exp": True}
             )
-            # Verify audience if present
-            aud = payload.get("aud")
-            if aud and aud not in ("authenticated", "smart-bus-tracking"):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Invalid token audience: {aud}"
-                )
             return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired"
+            )
+        except jwt.InvalidTokenError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token signature: {str(e)}"
+            )
         except jwt.ExpiredSignatureError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -148,21 +151,20 @@ def verify_token(token: str) -> Dict[str, Any]:
         detail=f"Unsupported token algorithm: {alg}"
     )
 
-def current_user(authorization: Optional[str] = Header(None)) -> UserProfile:
-    """FastAPI dependency to verify JWT and return the user profile from DB."""
-    if not authorization:
+def current_user(request: Request, authorization: Optional[str] = Header(None)) -> UserProfile:
+    """FastAPI dependency to verify JWT from Bearer header or access_token cookie."""
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:].strip()
+    elif request and request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing Authorization header"
+            detail="Not authenticated. Provide Authorization header or access_token cookie."
         )
 
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization header must start with Bearer"
-        )
-
-    token = authorization[7:].strip()
     payload = verify_token(token)
 
     user_id = payload.get("sub") or payload.get("id")
