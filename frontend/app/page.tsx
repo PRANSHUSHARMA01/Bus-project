@@ -42,7 +42,7 @@ import { ArrivalCard } from "../components/ui/ArrivalCard";
 import { Badge } from "../components/ui/Badge";
 import { BottomNav, NavTab } from "../components/ui/BottomNav";
 import { CorridorTimeline } from "../components/ui/CorridorTimeline";
-import { Carousel } from "../components/ui/Carousel";
+import { Carousel, CrowdAIArt, NightOwlArt, InterchangeArt } from "../components/ui/Carousel";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LocationSheet } from "../components/ui/LocationSheet";
 import { ModeTabs, ModeTab } from "../components/ui/ModeTabs";
@@ -480,36 +480,31 @@ export default function UberPassengerApp() {
     },
   ];
 
-  // Carousel items
+  // Carousel items (Step 4 match reference layout)
   const carouselCards = [
     {
       id: "crowd",
-      tag: "Real-time AI",
-      title: lang === "hi" ? "मार्ग पर भीड़ की स्थिति" : "Live crowd on your route",
-      subtitle: lang === "hi" ? "चढ़ने से पहले सीट मिलने की संभावना जांचें" : "Predict seat availability before boarding",
-      bg: "linear-gradient(135deg, #18181b 0%, #27272a 100%)",
-      color: "#ffffff",
-      onClick: () => {
-        if (recentStops[0]) openStopTracker(recentStops[0].id);
-      },
+      tag: "Real-time crowd AI",
+      title: "Real-time crowd AI",
+      subtitle: "Predict seat availability before boarding",
+      illustration: <CrowdAIArt />,
+      onClick: () => router.push("/services/seat-finder"),
     },
     {
-      id: "safety",
-      tag: "Safety First",
-      title: lang === "hi" ? "रात में सुरक्षित यात्रा" : "Safer travel at night",
-      subtitle: lang === "hi" ? "कंट्रोल रूम से सीधा आपातकालीन SOS लिंक" : "Direct SOS linked to Delhi Transport Command",
-      bg: "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
-      color: "#ffffff",
-      onClick: () => setSafetySheetOpen(true),
+      id: "night",
+      tag: "Night owl network",
+      title: "Night owl network",
+      subtitle: "Safe 22:00–05:00 routes connecting NDLS",
+      illustration: <NightOwlArt />,
+      onClick: () => router.push("/services/night-buses"),
     },
     {
-      id: "routeA",
-      tag: "Smart Commute",
-      title: lang === "hi" ? "प्रमुख दिल्ली रूट: 502" : "Major Delhi Corridor: 502",
-      subtitle: lang === "hi" ? "महरौली से कश्मीरी गेट बस हर 5 मिनट में" : "Mehrauli - Kashmere Gate frequency 5 min",
-      bg: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-      color: "#ffffff",
-      onClick: () => openRouteTracker("502"),
+      id: "metro",
+      tag: "Metro + bus interchange",
+      title: "Metro + bus interchange",
+      subtitle: "One tap to transfer at Kashmere Gate",
+      illustration: <InterchangeArt />,
+      onClick: () => router.push("/services/plan-a-trip"),
     },
   ];
 
