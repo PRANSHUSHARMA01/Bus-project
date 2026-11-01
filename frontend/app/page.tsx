@@ -1070,9 +1070,9 @@ export default function UberPassengerApp() {
             if (tab === "account") {
               router.push("/account");
             } else if (tab === "activity") {
-              flashToast("Recent rides and ticket passes");
+              router.push("/activity");
             } else if (tab === "services") {
-              flashToast("Delhi Smart Transit network services");
+              router.push("/services");
             }
           }}
           lang={lang}
