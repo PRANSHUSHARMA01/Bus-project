@@ -34,6 +34,7 @@ import BusMap from "../components/BusMap";
 import { ArrivalCard } from "../components/ui/ArrivalCard";
 import { Badge } from "../components/ui/Badge";
 import { BottomNav, NavTab } from "../components/ui/BottomNav";
+import { CorridorTimeline } from "../components/ui/CorridorTimeline";
 import { Carousel } from "../components/ui/Carousel";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LocationSheet } from "../components/ui/LocationSheet";
@@ -654,55 +655,25 @@ export default function UberPassengerApp() {
                   </button>
                 </div>
 
-                {/* Progress Timeline */}
-                <div>
-                  <b style={{ fontSize: 15, display: "block", marginBottom: 12 }}>
-                    {lang === "hi" ? "रूट के स्टॉप" : "Corridor stops"}
-                  </b>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {trackingRoute?.stops.map((st) => {
-                      const isCurrent = st.id === selectedStopId;
-                      return (
-                        <div
-                          key={st.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            opacity: isCurrent ? 1 : 0.7,
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: 12,
-                              height: 12,
-                              borderRadius: "50%",
-                              background: isCurrent ? "var(--primary)" : "var(--surface-3)",
-                              border: isCurrent ? "3px solid #fff" : "none",
-                              outline: isCurrent ? "2px solid var(--primary)" : "none",
-                            }}
-                          />
-                          <span style={{ fontWeight: isCurrent ? 700 : 500, fontSize: 14 }}>
-                            {stopName(st)}
-                          </span>
-                          {isCurrent && (
-                            <span
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                background: "var(--surface-2)",
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                              }}
-                            >
-                              Next stop
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                {/* Beautiful Vertical Journey Corridor Timeline */}
+                {trackingRoute && (
+                  <CorridorTimeline
+                    route={trackingRoute}
+                    bus={trackingBus}
+                    selectedStopId={selectedStopId}
+                    onSelectStop={(id) => {
+                      setSelectedStopId(id);
+                      try {
+                        localStorage.setItem("user_selected_stop", id);
+                      } catch {}
+                    }}
+                    onSetDestination={(id) => {
+                      flashToast(lang === "hi" ? "गंतव्य स्टॉप सेट किया गया" : "Destination stop set");
+                    }}
+                    lang={lang}
+                    onNotify={(msg) => flashToast(msg)}
+                  />
+                )}
               </div>
             )}
 
