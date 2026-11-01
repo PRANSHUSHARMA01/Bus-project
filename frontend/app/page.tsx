@@ -47,9 +47,10 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { StopRow } from "../components/ui/StopRow";
 import { Toast } from "../components/ui/Toast";
 import { TopBar } from "../components/ui/TopBar";
+import { TripPlannerView, TripOption } from "../components/ui/TripPlannerView";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth-context";
-import { post, usePoll } from "../lib/api";
+import { get, post, usePoll } from "../lib/api";
 import { Alert, Arrival, Bus, Route, Stop } from "../lib/types";
 
 // Distance helper
@@ -130,6 +131,12 @@ export default function UberPassengerApp() {
     } catch {}
   }, [theme]);
 
+  // Phase 2B Trip Planner State
+  const [tripPlannerOpen, setTripPlannerOpen] = useState(false);
+  const [tripOptions, setTripOptions] = useState<TripOption[]>([]);
+  const [tripDestName, setTripDestName] = useState<string>("");
+  const [tripLoading, setTripLoading] = useState<boolean>(false);
+
   // Polling data
   const routes = usePoll<Route[]>("/routes", 60000) ?? [];
   const stops = usePoll<Stop[]>("/stops", 60000) ?? [];
@@ -200,6 +207,28 @@ export default function UberPassengerApp() {
       openStopTracker(route.stops[0].id);
     } else if (stops.length > 0) {
       openStopTracker(stops[0].id);
+    }
+  }
+
+  async function handlePlanTripTo(destStopId: string, destName?: string) {
+    const s = stops.find((x) => x.id === destStopId);
+    const resolvedName = destName || (s ? stopName(s) : destStopId);
+    setTripDestName(resolvedName);
+    setTripPlannerOpen(true);
+    setTripLoading(true);
+    setViewMode("map");
+    setSheetSnap("half");
+
+    try {
+      const fromLat = selectedStop ? selectedStop.lat : 28.718;
+      const fromLng = selectedStop ? selectedStop.lng : 77.065;
+      const data = await get(`/v1/trips/plan?to_stop_id=${destStopId}&from_lat=${fromLat}&from_lng=${fromLng}`);
+      setTripOptions(data.options || []);
+    } catch (err) {
+      console.error("Trip plan error:", err);
+      flashToast("Unable to fetch trip options. Check connection.");
+    } finally {
+      setTripLoading(false);
     }
   }
 
@@ -608,8 +637,26 @@ export default function UberPassengerApp() {
               aria-label="Toggle sheet snap height"
             />
 
+            {/* Phase 2B: Trip Planner Multi-Bus View */}
+            {tripPlannerOpen && (
+              <TripPlannerView
+                options={tripOptions}
+                destinationName={tripDestName}
+                loading={tripLoading}
+                lang={lang}
+                onSelectBus={(busId, routeId, boardingId) => {
+                  setTripPlannerOpen(false);
+                  openRouteTracker(routeId);
+                  setTrackingBusId(busId);
+                  setSelectedStopId(boardingId);
+                  flashToast(lang === "hi" ? "ट्रिप ट्रैकिंग शुरू" : "Tracking trip to destination");
+                }}
+                onClose={() => setTripPlannerOpen(false)}
+              />
+            )}
+
             {/* TRACKING SPECIFIC BUS */}
-            {trackingBus && (
+            {!tripPlannerOpen && trackingBus && (
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                   <div>
@@ -668,7 +715,7 @@ export default function UberPassengerApp() {
                       } catch {}
                     }}
                     onSetDestination={(id) => {
-                      flashToast(lang === "hi" ? "गंतव्य स्टॉप सेट किया गया" : "Destination stop set");
+                      handlePlanTripTo(id);
                     }}
                     lang={lang}
                     onNotify={(msg) => flashToast(msg)}
@@ -678,7 +725,7 @@ export default function UberPassengerApp() {
             )}
 
             {/* ARRIVALS AT SELECTED STOP */}
-            {!trackingBus && selectedStop && (
+            {!tripPlannerOpen && !trackingBus && selectedStop && (
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                   <div>

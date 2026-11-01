@@ -20,6 +20,10 @@ raw_origins = os.environ.get(
 )
 ALLOWED_ORIGINS = [o.strip() for o in raw_origins.split(",") if o.strip()]
 
+from fastapi.middleware.gzip import GZipMiddleware
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -170,8 +174,17 @@ def health():
     return {"ok": True, "buses_live": len(fresh())}
 
 @app.get("/buses/live")
-def buses_live():
-    return [bus_view(s) for s in fresh()]
+def buses_live(route: str = None, bbox: str = None):
+    b_list = fresh()
+    if route:
+        b_list = [b for b in b_list if b.get("route_id") == route]
+    if bbox:
+        try:
+            min_lng, min_lat, max_lng, max_lat = map(float, bbox.split(","))
+            b_list = [b for b in b_list if min_lat <= b["lat"] <= max_lat and min_lng <= b["lng"] <= max_lng]
+        except Exception:
+            pass
+    return [bus_view(s) for s in b_list]
 
 @app.get("/fleet")
 def fleet():

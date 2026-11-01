@@ -411,3 +411,50 @@ def dispatch_sos(
         message="Emergency alert received. Coordinates dispatched to Delhi Police (112) and DTC Control Room.",
         created_at=event["created_at"]
     )
+
+# ---------------------------------------------------------------------------
+# Multi-Bus Trip Planner (Phase 2B)
+# ---------------------------------------------------------------------------
+from trip_planner import TripPlanResponse, TripPlannerEngine
+from pathlib import Path
+_trip_planner: Optional[TripPlannerEngine] = None
+
+def get_trip_planner() -> Optional[TripPlannerEngine]:
+    global _trip_planner
+    if _trip_planner is None:
+        routes_path = Path(__file__).parent / "data" / "routes.json"
+        if routes_path.exists():
+            import json
+            raw = json.loads(routes_path.read_text(encoding="utf-8"))
+            _trip_planner = TripPlannerEngine(raw, raw["stops"])
+    return _trip_planner
+
+@v1_router.get("/trips/plan", response_model=TripPlanResponse)
+def plan_trip(
+    to_stop_id: str = Query(..., description="Destination stop ID"),
+    from_lat: Optional[float] = Query(None, description="Rider GPS latitude"),
+    from_lng: Optional[float] = Query(None, description="Rider GPS longitude"),
+    from_stop_id: Optional[str] = Query(None, description="Optional explicit boarding stop ID"),
+):
+    """
+    Trip Planner: Finds all routes serving boarding and destination stops in the right direction,
+    and returns every live bus approaching the boarding stop with ETA, crowd %, and seat chance.
+    """
+    planner = get_trip_planner()
+    if not planner:
+        raise HTTPException(status_code=503, detail="Transit network routes not loaded")
+
+    live_list = []
+    try:
+        from main import fresh, bus_view
+        live_list = [bus_view(s) for s in fresh()]
+    except Exception:
+        pass
+
+    return planner.plan(
+        from_lat=from_lat,
+        from_lng=from_lng,
+        to_stop_id=to_stop_id,
+        from_stop_id=from_stop_id,
+        live_buses=live_list
+    )

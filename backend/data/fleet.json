@@ -1,770 +1,1932 @@
 [
   {
     "bus_id": 1,
-    "reg_no": "DL1PD1409",
+    "reg_no": "DL1PC1409",
     "route_id": "502",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 8
   },
   {
     "bus_id": 2,
     "reg_no": "DL1PB5012",
     "route_id": "502",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 8
   },
   {
     "bus_id": 3,
-    "reg_no": "DL1PC3286",
+    "reg_no": "DL1PD3286",
     "route_id": "502",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 8
   },
   {
     "bus_id": 4,
-    "reg_no": "DL1PD9935",
+    "reg_no": "DL1PC9935",
     "route_id": "502",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 8
   },
   {
     "bus_id": 5,
-    "reg_no": "DL1PD7912",
+    "reg_no": "DL1PC7912",
     "route_id": "502",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 8
   },
   {
     "bus_id": 6,
-    "reg_no": "DL1PD1488",
+    "reg_no": "DL1PC1488",
     "route_id": "502",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 8
   },
   {
     "bus_id": 7,
-    "reg_no": "DL1PD4582",
+    "reg_no": "DL1PC4582",
     "route_id": "502",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 8
   },
   {
     "bus_id": 8,
-    "reg_no": "DL1PC9279",
+    "reg_no": "DL1PD9279",
     "route_id": "502",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 8
   },
   {
     "bus_id": 9,
-    "reg_no": "DL1PD4257",
+    "reg_no": "DL1PC4257",
     "route_id": "427",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 7
   },
   {
     "bus_id": 10,
     "reg_no": "DL1DL4611",
     "route_id": "427",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 7
   },
   {
     "bus_id": 11,
     "reg_no": "DL1DL5557",
     "route_id": "427",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 7
   },
   {
     "bus_id": 12,
-    "reg_no": "DL1PD3615",
+    "reg_no": "DL1PC3615",
     "route_id": "427",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 7
   },
   {
     "bus_id": 13,
     "reg_no": "DL1DL6574",
     "route_id": "427",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 7
   },
   {
     "bus_id": 14,
     "reg_no": "DL1PB3547",
     "route_id": "427",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 7
   },
   {
     "bus_id": 15,
-    "reg_no": "DL1PC6514",
+    "reg_no": "DL1PD6514",
     "route_id": "427",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 7
   },
   {
     "bus_id": 16,
-    "reg_no": "DL1PD2519",
-    "route_id": "427",
-    "capacity": 60
+    "reg_no": "DL1PC2519",
+    "route_id": "102",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 12
   },
   {
     "bus_id": 17,
     "reg_no": "DL1DL2584",
     "route_id": "102",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 12
   },
   {
     "bus_id": 18,
     "reg_no": "DL1PB6635",
     "route_id": "102",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 12
   },
   {
     "bus_id": 19,
     "reg_no": "DL1PB1711",
     "route_id": "102",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 12
   },
   {
     "bus_id": 20,
     "reg_no": "DL1DL9785",
     "route_id": "102",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 12
   },
   {
     "bus_id": 21,
-    "reg_no": "DL1PD7201",
+    "reg_no": "DL1PC7201",
     "route_id": "102",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 12
   },
   {
     "bus_id": 22,
-    "reg_no": "DL1PD5803",
+    "reg_no": "DL1PC5803",
     "route_id": "102",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 12
   },
   {
     "bus_id": 23,
     "reg_no": "DL1PB4150",
     "route_id": "102",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 12
   },
   {
     "bus_id": 24,
-    "reg_no": "DL1PD1750",
+    "reg_no": "DL1PC1750",
     "route_id": "102",
-    "capacity": 60
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 12
   },
   {
     "bus_id": 25,
-    "reg_no": "DL1PC5741",
-    "route_id": "534",
-    "capacity": 60
+    "reg_no": "DL1PD5741",
+    "route_id": "102",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 12
   },
   {
     "bus_id": 26,
-    "reg_no": "DL1PD4814",
-    "route_id": "534",
-    "capacity": 60
+    "reg_no": "DL1PC4814",
+    "route_id": "102",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 12
   },
   {
     "bus_id": 27,
-    "reg_no": "DL1PD7227",
-    "route_id": "534",
-    "capacity": 60
+    "reg_no": "DL1PC7227",
+    "route_id": "102",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 12
   },
   {
     "bus_id": 28,
     "reg_no": "DL1PB8428",
     "route_id": "534",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 12
   },
   {
     "bus_id": 29,
     "reg_no": "DL1PB3664",
     "route_id": "534",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 12
   },
   {
     "bus_id": 30,
     "reg_no": "DL1PB6820",
     "route_id": "534",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 12
   },
   {
     "bus_id": 31,
-    "reg_no": "DL1PC5374",
+    "reg_no": "DL1PD5374",
     "route_id": "534",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 12
   },
   {
     "bus_id": 32,
-    "reg_no": "DL1PD3803",
+    "reg_no": "DL1PC3803",
     "route_id": "534",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 12
   },
   {
     "bus_id": 33,
-    "reg_no": "DL1PC3677",
-    "route_id": "615",
-    "capacity": 60
+    "reg_no": "DL1PD3677",
+    "route_id": "534",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 12
   },
   {
     "bus_id": 34,
     "reg_no": "DL1DL7216",
-    "route_id": "615",
-    "capacity": 60
+    "route_id": "534",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 12
   },
   {
     "bus_id": 35,
     "reg_no": "DL1PB4598",
-    "route_id": "615",
-    "capacity": 60
+    "route_id": "534",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 12
   },
   {
     "bus_id": 36,
     "reg_no": "DL1PB1916",
-    "route_id": "615",
-    "capacity": 60
+    "route_id": "534",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 12
   },
   {
     "bus_id": 37,
-    "reg_no": "DL1PC1525",
-    "route_id": "615",
-    "capacity": 60
+    "reg_no": "DL1PD1525",
+    "route_id": "534",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 12
   },
   {
     "bus_id": 38,
     "reg_no": "DL1PB7572",
-    "route_id": "615",
-    "capacity": 60
+    "route_id": "534",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 12
   },
   {
     "bus_id": 39,
     "reg_no": "DL1PB2084",
-    "route_id": "615",
-    "capacity": 60
+    "route_id": "534",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 12
   },
   {
     "bus_id": 40,
-    "reg_no": "DL1PC6155",
+    "reg_no": "DL1PD6155",
     "route_id": "615",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 8
   },
   {
     "bus_id": 41,
-    "reg_no": "DL1PC9179",
-    "route_id": "764",
-    "capacity": 60
+    "reg_no": "DL1PD9179",
+    "route_id": "615",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 8
   },
   {
     "bus_id": 42,
     "reg_no": "DL1DL8517",
-    "route_id": "764",
-    "capacity": 60
+    "route_id": "615",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 8
   },
   {
     "bus_id": 43,
-    "reg_no": "DL1PC5339",
-    "route_id": "764",
-    "capacity": 60
+    "reg_no": "DL1PD5339",
+    "route_id": "615",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 8
   },
   {
     "bus_id": 44,
-    "reg_no": "DL1PC5040",
-    "route_id": "764",
-    "capacity": 60
+    "reg_no": "DL1PD5040",
+    "route_id": "615",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 8
   },
   {
     "bus_id": 45,
     "reg_no": "DL1PB8019",
-    "route_id": "764",
-    "capacity": 60
+    "route_id": "615",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 8
   },
   {
     "bus_id": 46,
     "reg_no": "DL1DL6930",
-    "route_id": "764",
-    "capacity": 60
+    "route_id": "615",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 8
   },
   {
     "bus_id": 47,
-    "reg_no": "DL1PC3266",
-    "route_id": "764",
-    "capacity": 60
+    "reg_no": "DL1PD3266",
+    "route_id": "615",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 8
   },
   {
     "bus_id": 48,
     "reg_no": "DL1DL2489",
     "route_id": "764",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 17
   },
   {
     "bus_id": 49,
-    "reg_no": "DL1PD2796",
+    "reg_no": "DL1PC2796",
     "route_id": "764",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 17
   },
   {
     "bus_id": 50,
-    "reg_no": "DL1PC3621",
+    "reg_no": "DL1PD3621",
     "route_id": "764",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 17
   },
   {
     "bus_id": 51,
     "reg_no": "DL1DL2040",
-    "route_id": "73",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 17
   },
   {
     "bus_id": 52,
     "reg_no": "DL1DL7252",
-    "route_id": "73",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 17
   },
   {
     "bus_id": 53,
     "reg_no": "DL1DL9669",
-    "route_id": "73",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 17
   },
   {
     "bus_id": 54,
     "reg_no": "DL1PB1188",
-    "route_id": "73",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 17
   },
   {
     "bus_id": 55,
-    "reg_no": "DL1PD9797",
-    "route_id": "73",
-    "capacity": 60
+    "reg_no": "DL1PC9797",
+    "route_id": "764",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 17
   },
   {
     "bus_id": 56,
     "reg_no": "DL1PB6573",
-    "route_id": "73",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 17
   },
   {
     "bus_id": 57,
-    "reg_no": "DL1PD5808",
-    "route_id": "78",
-    "capacity": 60
+    "reg_no": "DL1PC5808",
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 17
   },
   {
     "bus_id": 58,
     "reg_no": "DL1DL3591",
-    "route_id": "78",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 17
   },
   {
     "bus_id": 59,
     "reg_no": "DL1DL1053",
-    "route_id": "78",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 17
   },
   {
     "bus_id": 60,
     "reg_no": "DL1PB9201",
-    "route_id": "78",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 12,
+    "total_slots": 17
   },
   {
     "bus_id": 61,
-    "reg_no": "DL1PC9317",
-    "route_id": "78",
-    "capacity": 60
+    "reg_no": "DL1PD9317",
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 13,
+    "total_slots": 17
   },
   {
     "bus_id": 62,
-    "reg_no": "DL1PD5889",
-    "route_id": "78",
-    "capacity": 60
+    "reg_no": "DL1PC5889",
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 14,
+    "total_slots": 17
   },
   {
     "bus_id": 63,
-    "reg_no": "DL1PC3504",
-    "route_id": "761",
-    "capacity": 60
+    "reg_no": "DL1PD3504",
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 15,
+    "total_slots": 17
   },
   {
     "bus_id": 64,
     "reg_no": "DL1PB3646",
-    "route_id": "761",
-    "capacity": 60
+    "route_id": "764",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 16,
+    "total_slots": 17
   },
   {
     "bus_id": 65,
-    "reg_no": "DL1PD6310",
-    "route_id": "761",
-    "capacity": 60
+    "reg_no": "DL1PC6310",
+    "route_id": "73",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 13
   },
   {
     "bus_id": 66,
     "reg_no": "DL1DL1319",
-    "route_id": "761",
-    "capacity": 60
+    "route_id": "73",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 13
   },
   {
     "bus_id": 67,
-    "reg_no": "DL1PD6947",
-    "route_id": "761",
-    "capacity": 60
+    "reg_no": "DL1PC6947",
+    "route_id": "73",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 13
   },
   {
     "bus_id": 68,
     "reg_no": "DL1PB4923",
-    "route_id": "761",
-    "capacity": 60
+    "route_id": "73",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 13
   },
   {
     "bus_id": 69,
-    "reg_no": "DL1PD4946",
-    "route_id": "543A",
-    "capacity": 60
+    "reg_no": "DL1PC4946",
+    "route_id": "73",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 13
   },
   {
     "bus_id": 70,
-    "reg_no": "DL1PD2403",
-    "route_id": "543A",
-    "capacity": 60
+    "reg_no": "DL1PC2403",
+    "route_id": "73",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 13
   },
   {
     "bus_id": 71,
     "reg_no": "DL1DL2133",
-    "route_id": "543A",
-    "capacity": 60
+    "route_id": "73",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 13
   },
   {
     "bus_id": 72,
-    "reg_no": "DL1PC3103",
-    "route_id": "543A",
-    "capacity": 60
+    "reg_no": "DL1PD3103",
+    "route_id": "73",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 13
   },
   {
     "bus_id": 73,
     "reg_no": "DL1DL3705",
-    "route_id": "543A",
-    "capacity": 60
+    "route_id": "73",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 13
   },
   {
     "bus_id": 74,
     "reg_no": "DL1PB9645",
-    "route_id": "543A",
-    "capacity": 60
+    "route_id": "73",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 13
   },
   {
     "bus_id": 75,
     "reg_no": "DL1DL4470",
-    "route_id": "721",
-    "capacity": 60
+    "route_id": "73",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 13
   },
   {
     "bus_id": 76,
-    "reg_no": "DL1PC6107",
-    "route_id": "721",
-    "capacity": 60
+    "reg_no": "DL1PD6107",
+    "route_id": "73",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 13
   },
   {
     "bus_id": 77,
     "reg_no": "DL1DL7118",
-    "route_id": "721",
-    "capacity": 60
+    "route_id": "73",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 12,
+    "total_slots": 13
   },
   {
     "bus_id": 78,
     "reg_no": "DL1DL9479",
-    "route_id": "721",
-    "capacity": 60
+    "route_id": "78",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 6
   },
   {
     "bus_id": 79,
     "reg_no": "DL1DL2982",
-    "route_id": "721",
-    "capacity": 60
+    "route_id": "78",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 6
   },
   {
     "bus_id": 80,
-    "reg_no": "DL1PC4681",
-    "route_id": "721",
-    "capacity": 60
+    "reg_no": "DL1PD4681",
+    "route_id": "78",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 6
   },
   {
     "bus_id": 81,
-    "reg_no": "DL1PD6539",
-    "route_id": "623",
-    "capacity": 60
+    "reg_no": "DL1PC6539",
+    "route_id": "78",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 6
   },
   {
     "bus_id": 82,
-    "reg_no": "DL1PD4770",
-    "route_id": "623",
-    "capacity": 60
+    "reg_no": "DL1PC4770",
+    "route_id": "78",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 6
   },
   {
     "bus_id": 83,
-    "reg_no": "DL1PC1117",
-    "route_id": "623",
-    "capacity": 60
+    "reg_no": "DL1PD1117",
+    "route_id": "78",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 6
   },
   {
     "bus_id": 84,
-    "reg_no": "DL1PD1964",
-    "route_id": "623",
-    "capacity": 60
+    "reg_no": "DL1PC1964",
+    "route_id": "761",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 11
   },
   {
     "bus_id": 85,
-    "reg_no": "DL1PC2104",
-    "route_id": "623",
-    "capacity": 60
+    "reg_no": "DL1PD2104",
+    "route_id": "761",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 11
   },
   {
     "bus_id": 86,
-    "reg_no": "DL1PD6413",
-    "route_id": "623",
-    "capacity": 60
+    "reg_no": "DL1PC6413",
+    "route_id": "761",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 11
   },
   {
     "bus_id": 87,
-    "reg_no": "DL1PD9423",
-    "route_id": "861A",
-    "capacity": 60
+    "reg_no": "DL1PC9423",
+    "route_id": "761",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 11
   },
   {
     "bus_id": 88,
-    "reg_no": "DL1PC5562",
-    "route_id": "861A",
-    "capacity": 60
+    "reg_no": "DL1PD5562",
+    "route_id": "761",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 11
   },
   {
     "bus_id": 89,
     "reg_no": "DL1DL4510",
-    "route_id": "861A",
-    "capacity": 60
+    "route_id": "761",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 11
   },
   {
     "bus_id": 90,
-    "reg_no": "DL1PC8744",
-    "route_id": "861A",
-    "capacity": 60
+    "reg_no": "DL1PD8744",
+    "route_id": "761",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 11
   },
   {
     "bus_id": 91,
-    "reg_no": "DL1PC8749",
-    "route_id": "861A",
-    "capacity": 60
+    "reg_no": "DL1PD8749",
+    "route_id": "761",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 11
   },
   {
     "bus_id": 92,
     "reg_no": "DL1DL4119",
-    "route_id": "861A",
-    "capacity": 60
+    "route_id": "761",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 11
   },
   {
     "bus_id": 93,
-    "reg_no": "DL1PD2588",
-    "route_id": "144",
-    "capacity": 60
+    "reg_no": "DL1PC2588",
+    "route_id": "761",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 11
   },
   {
     "bus_id": 94,
     "reg_no": "DL1DL6804",
-    "route_id": "144",
-    "capacity": 60
+    "route_id": "761",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 11
   },
   {
     "bus_id": 95,
     "reg_no": "DL1DL7735",
-    "route_id": "144",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 15
   },
   {
     "bus_id": 96,
     "reg_no": "DL1DL1887",
-    "route_id": "144",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 15
   },
   {
     "bus_id": 97,
-    "reg_no": "DL1PD1993",
-    "route_id": "144",
-    "capacity": 60
+    "reg_no": "DL1PC1993",
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 15
   },
   {
     "bus_id": 98,
     "reg_no": "DL1DL6559",
-    "route_id": "144",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 15
   },
   {
     "bus_id": 99,
-    "reg_no": "DL1PD5073",
-    "route_id": "192",
-    "capacity": 60
+    "reg_no": "DL1PC5073",
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 15
   },
   {
     "bus_id": 100,
-    "reg_no": "DL1PC4116",
-    "route_id": "192",
-    "capacity": 60
+    "reg_no": "DL1PD4116",
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 15
   },
   {
     "bus_id": 101,
     "reg_no": "DL1DL3296",
-    "route_id": "192",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 15
   },
   {
     "bus_id": 102,
     "reg_no": "DL1DL4006",
-    "route_id": "192",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 15
   },
   {
     "bus_id": 103,
     "reg_no": "DL1PB8579",
-    "route_id": "192",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 15
   },
   {
     "bus_id": 104,
-    "reg_no": "DL1PC2235",
-    "route_id": "192",
-    "capacity": 60
+    "reg_no": "DL1PD2235",
+    "route_id": "543A",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 15
   },
   {
     "bus_id": 105,
     "reg_no": "DL1DL2604",
-    "route_id": "AIRPORT",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 15
   },
   {
     "bus_id": 106,
-    "reg_no": "DL1PD9856",
-    "route_id": "AIRPORT",
-    "capacity": 60
+    "reg_no": "DL1PC9856",
+    "route_id": "543A",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 15
   },
   {
     "bus_id": 107,
-    "reg_no": "DL1PD2528",
-    "route_id": "AIRPORT",
-    "capacity": 60
+    "reg_no": "DL1PC2528",
+    "route_id": "543A",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 12,
+    "total_slots": 15
   },
   {
     "bus_id": 108,
-    "reg_no": "DL1PC3724",
-    "route_id": "AIRPORT",
-    "capacity": 60
+    "reg_no": "DL1PD3724",
+    "route_id": "543A",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 13,
+    "total_slots": 15
   },
   {
     "bus_id": 109,
     "reg_no": "DL1DL8956",
-    "route_id": "AIRPORT",
-    "capacity": 60
+    "route_id": "543A",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 14,
+    "total_slots": 15
   },
   {
     "bus_id": 110,
     "reg_no": "DL1DL4502",
-    "route_id": "AIRPORT",
-    "capacity": 60
+    "route_id": "721",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 11
   },
   {
     "bus_id": 111,
-    "reg_no": "DL1PC1960",
-    "route_id": "A",
-    "capacity": 60
+    "reg_no": "DL1DL1960",
+    "route_id": "721",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 11
   },
   {
     "bus_id": 112,
     "reg_no": "DL1PD7209",
-    "route_id": "A",
-    "capacity": 60
+    "route_id": "721",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 11
   },
   {
     "bus_id": 113,
-    "reg_no": "DL1PD7396",
-    "route_id": "A",
-    "capacity": 60
+    "reg_no": "DL1PC7396",
+    "route_id": "721",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 11
   },
   {
     "bus_id": 114,
-    "reg_no": "DL1PC8454",
-    "route_id": "A",
-    "capacity": 60
+    "reg_no": "DL1PB8454",
+    "route_id": "721",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 11
   },
   {
     "bus_id": 115,
-    "reg_no": "DL1PC7930",
-    "route_id": "A",
-    "capacity": 60
+    "reg_no": "DL1PB7930",
+    "route_id": "721",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 11
   },
   {
     "bus_id": 116,
-    "reg_no": "DL1PB8973",
-    "route_id": "A",
-    "capacity": 60
+    "reg_no": "DL1DL3536",
+    "route_id": "721",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 11
   },
   {
     "bus_id": 117,
-    "reg_no": "DL1PD4111",
-    "route_id": "B",
-    "capacity": 60
+    "reg_no": "DL1PD5861",
+    "route_id": "721",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 11
   },
   {
     "bus_id": 118,
-    "reg_no": "DL1PC4566",
-    "route_id": "B",
-    "capacity": 60
+    "reg_no": "DL1PD1958",
+    "route_id": "721",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 11
   },
   {
     "bus_id": 119,
-    "reg_no": "DL1PD9883",
-    "route_id": "B",
-    "capacity": 60
+    "reg_no": "DL1PC6138",
+    "route_id": "721",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 11
   },
   {
     "bus_id": 120,
-    "reg_no": "DL1PD6138",
-    "route_id": "B",
-    "capacity": 60
+    "reg_no": "DL1PC1821",
+    "route_id": "721",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 11
   },
   {
     "bus_id": 121,
-    "reg_no": "DL1PD1821",
-    "route_id": "B",
-    "capacity": 60
+    "reg_no": "DL1DL9238",
+    "route_id": "623",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 14
   },
   {
     "bus_id": 122,
-    "reg_no": "DL1PB8811",
-    "route_id": "B",
-    "capacity": 60
+    "reg_no": "DL1PD1931",
+    "route_id": "623",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 14
   },
   {
     "bus_id": 123,
-    "reg_no": "DL1PB9701",
-    "route_id": "C",
-    "capacity": 60
+    "reg_no": "DL1PC4044",
+    "route_id": "623",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 14
   },
   {
     "bus_id": 124,
-    "reg_no": "DL1PD1931",
-    "route_id": "C",
-    "capacity": 60
+    "reg_no": "DL1PC2113",
+    "route_id": "623",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 14
   },
   {
     "bus_id": 125,
-    "reg_no": "DL1PB2312",
-    "route_id": "C",
-    "capacity": 60
+    "reg_no": "DL1PD7615",
+    "route_id": "623",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 14
   },
   {
     "bus_id": 126,
-    "reg_no": "DL1PD2122",
-    "route_id": "C",
-    "capacity": 60
+    "reg_no": "DL1PC5033",
+    "route_id": "623",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 14
   },
   {
     "bus_id": 127,
-    "reg_no": "DL1PB2113",
-    "route_id": "C",
-    "capacity": 60
+    "reg_no": "DL1PC2343",
+    "route_id": "623",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 14
   },
   {
     "bus_id": 128,
-    "reg_no": "DL1PB4853",
+    "reg_no": "DL1DL9565",
+    "route_id": "623",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 14
+  },
+  {
+    "bus_id": 129,
+    "reg_no": "DL1PB5272",
+    "route_id": "623",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 14
+  },
+  {
+    "bus_id": 130,
+    "reg_no": "DL1PD6147",
+    "route_id": "623",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 14
+  },
+  {
+    "bus_id": 131,
+    "reg_no": "DL1PD5351",
+    "route_id": "623",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 14
+  },
+  {
+    "bus_id": 132,
+    "reg_no": "DL1DL3144",
+    "route_id": "623",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 14
+  },
+  {
+    "bus_id": 133,
+    "reg_no": "DL1PB8491",
+    "route_id": "623",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 12,
+    "total_slots": 14
+  },
+  {
+    "bus_id": 134,
+    "reg_no": "DL1PB2188",
+    "route_id": "623",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 13,
+    "total_slots": 14
+  },
+  {
+    "bus_id": 135,
+    "reg_no": "DL1PC8508",
+    "route_id": "861A",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 136,
+    "reg_no": "DL1PC2200",
+    "route_id": "861A",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 137,
+    "reg_no": "DL1PD9288",
+    "route_id": "861A",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 138,
+    "reg_no": "DL1PB3170",
+    "route_id": "861A",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 139,
+    "reg_no": "DL1PB2127",
+    "route_id": "861A",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 140,
+    "reg_no": "DL1PD7054",
+    "route_id": "861A",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 141,
+    "reg_no": "DL1PB3584",
+    "route_id": "861A",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 142,
+    "reg_no": "DL1DL9900",
+    "route_id": "861A",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 143,
+    "reg_no": "DL1PB9666",
+    "route_id": "144",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 144,
+    "reg_no": "DL1PC5905",
+    "route_id": "144",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 145,
+    "reg_no": "DL1PC3200",
+    "route_id": "144",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 146,
+    "reg_no": "DL1PB2891",
+    "route_id": "144",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 147,
+    "reg_no": "DL1PC3546",
+    "route_id": "144",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 148,
+    "reg_no": "DL1PB5616",
+    "route_id": "144",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 149,
+    "reg_no": "DL1PD6617",
+    "route_id": "144",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 150,
+    "reg_no": "DL1PD5325",
+    "route_id": "144",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 151,
+    "reg_no": "DL1DL5114",
+    "route_id": "144",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 152,
+    "reg_no": "DL1PC2512",
+    "route_id": "144",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 153,
+    "reg_no": "DL1DL5533",
+    "route_id": "144",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 154,
+    "reg_no": "DL1PC1058",
+    "route_id": "144",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 155,
+    "reg_no": "DL1PB3143",
+    "route_id": "192",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 156,
+    "reg_no": "DL1PB3647",
+    "route_id": "192",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 157,
+    "reg_no": "DL1DL8007",
+    "route_id": "192",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 158,
+    "reg_no": "DL1PC2832",
+    "route_id": "192",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 159,
+    "reg_no": "DL1PC3442",
+    "route_id": "192",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 160,
+    "reg_no": "DL1PC7049",
+    "route_id": "192",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 161,
+    "reg_no": "DL1PD8041",
+    "route_id": "192",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 162,
+    "reg_no": "DL1PD1685",
+    "route_id": "AIRPORT",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 5
+  },
+  {
+    "bus_id": 163,
+    "reg_no": "DL1PB6974",
+    "route_id": "AIRPORT",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 5
+  },
+  {
+    "bus_id": 164,
+    "reg_no": "DL1PC6862",
+    "route_id": "AIRPORT",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 5
+  },
+  {
+    "bus_id": 165,
+    "reg_no": "DL1PD5088",
+    "route_id": "AIRPORT",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 5
+  },
+  {
+    "bus_id": 166,
+    "reg_no": "DL1PC6794",
+    "route_id": "AIRPORT",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 5
+  },
+  {
+    "bus_id": 167,
+    "reg_no": "DL1DL3532",
+    "route_id": "A",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 168,
+    "reg_no": "DL1PD3662",
+    "route_id": "A",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 169,
+    "reg_no": "DL1PD7755",
+    "route_id": "A",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 170,
+    "reg_no": "DL1PC3938",
+    "route_id": "A",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 171,
+    "reg_no": "DL1PB7745",
+    "route_id": "A",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 172,
+    "reg_no": "DL1PD5371",
+    "route_id": "A",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 173,
+    "reg_no": "DL1PD2771",
+    "route_id": "A",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 174,
+    "reg_no": "DL1DL1634",
+    "route_id": "A",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 8
+  },
+  {
+    "bus_id": 175,
+    "reg_no": "DL1DL4644",
+    "route_id": "B",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 176,
+    "reg_no": "DL1PD8541",
+    "route_id": "B",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 177,
+    "reg_no": "DL1PB6000",
+    "route_id": "B",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 178,
+    "reg_no": "DL1PD4652",
+    "route_id": "B",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 179,
+    "reg_no": "DL1PC4164",
+    "route_id": "B",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 180,
+    "reg_no": "DL1DL6378",
+    "route_id": "B",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 181,
+    "reg_no": "DL1PB2137",
+    "route_id": "B",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 7
+  },
+  {
+    "bus_id": 182,
+    "reg_no": "DL1PB6753",
     "route_id": "C",
-    "capacity": 60
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 0,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 183,
+    "reg_no": "DL1DL9785",
+    "route_id": "C",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 1,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 184,
+    "reg_no": "DL1PB1452",
+    "route_id": "C",
+    "direction": "out",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 2,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 185,
+    "reg_no": "DL1PC5279",
+    "route_id": "C",
+    "direction": "out",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 3,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 186,
+    "reg_no": "DL1PD5349",
+    "route_id": "C",
+    "direction": "out",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 4,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 187,
+    "reg_no": "DL1PC2776",
+    "route_id": "C",
+    "direction": "out",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 5,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 188,
+    "reg_no": "DL1DL6663",
+    "route_id": "C",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 6,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 189,
+    "reg_no": "DL1PB8149",
+    "route_id": "C",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 7,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 190,
+    "reg_no": "DL1PC7311",
+    "route_id": "C",
+    "direction": "in",
+    "fleet_type": "Electric AC",
+    "capacity": 60,
+    "slot_idx": 8,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 191,
+    "reg_no": "DL1PD5173",
+    "route_id": "C",
+    "direction": "in",
+    "fleet_type": "CNG AC",
+    "capacity": 60,
+    "slot_idx": 9,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 192,
+    "reg_no": "DL1PC8144",
+    "route_id": "C",
+    "direction": "in",
+    "fleet_type": "CNG Standard",
+    "capacity": 60,
+    "slot_idx": 10,
+    "total_slots": 12
+  },
+  {
+    "bus_id": 193,
+    "reg_no": "DL1PC9518",
+    "route_id": "C",
+    "direction": "in",
+    "fleet_type": "Electric Standard",
+    "capacity": 60,
+    "slot_idx": 11,
+    "total_slots": 12
   }
 ]

@@ -85,6 +85,7 @@ print(f"Simulator running: {len(buses)} buses, demo clock x{args.speedup}. Press
 
 def run_loop():
     global flags, last_flags, last_print
+    broken_since = {}
     while True:
         t0 = time.time()
         now = datetime.now()
@@ -105,11 +106,23 @@ def run_loop():
         pings, boardings = [], []
         sim_dt = args.tick * args.speedup
 
-        for bid, b in buses.items():
+        for bid, b in list(buses.items()):
             route = ROUTES[b["route"]]
             broken = bid in flags.get("broken", [])
             if broken:
                 b["speed"] = 0.0
+                if bid not in broken_since:
+                    broken_since[bid] = t0
+                elif t0 - broken_since[bid] > 60:
+                    # Spawn relief bus after 60s so route active fleet >= 5
+                    relief_id = max(buses.keys()) + 1
+                    buses[relief_id] = {
+                        "route": b["route"],
+                        "s": (b["s"] + 2000) % route["period"],
+                        "speed": 12.0, "dwell": 0.0, "onboard": 12,
+                        "cap": 60, "last_stop": None
+                    }
+                    del broken_since[bid]
             elif b["dwell"] > 0:
                 b["dwell"] -= sim_dt
                 b["speed"] = 0.0

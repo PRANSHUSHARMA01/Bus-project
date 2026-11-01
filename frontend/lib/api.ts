@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 
 export const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
+export async function get<T = any>(path: string): Promise<T> {
+  const r = await fetch(API + path);
+  if (!r.ok) {
+    throw new Error(`API GET failed: ${r.status}`);
+  }
+  return r.json();
+}
+
 export async function post<T = unknown>(path: string, body: unknown): Promise<T> {
   const r = await fetch(API + path, {
     method: "POST",
