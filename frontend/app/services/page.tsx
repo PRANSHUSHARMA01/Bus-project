@@ -5,19 +5,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { STATIC_SERVICES, ServiceItem } from "@/lib/services";
 import { ServiceCard } from "@/components/ui/ServiceCard";
-import { Sheet } from "@/components/ui/Sheet";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { PillButton } from "@/components/ui/PillButton";
+import { FaresIllustration } from "@/components/illustrations/ServiceIllustrations";
 import {
   Search,
   ArrowLeft,
   X,
-  ExternalLink,
-  PhoneCall,
-  CheckCircle2,
-  Clock,
-  ShieldAlert,
-  Bus
+  Sparkles,
+  ChevronRight
 } from "lucide-react";
 
 export default function ServicesPage() {
@@ -26,10 +21,8 @@ export default function ServicesPage() {
   const lang = user?.language || "en";
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
-  const [recentIds, setRecentIds] = useState<string[]>(["find_bus", "fares_passes", "safety_sos", "night_buses"]);
 
-  // Filter services by search query
+  // Live filtering by search query
   const filteredServices = useMemo(() => {
     if (!searchQuery.trim()) return STATIC_SERVICES;
     const q = searchQuery.toLowerCase().trim();
@@ -37,22 +30,14 @@ export default function ServicesPage() {
       (s) =>
         s.title.toLowerCase().includes(q) ||
         s.title_hi.toLowerCase().includes(q) ||
-        s.description.toLowerCase().includes(q) ||
-        s.description_hi.toLowerCase().includes(q)
+        s.subtitle.toLowerCase().includes(q) ||
+        s.subtitle_hi.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q)
     );
   }, [searchQuery]);
 
   const handleCardClick = (service: ServiceItem) => {
-    // Add to recently used
-    setRecentIds((prev) => [service.id, ...prev.filter((id) => id !== service.id)].slice(0, 5));
-
-    // Open detailed sheet with full specifications & working action button
-    setSelectedService(service);
-  };
-
-  const handleRecentClick = (id: string) => {
-    const s = STATIC_SERVICES.find((item) => item.id === id);
-    if (s) handleCardClick(s);
+    router.push(`/services/${service.slug}`);
   };
 
   return (
@@ -106,7 +91,7 @@ export default function ServicesPage() {
           </div>
         </div>
 
-        {/* 1. Top Search Field (Search services) */}
+        {/* 1. Top Search Field (Filters live) */}
         <div style={{ position: "relative", width: "100%" }}>
           <Search
             size={18}
@@ -116,17 +101,18 @@ export default function ServicesPage() {
               top: "50%",
               transform: "translateY(-50%)",
               color: "var(--text-muted)",
+              pointerEvents: "none",
             }}
           />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={lang === "hi" ? "सेवाएं खोजें (बस, पास, 112, टाइमटेबल)..." : "Search services (Bus, Passes, 112, Schedule)..."}
+            placeholder={lang === "hi" ? "सेवाएं खोजें (उदा. बस, किराया, पास, सुरक्षा)..." : "Search services (e.g. bus, fares, pass, SOS)..."}
             style={{
               width: "100%",
               height: 48,
-              borderRadius: "var(--r-pill)",
+              borderRadius: "var(--r-card)",
               background: "var(--surface)",
               border: "1px solid var(--border)",
               boxShadow: "var(--ring-subtle)",
@@ -135,6 +121,7 @@ export default function ServicesPage() {
               color: "var(--text)",
               outline: "none",
             }}
+            aria-label="Search transit services"
           />
           {searchQuery && (
             <button
@@ -157,204 +144,166 @@ export default function ServicesPage() {
           )}
         </div>
 
-        {/* 2. Recently Used Quick Row */}
+        {/* 2. Black Full-Width Promo Banner for Fares & Passes (Step 3 specs) */}
         {!searchQuery && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span
-              className="text-caption"
-              style={{
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                color: "var(--text-muted)",
-                textTransform: "uppercase",
-                letterSpacing: "+0.05em",
-                marginInlineStart: 4,
-              }}
-            >
-              {lang === "hi" ? "हाल ही में उपयोग किए गए" : "Recently used"}
-            </span>
+          <div
+            onClick={() => router.push("/services/fares-passes")}
+            className="btn-press"
+            style={{
+              width: "100%",
+              borderRadius: 20,
+              background: "#000000",
+              color: "#ffffff",
+              padding: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Fares & Passes: Free bus travel for women commuters and DTC slabs"
+          >
+            {/* Left 58% Content */}
+            <div style={{ width: "58%", zIndex: 2, display: "flex", flexDirection: "column", gap: 6 }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "+0.08em",
+                  color: "oklch(0.80 0.17 75)",
+                }}
+              >
+                DTC SCHEME · FREE PASS
+              </span>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "1.125rem",
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  color: "#ffffff",
+                }}
+              >
+                {lang === "hi" ? "महिला यात्रियों के लिए मुफ्त सफर" : "Fares, passes & free travel"}
+              </h2>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "0.75rem",
+                  color: "rgba(255,255,255,0.75)",
+                  lineHeight: 1.3,
+                }}
+              >
+                {lang === "hi" ? "पिंक पास योजना व डीटीसी किराया स्लैब" : "Pink pass scheme & standard DTC slabs"}
+              </p>
+
+              {/* 44px White Pill CTA */}
+              <div
+                style={{
+                  marginTop: 6,
+                  height: 38,
+                  padding: "0 18px",
+                  borderRadius: 999,
+                  background: "#ffffff",
+                  color: "#000000",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  fontSize: "0.8125rem",
+                  fontWeight: 700,
+                  width: "fit-content",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                }}
+              >
+                <span>{lang === "hi" ? "किराया देखें" : "See fares"}</span>
+                <ChevronRight size={14} strokeWidth={2.5} />
+              </div>
+            </div>
+
+            {/* Right 42% Artwork */}
             <div
               style={{
-                display: "flex",
-                gap: 8,
-                overflowX: "auto",
-                paddingBottom: 4,
-                scrollbarWidth: "none",
+                width: "40%",
+                aspectRatio: "4/3",
+                borderRadius: 14,
+                overflow: "hidden",
+                position: "relative",
               }}
             >
-              {recentIds.map((id) => {
-                const s = STATIC_SERVICES.find((item) => item.id === id);
-                if (!s) return null;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => handleRecentClick(id)}
-                    className="btn-press"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      height: 32,
-                      padding: "0 12px",
-                      borderRadius: "var(--r-pill)",
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "var(--ring-subtle)",
-                      fontSize: "0.8125rem",
-                      fontWeight: 500,
-                      color: "var(--text)",
-                      whiteSpace: "nowrap",
-                      cursor: "pointer",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <span>{lang === "hi" ? s.title_hi : s.title}</span>
-                  </button>
-                );
-              })}
+              <FaresIllustration />
             </div>
           </div>
         )}
 
-        {/* 3. Two-Column Grid of ServiceCards (>= 9 visible cards!) */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginInline: 4 }}>
-            <span className="text-heading" style={{ fontSize: "1rem" }}>
-              {lang === "hi" ? "सभी सेवाएं" : "All Services"}
+        {/* 3. Section Title "All services" + Count Chip "13" */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginInline: 4, marginTop: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="text-heading" style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--text)" }}>
+              {lang === "hi" ? "सभी सेवाएं" : "All services"}
             </span>
-            <span className="text-caption" style={{ color: "var(--text-muted)" }}>
-              {filteredServices.length} {lang === "hi" ? "उपलब्ध" : "available"}
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 12,
-            }}
-            data-testid="services-grid"
-          >
-            {filteredServices.map((service, idx) => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                lang={lang}
-                onClick={handleCardClick}
-                staggerIndex={idx}
-              />
-            ))}
-          </div>
-
-          {filteredServices.length === 0 && (
-            <div
+            <span
               style={{
-                textAlign: "center",
-                padding: "48px 16px",
-                background: "var(--surface)",
-                borderRadius: "var(--r-card)",
-                boxShadow: "var(--ring-subtle)",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: 999,
+                background: "var(--surface-2)",
+                color: "var(--text-muted)",
               }}
             >
-              <p className="text-body" style={{ margin: "0 0 6px", fontWeight: 600 }}>
-                {lang === "hi" ? "कोई सेवा नहीं मिली" : "No services found"}
-              </p>
-              <p className="text-caption" style={{ color: "var(--text-muted)", margin: 0 }}>
-                {lang === "hi" ? "कृपया अलग खोज शब्द आज़माएं।" : "Try searching for bus routes, fares or emergency helplines."}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 4. Interactive Detail Sheet for each Service (No Dead Links!) */}
-      {selectedService && (
-        <Sheet
-          isOpen={true}
-          onClose={() => setSelectedService(null)}
-          title={lang === "hi" ? selectedService.title_hi : selectedService.title}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: 16 }}>
-            {selectedService.badge && (
-              <span
-                style={{
-                  alignSelf: "flex-start",
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  padding: "4px 10px",
-                  borderRadius: "var(--r-chip)",
-                  background: "var(--surface-2)",
-                  color: "var(--accent)",
-                }}
-              >
-                {selectedService.badge}
-              </span>
-            )}
-
-            <p className="text-body" style={{ margin: 0, color: "var(--text)" }}>
-              {lang === "hi"
-                ? selectedService.details?.summary_hi || selectedService.description_hi
-                : selectedService.details?.summary || selectedService.description}
-            </p>
-
-            {/* Structured Specifications Table */}
-            {selectedService.details?.items && selectedService.details.items.length > 0 && (
-              <div
-                style={{
-                  background: "var(--surface-2)",
-                  borderRadius: "var(--r-tile)",
-                  padding: "12px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                {selectedService.details.items.map((item, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      fontSize: "0.875rem",
-                      borderBottom:
-                        i < (selectedService.details?.items.length || 0) - 1 ? "1px solid var(--border)" : "none",
-                      paddingBottom: i < (selectedService.details?.items.length || 0) - 1 ? 8 : 0,
-                    }}
-                  >
-                    <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
-                      {lang === "hi" ? item.label_hi : item.label}
-                    </span>
-                    <span className="tabular-nums" style={{ fontWeight: 600, color: "var(--text)", textAlign: "right" }}>
-                      {item.val}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Action Button */}
-            {selectedService.details?.actionLabel && (
-              <PillButton
-                variant={selectedService.category === "safety" ? "danger" : "primary"}
-                size="lg"
-                onClick={() => {
-                  const target = selectedService.details?.actionLink || selectedService.link || "/";
-                  if (target.startsWith("tel:")) {
-                    window.location.href = target;
-                  } else {
-                    setSelectedService(null);
-                    router.push(target);
-                  }
-                }}
-                style={{ width: "100%", marginTop: 8 }}
-              >
-                {lang === "hi" ? selectedService.details.actionLabel_hi : selectedService.details.actionLabel}
-              </PillButton>
-            )}
+              {filteredServices.length}
+            </span>
           </div>
-        </Sheet>
-      )}
+          <span className="text-caption" style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}>
+            Tap any card to open
+          </span>
+        </div>
+
+        {/* 4. Large Illustrated Cards in 2-Column Grid (All 13 cards fully functional) */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 12,
+          }}
+          data-testid="services-grid"
+        >
+          {filteredServices.map((service, idx) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              lang={lang}
+              onClick={handleCardClick}
+              staggerIndex={idx}
+            />
+          ))}
+        </div>
+
+        {filteredServices.length === 0 && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "48px 16px",
+              background: "var(--surface)",
+              borderRadius: "var(--r-card)",
+              boxShadow: "var(--ring-subtle)",
+            }}
+          >
+            <p className="text-body" style={{ margin: "0 0 6px", fontWeight: 600 }}>
+              {lang === "hi" ? "कोई सेवा नहीं मिली" : "No services found"}
+            </p>
+            <p className="text-caption" style={{ color: "var(--text-muted)", margin: 0 }}>
+              {lang === "hi" ? "कृपया अलग खोज शब्द आज़माएं।" : "Try searching for bus routes, fares or emergency helplines."}
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Fixed Bottom Navigation */}
       <BottomNav

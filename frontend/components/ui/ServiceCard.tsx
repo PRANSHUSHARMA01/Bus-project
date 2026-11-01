@@ -1,20 +1,8 @@
 "use client";
 
 import React from "react";
-import {
-  Bus,
-  MapPin,
-  Users,
-  Moon,
-  ShieldCheck,
-  HeartHandshake,
-  CreditCard,
-  Clock,
-  PhoneCall,
-  Info,
-  ChevronRight
-} from "lucide-react";
 import { ServiceItem } from "@/lib/services";
+import { getServiceIllustration } from "@/components/illustrations/ServiceIllustrations";
 
 interface ServiceCardProps {
   service: ServiceItem;
@@ -29,22 +17,27 @@ export function ServiceCard({
   onClick,
   staggerIndex = 0
 }: ServiceCardProps) {
-  const getIcon = (name: string) => {
-    switch (name) {
-      case "Bus": return <Bus size={22} />;
-      case "MapPin": return <MapPin size={22} />;
-      case "Users": return <Users size={22} />;
-      case "Moon": return <Moon size={22} />;
-      case "ShieldCheck": return <ShieldCheck size={22} />;
-      case "HeartHandshake": return <HeartHandshake size={22} />;
-      case "CreditCard": return <CreditCard size={22} />;
-      case "Clock": return <Clock size={22} />;
-      case "PhoneCall": return <PhoneCall size={22} />;
-      default: return <Info size={22} />;
-    }
-  };
+  const isSOS = service.badge === "SOS";
+  const isNew = service.badge === "New";
+  const isBeta = service.badge === "Beta";
+  const isGTFS = service.badge === "GTFS data";
 
-  const isSafety = service.category === "safety" || service.id.includes("emergency");
+  let badgeBg = "var(--surface-2)";
+  let badgeColor = "var(--text)";
+
+  if (isSOS) {
+    badgeBg = "oklch(0.55 0.24 27)";
+    badgeColor = "#ffffff";
+  } else if (isNew) {
+    badgeBg = "oklch(0.50 0.22 262)";
+    badgeColor = "#ffffff";
+  } else if (isBeta) {
+    badgeBg = "oklch(0.80 0.17 75)";
+    badgeColor = "oklch(0.18 0.02 260)";
+  } else if (isGTFS) {
+    badgeBg = "oklch(0.48 0.18 150)";
+    badgeColor = "#ffffff";
+  }
 
   return (
     <button
@@ -53,50 +46,57 @@ export function ServiceCard({
       style={{
         display: "flex",
         flexDirection: "column",
-        alignItems: "flex-start",
-        padding: "16px",
+        alignItems: "stretch",
+        padding: 8, // 8px padding around 18px radius art = 26px concentric card
         background: "var(--surface)",
-        borderRadius: "var(--r-card)", // 20px concentric card
+        borderRadius: 24,
         boxShadow: "var(--ring)",
         border: "1px solid transparent",
         textAlign: "left",
         width: "100%",
-        minHeight: "150px",
         cursor: "pointer",
         position: "relative",
-        animationDelay: `${staggerIndex * 50}ms`,
-        opacity: 1, // Ends visible even if animation fails
+        animationDelay: `${staggerIndex * 40}ms`,
+        opacity: 1,
         outline: "none",
+        transition: "transform 150ms ease, box-shadow 150ms ease",
       }}
-      aria-label={`${service.title}: ${service.description}`}
+      aria-label={`${service.title}: ${service.subtitle}`}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: 12 }}>
-        {/* 44px icon tile radius 12 */}
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: "var(--r-tile)", // 12px concentric tile
-            background: isSafety ? "rgba(239, 68, 68, 0.12)" : "var(--surface-2)",
-            color: isSafety ? "var(--crowd-high)" : "var(--accent)",
-            display: "grid",
-            placeItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          {getIcon(service.icon)}
-        </div>
+      {/* 1. Large Illustrated Art Area on Top (Aspect 4:3, Radius 18) */}
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: "4/3",
+          borderRadius: 18,
+          overflow: "hidden",
+          position: "relative",
+          background: "var(--surface-2)",
+        }}
+      >
+        {getServiceIllustration(service.id)}
 
+        {/* 22px Single-line Pill Badge on Top-Left Corner */}
         {service.badge && (
           <span
             style={{
-              fontSize: "0.6875rem",
-              fontWeight: 600,
-              padding: "2px 8px",
-              borderRadius: "var(--r-chip)",
-              background: "var(--surface-2)",
-              color: "var(--text-muted)",
-              letterSpacing: "+0.02em",
+              position: "absolute",
+              top: 8,
+              left: 8,
+              height: 22,
+              padding: "0 8px",
+              borderRadius: 999,
+              background: badgeBg,
+              color: badgeColor,
+              boxShadow: "0 0 0 1.5px var(--paper), 0 2px 4px rgba(0,0,0,0.18)",
+              fontSize: 10,
+              lineHeight: "22px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "+0.04em",
+              whiteSpace: "nowrap",
+              zIndex: 2,
+              pointerEvents: "none",
             }}
           >
             {service.badge}
@@ -104,38 +104,37 @@ export function ServiceCard({
         )}
       </div>
 
-      <h3
-        className="text-heading"
-        style={{
-          fontSize: "1.0625rem",
-          fontWeight: 600,
-          margin: "0 0 6px 0",
-          color: "var(--text)",
-          lineHeight: 1.25,
-        }}
-      >
-        {lang === "hi" ? service.title_hi : service.title}
-      </h3>
-
-      <p
-        className="text-caption"
-        style={{
-          color: "var(--text-muted)",
-          margin: 0,
-          fontSize: "0.8125rem",
-          lineHeight: 1.4,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {lang === "hi" ? service.description_hi : service.description}
-      </p>
-
-      <div style={{ marginTop: "auto", paddingTop: 10, display: "flex", alignItems: "center", gap: 4, color: "var(--accent)", fontSize: "0.8125rem", fontWeight: 600 }}>
-        <span>{lang === "hi" ? "विवरण देखें" : "Explore"}</span>
-        <ChevronRight size={14} />
+      {/* 2. Title + Single-Line Subtitle below Art */}
+      <div style={{ padding: "10px 6px 4px 6px", display: "flex", flexDirection: "column", gap: 2 }}>
+        <h2
+          className="text-heading"
+          style={{
+            fontSize: "0.9375rem",
+            fontWeight: 700,
+            margin: 0,
+            color: "var(--text)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            lineHeight: 1.25,
+          }}
+        >
+          {lang === "hi" ? service.title_hi : service.title}
+        </h2>
+        <p
+          className="text-caption"
+          style={{
+            fontSize: "0.8125rem",
+            color: "var(--text-muted)",
+            margin: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            lineHeight: 1.3,
+          }}
+        >
+          {lang === "hi" ? service.subtitle_hi : service.subtitle}
+        </p>
       </div>
     </button>
   );
