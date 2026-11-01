@@ -8,7 +8,7 @@ import { Bus, OCC_COLOR, Route, Stop } from "../lib/types";
 
 type LngLat = [number, number];
 
-/** Makes buses glide to their new position instead of jumping once per second. */
+/** Makes buses glide to their new position smoothly instead of jumping */
 function useSmooth(buses: Bus[]) {
   const [pos, setPos] = useState<Record<string, LngLat>>({});
   const target = useRef<Record<string, LngLat>>({});
@@ -36,8 +36,8 @@ function useSmooth(buses: Bus[]) {
               changed = true;
               continue;
             }
-            const nx = p[0] + (tx - p[0]) * 0.12;
-            const ny = p[1] + (ty - p[1]) * 0.12;
+            const nx = p[0] + (tx - p[0]) * 0.14;
+            const ny = p[1] + (ty - p[1]) * 0.14;
             if (Math.abs(nx - p[0]) > 1e-9 || Math.abs(ny - p[1]) > 1e-9) changed = true;
             next[id] = [nx, ny];
           }
@@ -57,14 +57,14 @@ const casing: LayerProps = {
   id: "route-casing",
   type: "line",
   layout: { "line-cap": "round", "line-join": "round" },
-  paint: { "line-color": "#ffffff", "line-width": 9, "line-opacity": 0.9 },
+  paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.85 },
 };
 
 const line: LayerProps = {
   id: "route-line",
   type: "line",
   layout: { "line-cap": "round", "line-join": "round" },
-  paint: { "line-color": ["get", "color"] as unknown as string, "line-width": 5, "line-opacity": 0.9 },
+  paint: { "line-color": ["get", "color"] as unknown as string, "line-width": 5, "line-opacity": 0.95 },
 };
 
 interface Props {
@@ -72,7 +72,9 @@ interface Props {
   buses: Bus[];
   stops?: Stop[];
   selectedStop?: string | null;
+  selectedBusId?: number | null;
   onStopClick?: (id: string) => void;
+  onBusClick?: (bus: Bus) => void;
   mapStyle?: string;
   lang?: "en" | "hi";
   center?: LngLat;
@@ -84,7 +86,9 @@ export default function BusMap({
   buses,
   stops = [],
   selectedStop = null,
+  selectedBusId = null,
   onStopClick,
+  onBusClick,
   mapStyle = "https://tiles.openfreemap.org/styles/liberty",
   lang = "en",
   center = [77.215, 28.605],
@@ -93,10 +97,20 @@ export default function BusMap({
   const mapRef = useRef<MapRef>(null);
   const pos = useSmooth(buses);
 
+  // Focus map on selected stop or selected bus
   useEffect(() => {
-    const s = stops.find((x) => x.id === selectedStop);
-    if (s) mapRef.current?.flyTo({ center: [s.lng, s.lat], zoom: 14, duration: 800 });
+    if (selectedStop) {
+      const s = stops.find((x) => x.id === selectedStop);
+      if (s) mapRef.current?.flyTo({ center: [s.lng, s.lat], zoom: 14.5, duration: 800 });
+    }
   }, [selectedStop, stops]);
+
+  useEffect(() => {
+    if (selectedBusId) {
+      const b = buses.find((x) => x.bus_id === selectedBusId);
+      if (b) mapRef.current?.flyTo({ center: [b.lng, b.lat], zoom: 14.5, duration: 800 });
+    }
+  }, [selectedBusId, buses]);
 
   const geo = {
     type: "FeatureCollection" as const,
@@ -135,12 +149,20 @@ export default function BusMap({
       {buses.map((b) => {
         const p = pos[String(b.bus_id)] ?? [b.lng, b.lat];
         const bg = b.broken ? "#64748b" : OCC_COLOR[b.occupancy];
+        const isSelected = b.bus_id === selectedBusId;
         return (
           <Marker key={b.bus_id} longitude={p[0]} latitude={p[1]} anchor="bottom">
             <div
-              className={"bus" + (b.broken ? " broken" : "")}
-              style={{ background: bg, outline: `3px solid ${routeColor(b.route_id)}` }}
+              className={`bus ${b.broken ? "broken" : ""} ${isSelected ? "selected" : ""}`}
+              style={{
+                background: bg,
+                outline: isSelected ? "4px solid var(--accent)" : `3px solid ${routeColor(b.route_id)}`,
+              }}
               title={`${b.reg_no} - ${b.load_pct}% full - ${b.speed_kmh} km/h`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onBusClick?.(b);
+              }}
             >
               {b.route_id}
             </div>
