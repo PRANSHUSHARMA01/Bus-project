@@ -44,6 +44,8 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { StopRow } from "../components/ui/StopRow";
 import { Toast } from "../components/ui/Toast";
 import { TopBar } from "../components/ui/TopBar";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../lib/auth-context";
 import { post, usePoll } from "../lib/api";
 import { Alert, Arrival, Bus, Route, Stop } from "../lib/types";
 
@@ -57,6 +59,9 @@ function kmDist(a: Stop, lat: number, lng: number) {
 }
 
 export default function UberPassengerApp() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
   // App view state
   const [userName, setUserName] = useState<string>("Pranshu");
   const [lang, setLang] = useState<"en" | "hi">("en");
@@ -83,21 +88,30 @@ export default function UberPassengerApp() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Persistence
+  // Persistence & User Sync
   useEffect(() => {
+    if (user?.full_name) {
+      setUserName(user.full_name);
+    }
+    if (user?.language) {
+      setLang(user.language);
+    }
     try {
-      const savedName = localStorage.getItem("user_full_name") || localStorage.getItem("user_name");
-      if (savedName) setUserName(savedName);
       const savedStop = localStorage.getItem("user_selected_stop");
       if (savedStop) setSelectedStopId(savedStop);
-      const savedLang = localStorage.getItem("user_lang") as "en" | "hi";
-      if (savedLang) setLang(savedLang);
       const savedTheme = localStorage.getItem("user_theme") as "light" | "dark";
       if (savedTheme) setTheme(savedTheme);
     } catch {}
-  }, []);
+  }, [user]);
 
-  const firstName = userName ? userName.trim().split(" ")[0] : "";
+  // Auth lock check
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [user, isLoading, router]);
+
+  const firstName = (user?.full_name || userName || "").trim().split(" ")[0];
   const greeting = firstName
     ? lang === "hi"
       ? `नमस्ते, ${firstName}`
@@ -1077,8 +1091,7 @@ export default function UberPassengerApp() {
           onSelectTab={(tab) => {
             setActiveNav(tab);
             if (tab === "account") {
-              setLang(lang === "en" ? "hi" : "en");
-              flashToast(lang === "en" ? "भाषा बदलकर हिंदी कर दी गई है" : "Language set to English");
+              router.push("/account");
             } else if (tab === "activity") {
               flashToast("Recent rides and ticket passes");
             } else if (tab === "services") {

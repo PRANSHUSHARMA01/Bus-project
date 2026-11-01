@@ -36,6 +36,8 @@ export const viewport: Viewport = {
   ],
 };
 
+import { AuthProvider } from "@/lib/auth-context";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -46,9 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <main id="main-content" tabIndex={-1}>
-          {children}
-        </main>
+        <AuthProvider>
+          <main id="main-content" tabIndex={-1}>
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );
