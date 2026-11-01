@@ -253,15 +253,21 @@ export default function Admin() {
               style={{ width: "100%", margin: "6px 0" }}
             />
             {what && (
-              <div>
+              <div style={{ fontVariantNumeric: "tabular-nums" }}>
                 Load at peak:{" "}
-                <b style={{ color: what.load_now_pct > 100 ? "#dc2626" : undefined }}>
+                <b
+                  style={{
+                    color: what.load_now_pct > 100 ? "#dc2626" : undefined,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
                   {what.load_now_pct}%
                 </b>{" "}
                 →{" "}
                 <b
                   style={{
                     color: what.load_after_pct > 100 ? "#dc2626" : "#16a34a",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   {what.load_after_pct}%

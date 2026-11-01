@@ -129,7 +129,7 @@ export default function Conductor() {
           </div>
 
           <div className="card">
-            <div className="btns">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               <button
                 className="btn red"
                 onClick={() => report("breakdown", "Breakdown")}

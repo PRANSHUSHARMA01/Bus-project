@@ -230,7 +230,18 @@ export default function Passenger() {
               <b style={{ fontSize: 20 }}>{name(stop)}</b>
               <button
                 onClick={() => setSel(null)}
-                style={{ background: "transparent", fontSize: 20 }}
+                style={{
+                  background: "transparent",
+                  fontSize: 20,
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                }}
+                className="hover:bg-slate-100 active:scale-[0.96] transition-transform"
+                aria-label="Close arrivals sheet"
               >
                 ✕
               </button>

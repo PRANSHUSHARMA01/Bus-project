@@ -11,6 +11,18 @@
   --low: #16a34a;
   --mod: #f59e0b;
   --high: #dc2626;
+
+  /* Layered transparent shadows (Principle 3: Surfaces) */
+  --shadow-subtle:
+    0px 0px 0px 1px rgba(15, 23, 42, 0.05),
+    0px 1px 2px -1px rgba(15, 23, 42, 0.06),
+    0px 2px 4px 0px rgba(15, 23, 42, 0.04);
+
+  --shadow-elevated:
+    0px 0px 0px 1px rgba(15, 23, 42, 0.06),
+    0px 2px 6px -1px rgba(15, 23, 42, 0.07),
+    0px 8px 24px -2px rgba(15, 23, 42, 0.10);
+
   --shadow: 0 8px 30px rgba(15, 23, 42, 0.14);
 }
 
@@ -18,18 +30,30 @@
   box-sizing: border-box;
 }
 
+/* Typography Polish (Principles 8, 9, 10) */
 html, body {
   margin: 0;
   height: 100%;
   background: var(--bg);
   color: var(--ink);
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, b {
+  text-wrap: balance;
+}
+
+p, .muted, .alert {
+  text-wrap: pretty;
 }
 
 button {
   font: inherit;
   cursor: pointer;
   border: 0;
+  touch-action: manipulation;
 }
 
 a {
@@ -37,13 +61,13 @@ a {
   text-decoration: none;
 }
 
-/* floating glass cards on top of the map */
+/* Floating glass cards on top of the map */
 .glass {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.90);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-elevated);
   border-radius: 18px;
 }
 
@@ -52,16 +76,30 @@ a {
   inset: 0;
 }
 
+/* Interactive Pill with Minimum 40px Hit Area & Scale on Press */
 .pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
+  min-height: 40px;
+  padding: 6px 14px;
   border-radius: 999px;
   background: #fff;
   font-weight: 600;
   font-size: 13px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-subtle);
+  transition-property: transform, box-shadow, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.pill:hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+.pill:active {
+  transform: scale(0.96);
 }
 
 .dot-live {
@@ -69,7 +107,7 @@ a {
   height: 8px;
   border-radius: 50%;
   background: var(--low);
-  animation: pulse 1.6s infinite;
+  animation: pulse 1.6s infinite cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 @keyframes pulse {
@@ -81,7 +119,7 @@ a {
   }
 }
 
-/* map markers */
+/* Map Markers with Smooth Interruptible Transforms */
 .bus {
   min-width: 38px;
   height: 38px;
@@ -95,6 +133,9 @@ a {
   border: 3px solid #fff;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
   position: relative;
+  transition-property: transform, filter, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease-out;
 }
 
 .bus::after {
@@ -121,14 +162,22 @@ a {
   border: 4px solid #0f172a;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   cursor: pointer;
+  transition-property: transform, border-color, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: ease-out;
+}
+
+.stop:hover {
+  transform: scale(1.2);
 }
 
 .stop.sel {
   border-color: var(--brand);
   transform: scale(1.35);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
 }
 
-/* passenger screen */
+/* Passenger Screen */
 .search {
   position: fixed;
   top: 12px;
@@ -158,6 +207,10 @@ a {
   background: transparent;
   border-radius: 10px;
   font-size: 15px;
+  min-height: 40px;
+  transition-property: background-color;
+  transition-duration: 100ms;
+  transition-timing-function: ease-out;
 }
 
 .suggest button:hover {
@@ -172,10 +225,17 @@ a {
   z-index: 19;
   max-width: 520px;
   margin: 0 auto;
-  padding: 10px 14px;
+  padding: 12px 16px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition-property: transform, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.toast:active {
+  transform: scale(0.98);
 }
 
 .toast.critical {
@@ -203,56 +263,62 @@ a {
   margin: 0 auto;
   background: #fff;
   border-radius: 24px 24px 0 0;
-  box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.2);
-  padding: 10px 18px 22px;
+  box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.16);
+  padding: 12px 20px 24px;
   max-height: 52vh;
-  overflow: auto;
+  overflow-y: auto;
   animation: slideup 0.28s ease-out;
 }
 
 @keyframes slideup {
   from {
-    transform: translateY(40px);
+    transform: translateY(32px);
     opacity: 0;
   }
   to {
-    transform: none;
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
 .grab {
-  width: 42px;
+  width: 44px;
   height: 5px;
   background: var(--line);
   border-radius: 9px;
-  margin: 0 auto 10px;
+  margin: 0 auto 12px;
 }
 
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
+  transition-property: background-color;
+  transition-duration: 100ms;
+  transition-timing-function: ease-out;
 }
 
 .chip {
   display: inline-grid;
   place-items: center;
-  min-width: 34px;
-  height: 34px;
+  min-width: 36px;
+  height: 36px;
   border-radius: 10px;
   color: #fff;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
+/* Tabular numbers on dynamic ETA to eliminate jitter */
 .eta {
   font-size: 26px;
   font-weight: 800;
   color: var(--brand);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .eta small {
@@ -267,13 +333,16 @@ a {
   font-size: 12px;
   font-weight: 700;
   color: #fff;
+  font-variant-numeric: tabular-nums;
 }
 
 .muted {
   color: var(--muted);
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
+/* Minimum 44px hit area FAB controls */
 .fab {
   position: fixed;
   right: 14px;
@@ -282,11 +351,23 @@ a {
   height: 52px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-elevated);
   font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition-property: transform, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.fab:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.fab:active {
+  transform: scale(0.96);
 }
 
 .sos {
@@ -296,19 +377,23 @@ a {
   font-size: 13px;
 }
 
-/* conductor */
+/* Conductor Screen */
 .wrap {
   max-width: 520px;
   margin: 0 auto;
   padding: 18px;
 }
 
+/* Concentric border-radius on cards and children */
 .card {
   background: var(--card);
-  border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  box-shadow: var(--shadow-subtle);
   padding: 18px;
   margin-bottom: 14px;
+  transition-property: box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
 
 .bar {
@@ -322,13 +407,14 @@ a {
   display: block;
   height: 100%;
   border-radius: 99px;
-  transition: width 0.4s, background 0.4s;
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.3s ease-out;
 }
 
 .big {
   font-size: 54px;
   font-weight: 800;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .btns {
@@ -337,13 +423,22 @@ a {
   gap: 12px;
 }
 
+/* Tactile 0.96 scale-on-press buttons */
 .btn {
-  padding: 22px 10px;
-  border-radius: 16px;
+  padding: 20px 10px;
+  min-height: 54px;
+  border-radius: 14px;
   font-size: 22px;
   font-weight: 800;
   color: #fff;
   background: var(--brand);
+  transition-property: transform, background-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.btn:active {
+  transform: scale(0.96);
 }
 
 .btn.minus {
@@ -362,10 +457,6 @@ a {
   padding: 16px 10px;
 }
 
-.btn:active {
-  transform: scale(0.97);
-}
-
 select {
   width: 100%;
   padding: 14px;
@@ -373,9 +464,18 @@ select {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: #fff;
+  transition-property: border-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
 
-/* admin */
+select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Admin Operations HQ */
 .admin {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -395,31 +495,36 @@ select {
 .kpi {
   background: #fff;
   border-radius: 18px;
-  padding: 14px 18px;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-subtle);
+  transition-property: transform, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
 
 .kpi b {
   display: block;
   font-size: 30px;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi span {
   color: var(--muted);
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 .mapbox {
   border-radius: 20px;
   overflow: hidden;
   position: relative;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-subtle);
   min-height: 300px;
 }
 
 .side {
-  overflow: auto;
+  overflow-y: auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -427,7 +532,7 @@ select {
 }
 
 .alert {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
@@ -450,11 +555,19 @@ select {
 }
 
 .tabs button {
-  padding: 6px 14px;
+  min-height: 38px;
+  padding: 8px 16px;
   border-radius: 999px;
   background: var(--line);
   font-weight: 700;
   margin-right: 6px;
+  transition-property: transform, background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.tabs button:active {
+  transform: scale(0.96);
 }
 
 .tabs button.on {
@@ -463,13 +576,25 @@ select {
 }
 
 .act {
-  padding: 9px 14px;
+  min-height: 40px;
+  padding: 10px 16px;
   border-radius: 12px;
   background: var(--ink);
   color: #fff;
   font-weight: 700;
   font-size: 13px;
   margin: 0 6px 6px 0;
+  transition-property: transform, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+.act:hover {
+  opacity: 0.92;
+}
+
+.act:active {
+  transform: scale(0.96);
 }
 
 .act.go {
