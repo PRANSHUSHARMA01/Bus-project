@@ -19,6 +19,19 @@ export default function LoginPage() {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Check URL query error params on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const err = params.get("error");
+      if (err === "google_not_configured") {
+        setErrorMsg("Google Sign-In is not configured yet. Please enter your email below to receive an instant verification code.");
+      } else if (err) {
+        setErrorMsg(`Authentication issue: ${err.replace(/_/g, " ")}. Please try email login.`);
+      }
+    }
+  }, []);
+
   // If already signed in, redirect to home
   useEffect(() => {
     if (user) {

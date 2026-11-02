@@ -1,14 +1,31 @@
 """
-Email Notification Service (AWS SES + Console Dev Fallback)
+Email Notification Service (SMTP, AWS SES, Resend, and Console Dev Fallback)
 Provides bilingual (English + Hindi) transactional emails for Smart Public Bus Tracking.
 """
 
 import os
 import sys
+import smtplib
+import urllib.request
+import json
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
 SES_FROM_EMAIL = os.environ.get("SES_FROM_EMAIL", "login@pranshusharma.tech")
 DEV_MODE = os.environ.get("DEV_MODE", "true").lower() in ("true", "1", "yes")
+
+# SMTP Configuration (Works out-of-the-box with Gmail App Password, Resend SMTP, Sendgrid, etc.)
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", SMTP_USER or SES_FROM_EMAIL)
+SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() in ("true", "1", "yes")
+
+# Resend API Configuration (Free 3,000 emails/month via simple API key)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+
 
 def get_ses_client():
     try:
@@ -17,6 +34,7 @@ def get_ses_client():
         return boto3.client("ses", region_name=AWS_REGION)
     except Exception:
         return None
+
 
 def build_otp_email_html(code: str, language: str = "en") -> str:
     """Builds a responsive, branded, bilingual HTML email for OTP login."""
@@ -95,10 +113,107 @@ def build_otp_email_html(code: str, language: str = "en") -> str:
 </html>
 """
 
+
+def _send_via_smtp(to_email: str, subject: str, text_content: str, html_content: str) -> bool:
+    """Dispatches email using standard SMTP (Gmail App Password, Resend SMTP, Mailgun, etc.)."""
+    if not SMTP_HOST or not SMTP_USER or not SMTP_PASSWORD:
+        return False
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"Smart Public Bus <{SMTP_FROM_EMAIL}>"
+        msg["To"] = to_email
+
+        part_text = MIMEText(text_content, "plain", "utf-8")
+        part_html = MIMEText(html_content, "html", "utf-8")
+        msg.attach(part_text)
+        msg.attach(part_html)
+
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SMTP_FROM_EMAIL, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+                if SMTP_USE_TLS:
+                    server.starttls()
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SMTP_FROM_EMAIL, [to_email], msg.as_string())
+
+        print(f"[SMTP] Successfully delivered OTP email to {to_email} via {SMTP_HOST}")
+        return True
+    except Exception as e:
+        print(f"[SMTP ERROR] Failed to send email via SMTP ({SMTP_HOST}): {e}")
+        return False
+
+
+def _send_via_resend(to_email: str, subject: str, html_content: str) -> bool:
+    """Dispatches email using Resend API (free tier: 3,000 emails/mo)."""
+    if not RESEND_API_KEY:
+        return False
+
+    try:
+        url = "https://api.resend.com/emails"
+        from_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+        payload = {
+            "from": f"Smart Public Bus <{from_email}>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content
+        }
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "SmartBus-Mailer/2.0"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status in (200, 201):
+                print(f"[RESEND] Successfully delivered OTP email to {to_email}")
+                return True
+    except Exception as e:
+        print(f"[RESEND ERROR] Failed to send email via Resend API: {e}")
+        return False
+    return False
+
+
+def _send_via_ses(to_email: str, subject: str, text_content: str, html_content: str) -> bool:
+    """Dispatches email using Amazon SES in production on EC2."""
+    ses = get_ses_client()
+    if not ses or DEV_MODE:
+        return False
+
+    try:
+        ses.send_email(
+            Source=SES_FROM_EMAIL,
+            Destination={"ToAddresses": [to_email]},
+            Message={
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Text": {"Data": text_content, "Charset": "UTF-8"},
+                    "Html": {"Data": html_content, "Charset": "UTF-8"}
+                }
+            }
+        )
+        print(f"[SES] Successfully dispatched OTP email to {to_email}")
+        return True
+    except Exception as e:
+        print(f"[SES ERROR] Failed to send via SES: {e}")
+        return False
+
+
 def send_otp_email(to_email: str, code: str, language: str = "en") -> bool:
     """
-    Sends bilingual OTP email using Amazon SES in production,
-    or cleanly prints to console in development mode.
+    Sends bilingual OTP email:
+    1. Attempts SMTP (Gmail App Password, Resend SMTP, Sendgrid, etc.) if configured.
+    2. Attempts Resend API if RESEND_API_KEY is configured.
+    3. Attempts Amazon SES if running on EC2 with IAM/SES configured.
+    4. Falls back gracefully to development console simulator without failing.
     """
     subject = f"{code} is your Smart Public Bus verification code / सत्यापन कोड"
     text_content = (
@@ -111,28 +226,23 @@ def send_otp_email(to_email: str, code: str, language: str = "en") -> bool:
         f"यह कोड 5 मिनट के लिए मान्य है। इसे किसी के साथ साझा न करें।\n\n"
         f"Domain: https://pranshusharma.tech\n"
     )
+    html_content = build_otp_email_html(code, language)
 
-    ses = get_ses_client()
-    if ses and not DEV_MODE:
-        try:
-            html_content = build_otp_email_html(code, language)
-            ses.send_email(
-                Source=SES_FROM_EMAIL,
-                Destination={"ToAddresses": [to_email]},
-                Message={
-                    "Subject": {"Data": subject, "Charset": "UTF-8"},
-                    "Body": {
-                        "Text": {"Data": text_content, "Charset": "UTF-8"},
-                        "Html": {"Data": html_content, "Charset": "UTF-8"}
-                    }
-                }
-            )
-            print(f"[SES] Successfully dispatched OTP email to {to_email}")
+    # 1. Try standard SMTP if credentials are provided
+    if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
+        if _send_via_smtp(to_email, subject, text_content, html_content):
             return True
-        except Exception as e:
-            print(f"[SES ERROR] Failed to send via SES: {e}. Falling back to console log.")
 
-    # Development Console Logger (Clearly printed with high visibility)
+    # 2. Try Resend API if API key is provided
+    if RESEND_API_KEY:
+        if _send_via_resend(to_email, subject, html_content):
+            return True
+
+    # 3. Try Amazon SES
+    if _send_via_ses(to_email, subject, text_content, html_content):
+        return True
+
+    # 4. Development Console Simulator (Always readable in server logs)
     print("\n" + "=" * 70, flush=True)
     print("[DEV EMAIL SIMULATOR] TRANSACTIONAL OTP DISPATCHED", flush=True)
     print(f"To:      {to_email}", flush=True)

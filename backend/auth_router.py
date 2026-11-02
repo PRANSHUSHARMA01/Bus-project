@@ -10,12 +10,16 @@ Endpoints:
 
 import hashlib
 import hmac
+import json
 import os
 import secrets
 import time
+import urllib.parse
+import urllib.request
 from typing import Any, Dict, Optional
 import jwt
 from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Request, Response, status
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from db import db
@@ -27,6 +31,11 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 JWT_SECRET = os.environ.get("JWT_SECRET", "smartbus-jwt-production-secret-key-32bytes")
 SERVER_PEPPER = os.environ.get("SERVER_PEPPER", "smartbus-production-server-pepper-32bytes")
 IS_PROD = os.environ.get("DEV_MODE", "true").lower() not in ("true", "1", "yes")
+
+# Google OAuth 2.0 Configuration
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "")
 
 def hash_email(email: str) -> str:
     norm = email.strip().lower()
@@ -381,3 +390,198 @@ async def get_me(user: Dict[str, Any] = Depends(get_current_user)):
         "phone": user.get("phone"),
         "created_at": user.get("created_at")
     }
+
+# ------------------------------------------------------------------------------
+# 6. GET /api/v1/auth/google/start
+# ------------------------------------------------------------------------------
+@auth_router.get("/google/start")
+async def google_auth_start(request: Request, demo: Optional[int] = 0):
+    """
+    Initiates Google OAuth 2.0 flow.
+    If GOOGLE_CLIENT_ID is not configured, provides a smooth developer/demo fallback
+    or clear configuration guidance.
+    """
+    proto = request.headers.get("x-forwarded-proto", "http" if ("localhost" in request.url.netloc or "127.0.0.1" in request.url.netloc) else "https")
+    host = request.headers.get("x-forwarded-host") or request.url.netloc
+    default_redirect = f"{proto}://{host}/api/v1/auth/google/callback"
+    redirect_uri = GOOGLE_REDIRECT_URI or default_redirect
+
+    # Fallback if Google Client ID is not configured yet
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        if demo == 1 or not IS_PROD:
+            # Instant 1-Click Google Demo Sign-In for local testing/dev
+            demo_user = db.get_or_create_user(
+                email="demo.commuter@gmail.com",
+                full_name="Demo Commuter"
+            )
+            access_token = create_access_token(demo_user)
+            raw_refresh = secrets.token_urlsafe(48)
+            client_ip = request.client.host if request.client else "127.0.0.1"
+            db.create_session(
+                user_id=demo_user["id"],
+                raw_refresh_token=raw_refresh,
+                pepper=SERVER_PEPPER,
+                ip=client_ip,
+                user_agent=request.headers.get("user-agent", "Google-Demo"),
+                expires_in_days=30
+            )
+            redirect_url = f"/auth/callback?token={access_token}&next=/"
+            resp = RedirectResponse(url=redirect_url, status_code=303)
+            resp.set_cookie("access_token", access_token, max_age=900, httponly=True, samesite="lax", secure=IS_PROD, path="/")
+            resp.set_cookie("refresh_token", raw_refresh, max_age=2592000, httponly=True, samesite="lax", secure=IS_PROD, path="/")
+            return resp
+
+        # In production without credentials, redirect back to login with a friendly message
+        return RedirectResponse(url="/login?error=google_not_configured", status_code=303)
+
+    state = secrets.token_urlsafe(32)
+    google_auth_endpoint = "https://accounts.google.com/o/oauth2/v2/auth"
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "access_type": "offline",
+        "prompt": "select_account"
+    }
+    target_url = f"{google_auth_endpoint}?{urllib.parse.urlencode(params)}"
+    resp = RedirectResponse(url=target_url, status_code=303)
+    resp.set_cookie(
+        key="google_oauth_state",
+        value=state,
+        max_age=600,
+        httponly=True,
+        samesite="lax",
+        secure=IS_PROD,
+        path="/"
+    )
+    return resp
+
+# ------------------------------------------------------------------------------
+# 7. GET /api/v1/auth/google/callback
+# ------------------------------------------------------------------------------
+@auth_router.get("/google/callback")
+async def google_auth_callback(
+    request: Request,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None
+):
+    """
+    Handles the Google OAuth 2.0 authorization code callback.
+    Exchanges code for user info, provisions user in database,
+    and sets authentication session cookies.
+    """
+    if error:
+        return RedirectResponse(url=f"/login?error={urllib.parse.quote(error)}", status_code=303)
+
+    if not code:
+        return RedirectResponse(url="/login?error=missing_code", status_code=303)
+
+    # Verify CSRF state token
+    expected_state = request.cookies.get("google_oauth_state")
+    if expected_state and state and not hmac.compare_digest(expected_state, state):
+        return RedirectResponse(url="/login?error=invalid_state", status_code=303)
+
+    proto = request.headers.get("x-forwarded-proto", "http" if ("localhost" in request.url.netloc or "127.0.0.1" in request.url.netloc) else "https")
+    host = request.headers.get("x-forwarded-host") or request.url.netloc
+    default_redirect = f"{proto}://{host}/api/v1/auth/google/callback"
+    redirect_uri = GOOGLE_REDIRECT_URI or default_redirect
+
+    try:
+        # 1. Exchange code for Google tokens
+        token_endpoint = "https://oauth2.googleapis.com/token"
+        data = {
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code"
+        }
+        encoded_data = urllib.parse.urlencode(data).encode("utf-8")
+        req = urllib.request.Request(token_endpoint, data=encoded_data, method="POST")
+        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+        req.add_header("User-Agent", "SmartBus-Auth/2.0")
+
+        with urllib.request.urlopen(req, timeout=10) as token_resp:
+            token_json = json.loads(token_resp.read().decode("utf-8"))
+
+        google_access_token = token_json.get("access_token")
+        if not google_access_token:
+            return RedirectResponse(url="/login?error=token_exchange_failed", status_code=303)
+
+        # 2. Fetch Google User Profile info
+        userinfo_endpoint = "https://www.googleapis.com/oauth2/v3/userinfo"
+        userinfo_req = urllib.request.Request(userinfo_endpoint)
+        userinfo_req.add_header("Authorization", f"Bearer {google_access_token}")
+        userinfo_req.add_header("User-Agent", "SmartBus-Auth/2.0")
+
+        with urllib.request.urlopen(userinfo_req, timeout=10) as userinfo_resp:
+            user_data = json.loads(userinfo_resp.read().decode("utf-8"))
+
+        email = user_data.get("email")
+        if not email:
+            return RedirectResponse(url="/login?error=no_email_returned", status_code=303)
+
+        full_name = user_data.get("name") or email.split("@")[0].replace(".", " ").title()
+        avatar_url = user_data.get("picture")
+
+        # 3. Create or fetch user in database
+        user = db.get_or_create_user(email=email, full_name=full_name)
+        if avatar_url or full_name:
+            db.update_profile(user["id"], {
+                "full_name": full_name,
+                "avatar_url": avatar_url
+            })
+
+        # 4. Issue local access token and refresh session
+        access_token = create_access_token(user)
+        raw_refresh = secrets.token_urlsafe(48)
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        user_agent = request.headers.get("user-agent", "Google-OAuth")
+
+        db.create_session(
+            user_id=user["id"],
+            raw_refresh_token=raw_refresh,
+            pepper=SERVER_PEPPER,
+            ip=client_ip,
+            user_agent=user_agent,
+            expires_in_days=30
+        )
+
+        db.log_audit(
+            action="auth.google_login_success",
+            user_id=user["id"],
+            ip=client_ip,
+            user_agent=user_agent
+        )
+
+        # 5. Set session cookies and redirect to application
+        redirect_target = f"/auth/callback?token={access_token}&next=/"
+        response = RedirectResponse(url=redirect_target, status_code=303)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            max_age=900,
+            httponly=True,
+            samesite="lax",
+            secure=IS_PROD,
+            path="/"
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=raw_refresh,
+            max_age=2592000,
+            httponly=True,
+            samesite="lax",
+            secure=IS_PROD,
+            path="/"
+        )
+        response.delete_cookie("google_oauth_state", path="/")
+        return response
+
+    except Exception as e:
+        print(f"[GOOGLE AUTH ERROR] {e}")
+        return RedirectResponse(url="/login?error=google_auth_failed", status_code=303)
+

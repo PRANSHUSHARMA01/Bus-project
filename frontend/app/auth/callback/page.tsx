@@ -9,6 +9,10 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     // If there is any auth redirect hash or code, process it client-side
     const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      localStorage.setItem("smart_bus_token", token);
+    }
     const next = params.get("next") || "/";
     router.replace(next);
   }, [router]);
