@@ -193,10 +193,33 @@ def _send_via_resend(to_email: str, subject: str, html_content: str) -> bool:
             },
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            if resp.status in (200, 201):
-                print(f"[RESEND] Successfully delivered OTP email to {to_email}")
-                return True
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if resp.status in (200, 201):
+                    print(f"[RESEND] Successfully delivered OTP email to {to_email} via {from_email}")
+                    return True
+        except urllib.error.HTTPError as he:
+            if he.code == 403 and from_email != "onboarding@resend.dev":
+                print(f"[RESEND NOTICE] Custom domain {from_email} pending verification; retrying via onboarding@resend.dev...")
+                payload["from"] = "Smart Public Bus <onboarding@resend.dev>"
+                fallback_req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={
+                        "Authorization": f"Bearer {resend_key}",
+                        "Content-Type": "application/json",
+                        "User-Agent": "SmartBus-Mailer/2.0"
+                    },
+                    method="POST"
+                )
+                try:
+                    with urllib.request.urlopen(fallback_req, timeout=10) as fb_resp:
+                        if fb_resp.status in (200, 201):
+                            print(f"[RESEND] Successfully delivered OTP email to {to_email} via onboarding fallback")
+                            return True
+                except Exception as fb_err:
+                    print(f"[RESEND FALLBACK ERROR] {fb_err}")
+            raise he
     except Exception as e:
         print(f"[RESEND ERROR] Failed to send email via Resend API: {e}")
         return False
