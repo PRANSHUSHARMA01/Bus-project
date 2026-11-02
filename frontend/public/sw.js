@@ -1,12 +1,16 @@
 // Service Worker for Delhi Smart Bus Tracking PWA
-const CACHE_NAME = "delhi-smart-bus-v2";
+const CACHE_NAME = "delhi-smart-bus-v3";
 const STATIC_ASSETS = [
   "/",
   "/services",
   "/activity",
   "/account",
+  "/conductor",
   "/manifest.webmanifest",
-  "/favicon.ico"
+  "/favicon.ico",
+  "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png"
 ];
 
 // 1. Install event: Cache critical app shell

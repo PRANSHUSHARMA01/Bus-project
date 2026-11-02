@@ -249,14 +249,18 @@ def send_otp_email(to_email: str, code: str, language: str = "en") -> bool:
     )
     html_content = build_otp_email_html(code, language)
 
-    # 1. Try standard SMTP if credentials are provided
-    if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
-        if _send_via_smtp(to_email, subject, text_content, html_content):
+    # 1. Try Resend API if API key is configured
+    resend_key = os.environ.get("RESEND_API_KEY", RESEND_API_KEY)
+    if resend_key:
+        if _send_via_resend(to_email, subject, html_content):
             return True
 
-    # 2. Try Resend API if API key is provided
-    if RESEND_API_KEY:
-        if _send_via_resend(to_email, subject, html_content):
+    # 2. Try standard SMTP if credentials are provided
+    smtp_host = os.environ.get("SMTP_HOST", SMTP_HOST)
+    smtp_user = os.environ.get("SMTP_USER", SMTP_USER)
+    smtp_pass = os.environ.get("SMTP_PASSWORD", SMTP_PASSWORD)
+    if smtp_host and smtp_user and smtp_pass:
+        if _send_via_smtp(to_email, subject, text_content, html_content):
             return True
 
     # 3. Try Amazon SES

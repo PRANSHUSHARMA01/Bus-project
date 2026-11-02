@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export const API =
   process.env.NEXT_PUBLIC_API_URL !== undefined
@@ -7,12 +7,17 @@ export const API =
     ? "http://127.0.0.1:8000"
     : "";
 
+// In-memory instant cache for zero perceived lag across route transitions
+const pollCache = new Map<string, any>();
+
 export async function get<T = any>(path: string): Promise<T> {
   const r = await fetch(API + path);
   if (!r.ok) {
     throw new Error(`API GET failed: ${r.status}`);
   }
-  return r.json();
+  const data = await r.json();
+  pollCache.set(path, data);
+  return data;
 }
 
 export async function post<T = unknown>(path: string, body: unknown): Promise<T> {
@@ -24,26 +29,67 @@ export async function post<T = unknown>(path: string, body: unknown): Promise<T>
   return r.json();
 }
 
-/** Fetch `path` now and then every `ms` milliseconds. Returns the latest data (or null). */
+/**
+ * High-performance polling hook:
+ * - Instant paint from in-memory cache (0ms perceived lag)
+ * - Auto-pauses when tab is hidden to save battery & network bandwidth
+ * - Immediate background revalidation when tab regains focus
+ * - Prevents overlapping requests
+ */
 export function usePoll<T>(path: string | null, ms = 1000): T | null {
-  const [data, setData] = useState<T | null>(null);
+  const [data, setData] = useState<T | null>(() => (path ? (pollCache.get(path) ?? null) : null));
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     if (!path) return;
     let alive = true;
 
-    const load = () =>
-      fetch(API + path)
-        .then((r) => r.json())
-        .then((d) => alive && setData(d))
-        .catch(() => {});
+    // Seed state immediately if cache has it
+    if (pollCache.has(path)) {
+      setData(pollCache.get(path));
+    }
+
+    const load = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return; // Pause while tab is backgrounded
+      }
+      if (inFlightRef.current) return; // Prevent request piling
+
+      inFlightRef.current = true;
+      try {
+        const res = await fetch(API + path);
+        if (res.ok) {
+          const json = await res.json();
+          if (alive) {
+            pollCache.set(path, json);
+            setData(json);
+          }
+        }
+      } catch {
+        // Keep existing cached data on intermittent network blip
+      } finally {
+        inFlightRef.current = false;
+      }
+    };
 
     load();
     const id = setInterval(load, ms);
 
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        load();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
     return () => {
       alive = false;
       clearInterval(id);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
     };
   }, [path, ms]);
 
