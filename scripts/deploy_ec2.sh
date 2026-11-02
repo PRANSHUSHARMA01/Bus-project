@@ -62,6 +62,14 @@ sudo systemctl restart smart-bus.service smart-bus-sim.service
 
 # 8. Setup Nginx Reverse Proxy
 echo "--> Configuring Nginx reverse proxy..."
+if [ ! -f /etc/letsencrypt/live/pranshusharma.tech/fullchain.pem ]; then
+    echo "--> Creating initial bootstrap certificate for Nginx startup..."
+    sudo mkdir -p /etc/letsencrypt/live/pranshusharma.tech
+    sudo openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+        -keyout /etc/letsencrypt/live/pranshusharma.tech/privkey.pem \
+        -out /etc/letsencrypt/live/pranshusharma.tech/fullchain.pem \
+        -subj "/CN=pranshusharma.tech"
+fi
 sudo cp nginx/smart-bus.conf /etc/nginx/sites-available/smart-bus.conf
 sudo ln -sf /etc/nginx/sites-available/smart-bus.conf /etc/nginx/sites-enabled/smart-bus.conf
 sudo rm -f /etc/nginx/sites-enabled/default
