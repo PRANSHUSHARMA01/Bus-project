@@ -8,8 +8,21 @@ import sys
 import smtplib
 import urllib.request
 import json
+from pathlib import Path
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+# Auto-load .env file if present
+for _p in [Path(__file__).parent / ".env", Path(__file__).parent.parent / ".env"]:
+    if _p.exists():
+        with open(_p, "r", encoding="utf-8") as _f:
+            for _l in _f:
+                _l = _l.strip()
+                if _l and not _l.startswith("#") and "=" in _l:
+                    _k, _v = _l.split("=", 1)
+                    _k, _v = _k.strip(), _v.strip().strip('"').strip("'")
+                    if _k and _k not in os.environ:
+                        os.environ[_k] = _v
 
 AWS_REGION = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
 SES_FROM_EMAIL = os.environ.get("SES_FROM_EMAIL", "login@pranshusharma.tech")
@@ -116,13 +129,20 @@ def build_otp_email_html(code: str, language: str = "en") -> str:
 
 def _send_via_smtp(to_email: str, subject: str, text_content: str, html_content: str) -> bool:
     """Dispatches email using standard SMTP (Gmail App Password, Resend SMTP, Mailgun, etc.)."""
-    if not SMTP_HOST or not SMTP_USER or not SMTP_PASSWORD:
+    host = os.environ.get("SMTP_HOST", SMTP_HOST)
+    port = int(os.environ.get("SMTP_PORT", str(SMTP_PORT)))
+    user = os.environ.get("SMTP_USER", SMTP_USER)
+    password = os.environ.get("SMTP_PASSWORD", SMTP_PASSWORD)
+    from_email = os.environ.get("SMTP_FROM_EMAIL", SMTP_FROM_EMAIL) or user or "login@pranshusharma.tech"
+    use_tls = os.environ.get("SMTP_USE_TLS", "true").lower() in ("true", "1", "yes")
+
+    if not host or not user or not password:
         return False
 
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"Smart Public Bus <{SMTP_FROM_EMAIL}>"
+        msg["From"] = f"Smart Public Bus <{from_email}>"
         msg["To"] = to_email
 
         part_text = MIMEText(text_content, "plain", "utf-8")
@@ -130,27 +150,28 @@ def _send_via_smtp(to_email: str, subject: str, text_content: str, html_content:
         msg.attach(part_text)
         msg.attach(part_html)
 
-        if SMTP_PORT == 465:
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=10) as server:
-                server.login(SMTP_USER, SMTP_PASSWORD)
-                server.sendmail(SMTP_FROM_EMAIL, [to_email], msg.as_string())
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=10) as server:
+                server.login(user, password)
+                server.sendmail(from_email, [to_email], msg.as_string())
         else:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
-                if SMTP_USE_TLS:
+            with smtplib.SMTP(host, port, timeout=10) as server:
+                if use_tls:
                     server.starttls()
-                server.login(SMTP_USER, SMTP_PASSWORD)
-                server.sendmail(SMTP_FROM_EMAIL, [to_email], msg.as_string())
+                server.login(user, password)
+                server.sendmail(from_email, [to_email], msg.as_string())
 
-        print(f"[SMTP] Successfully delivered OTP email to {to_email} via {SMTP_HOST}")
+        print(f"[SMTP] Successfully delivered OTP email to {to_email} via {host}")
         return True
     except Exception as e:
-        print(f"[SMTP ERROR] Failed to send email via SMTP ({SMTP_HOST}): {e}")
+        print(f"[SMTP ERROR] Failed to send email via SMTP ({host}): {e}")
         return False
 
 
 def _send_via_resend(to_email: str, subject: str, html_content: str) -> bool:
     """Dispatches email using Resend API (free tier: 3,000 emails/mo)."""
-    if not RESEND_API_KEY:
+    resend_key = os.environ.get("RESEND_API_KEY", RESEND_API_KEY)
+    if not resend_key:
         return False
 
     try:
@@ -166,7 +187,7 @@ def _send_via_resend(to_email: str, subject: str, html_content: str) -> bool:
             url,
             data=json.dumps(payload).encode("utf-8"),
             headers={
-                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Authorization": f"Bearer {resend_key}",
                 "Content-Type": "application/json",
                 "User-Agent": "SmartBus-Mailer/2.0"
             },
