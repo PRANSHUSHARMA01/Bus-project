@@ -404,10 +404,12 @@ async def google_auth_start(request: Request, demo: Optional[int] = 0):
     proto = request.headers.get("x-forwarded-proto", "http" if ("localhost" in request.url.netloc or "127.0.0.1" in request.url.netloc) else "https")
     host = request.headers.get("x-forwarded-host") or request.url.netloc
     default_redirect = f"{proto}://{host}/api/v1/auth/google/callback"
-    redirect_uri = GOOGLE_REDIRECT_URI or default_redirect
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", GOOGLE_CLIENT_ID)
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", GOOGLE_CLIENT_SECRET)
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", GOOGLE_REDIRECT_URI) or default_redirect
 
     # Fallback if Google Client ID is not configured yet
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    if not client_id or not client_secret:
         if demo == 1 or not IS_PROD:
             # Instant 1-Click Google Demo Sign-In for local testing/dev
             demo_user = db.get_or_create_user(
@@ -437,7 +439,7 @@ async def google_auth_start(request: Request, demo: Optional[int] = 0):
     state = secrets.token_urlsafe(32)
     google_auth_endpoint = "https://accounts.google.com/o/oauth2/v2/auth"
     params = {
-        "client_id": GOOGLE_CLIENT_ID,
+        "client_id": client_id,
         "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "openid email profile",
@@ -487,15 +489,17 @@ async def google_auth_callback(
     proto = request.headers.get("x-forwarded-proto", "http" if ("localhost" in request.url.netloc or "127.0.0.1" in request.url.netloc) else "https")
     host = request.headers.get("x-forwarded-host") or request.url.netloc
     default_redirect = f"{proto}://{host}/api/v1/auth/google/callback"
-    redirect_uri = GOOGLE_REDIRECT_URI or default_redirect
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", GOOGLE_CLIENT_ID)
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", GOOGLE_CLIENT_SECRET)
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", GOOGLE_REDIRECT_URI) or default_redirect
 
     try:
         # 1. Exchange code for Google tokens
         token_endpoint = "https://oauth2.googleapis.com/token"
         data = {
             "code": code,
-            "client_id": GOOGLE_CLIENT_ID,
-            "client_secret": GOOGLE_CLIENT_SECRET,
+            "client_id": client_id,
+            "client_secret": client_secret,
             "redirect_uri": redirect_uri,
             "grant_type": "authorization_code"
         }

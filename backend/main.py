@@ -3,6 +3,19 @@ import asyncio, json, math, os, random, sqlite3, threading, time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
+
+# Auto-load .env file if present
+for _env in [Path(__file__).parent / ".env", Path(__file__).parent.parent / ".env"]:
+    if _env.exists():
+        with open(_env, "r", encoding="utf-8") as _f:
+            for _l in _f:
+                _l = _l.strip()
+                if _l and not _l.startswith("#") and "=" in _l:
+                    _k, _v = _l.split("=", 1)
+                    _k, _v = _k.strip(), _v.strip().strip('"').strip("'")
+                    if _k and _k not in os.environ:
+                        os.environ[_k] = _v
+
 from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -599,6 +612,13 @@ if STATIC_DIR.exists():
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_spa_or_static(full_path: str):
+        # Serve admin dashboard page at /admin
+        clean_path = full_path.rstrip("/")
+        if clean_path == "admin":
+            admin_html = STATIC_DIR / "admin.html"
+            if admin_html.exists():
+                return FileResponse(admin_html, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
         # Do not intercept API, health, docs, or WebSocket paths
         api_prefixes = (
             "api", "v1", "buses", "routes", "stops", "fleet",
