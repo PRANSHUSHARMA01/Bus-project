@@ -772,12 +772,14 @@ def conductor_pin_auth(req: ConductorPinAuthRequest, response: Response):
     Staff / Conductor quick login via Staff Badge ID + 4-digit PIN.
     Issues a JWT access token with role 'conductor'.
     """
-    if len(req.pin) < 4:
-        raise HTTPException(status_code=400, detail="PIN must be at least 4 digits")
+    clean_pin = req.pin.strip().lower()
+    if len(clean_pin) < 4:
+        raise HTTPException(status_code=400, detail="PIN must be at least 4 characters (e.g. 1234 or demo)")
 
     clean_id = req.staff_id.strip().upper()
+    display_title = "Demo Conductor" if clean_id == "DEMO" else f"Conductor ({clean_id})"
     email = f"{clean_id.lower().replace('-', '_')}@pranshusharma.tech"
-    user_row = db.get_or_create_user(email, full_name=f"Conductor ({clean_id})")
+    user_row = db.get_or_create_user(email, full_name=display_title)
     db.update_profile(user_row["id"], {"role": "conductor"})
     
     token = create_access_token({

@@ -436,6 +436,9 @@ export default function ConductorPage() {
                 outline: "none",
               }}
             />
+            <p style={{ fontSize: 12, color: "var(--text-sub)", marginTop: 6, marginInlineStart: 2 }}>
+              Default access: Badge <strong>DTC-4021</strong> or <strong>DEMO</strong> &bull; PIN <strong>1234</strong> or <strong>demo</strong>
+            </p>
           </div>
 
           {authError && (
