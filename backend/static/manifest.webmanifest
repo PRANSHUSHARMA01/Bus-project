@@ -1,0 +1,55 @@
+{
+  "name": "Delhi Smart Public Bus Tracking",
+  "short_name": "Delhi Bus",
+  "description": "Live GPS bus arrival tracking, seat occupancy, and safe routes across NCR.",
+  "id": "/?source=pwa",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#054C2B",
+  "theme_color": "#0A6E3F",
+  "categories": ["transportation", "travel", "navigation"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Bus Map",
+      "url": "/?mode=bus",
+      "description": "View live buses moving across Delhi"
+    },
+    {
+      "name": "Services & Fares",
+      "url": "/services",
+      "description": "DTC passes, timetable and emergency numbers"
+    },
+    {
+      "name": "Conductor Portal",
+      "url": "/conductor",
+      "description": "Staff duty and ticketing console"
+    }
+  ]
+}

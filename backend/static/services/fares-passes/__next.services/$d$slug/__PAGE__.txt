@@ -1,0 +1,30 @@
+2:"$Sreact.fragment"
+3:"/_next/static/chunks/1zqqnrsidq9tl.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+c:"/_next/static/chunks/1_xh4ebxxephh.js"
+d:"/_next/static/chunks/303521fa7hgka.js"
+e:I[52283,["$3","$c","$d"],"default"]
+f:I[97367,["$3"],"OutletBoundary"]
+10:"$Sreact.suspense"
+13:"ViewportBoundary"
+14:I[97367,["$3"],"$13"]
+15:"MetadataBoundary"
+16:I[97367,["$3"],"$15"]
+17:I[27201,["$3"],"IconMark"]
+7:X
+7:C
+8:X
+b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[["$","$Le",null,{"service":{"id":"fares_passes","slug":"fares-passes","title":"Fares & passes","title_hi":"किराया एवं पास","subtitle":"DTC fare slabs & pink pass","subtitle_hi":"डीटीसी किराया व पिंक पास","description":"Official fare slabs for AC & Non-AC buses, daily transit passes, and free Pink Pass.","description_hi":"एसी व नॉन-एसी बसों के लिए आधिकारिक किराया स्लैब और महिलाओं के लिए मुफ्त पिंक पास।","icon":"CreditCard","badge":"GTFS data","category":"fares","details":{"summary":"Regulated fare structure implemented by Delhi Transport Corporation (DTC).","summary_hi":"दिल्ली परिवहन निगम (DTC) द्वारा निर्धारित आधिकारिक किराया संरचना।","items":[{"label":"Non-AC Bus","label_hi":"नॉन-एसी बस","val":"₹5 (0-4 km) / ₹10 (4-10 km) / ₹15 (10+ km)"},{"label":"AC Bus","label_hi":"एसी बस","val":"₹10 / ₹15 / ₹20 / ₹25 (by distance)"},{"label":"Daily Pass","label_hi":"दैनिक पास","val":"₹40 (Non-AC) / ₹50 (AC fleets)"},{"label":"Women Commuters","label_hi":"महिला यात्री","val":"100% Free Pink Single-Journey Ticket"}],"actionLabel":"View DTC fare table","actionLabel_hi":"किराया विवरण देखें","actionLink":"/services/fares-passes"}}}],[["$","script","script-0",{"src":"/_next/static/chunks/1_xh4ebxxephh.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/303521fa7hgka.js","async":true}]],["$","$Lf",null,{"children":["$","$10",null,{"name":"Next.MetadataOutlet","children":"$@11"}]}]]}],"p":"$@12","v":null,"s":"$8"}}]]
+9:[["children",{"s":{"n":"slug","t":"d","k":"fares-passes","s":[]},"h":96,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@a","v":"$7","s":"$8"},"c":"$Qb"}]]
+1:[["children",{"s":"services","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+0:{"t":{"t":{"s":"","h":20,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[null,["$","$L14",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff","media":"(prefers-color-scheme: light)"}],["$","meta","3",{"name":"theme-color","content":"#18181b","media":"(prefers-color-scheme: dark)"}]]}],["$","$L16",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$10",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Delhi Smart Bus · Live Tracking & Fleet Intelligence"}],["$","meta","1",{"name":"description","content":"Real-time GPS bus tracking, crowd occupancy intelligence, and accurate arrivals for Delhi DTC & DIMTS electric buses."}],["$","link","2",{"rel":"manifest","href":"/manifest.webmanifest"}],["$","link","3",{"rel":"canonical","href":"https://pranshusharma.tech"}],["$","meta","4",{"name":"mobile-web-app-capable","content":"yes"}],["$","meta","5",{"name":"apple-mobile-web-app-title","content":"Delhi Bus"}],["$","meta","6",{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","meta","7",{"property":"og:title","content":"Delhi Smart Bus · Live Public Transit Tracking"}],["$","meta","8",{"property":"og:description","content":"Track live buses, seat occupancy, and accurate arrival ETAs across 19 major Delhi NCR corridors."}],["$","meta","9",{"property":"og:url","content":"https://pranshusharma.tech"}],["$","meta","10",{"property":"og:site_name","content":"Smart Bus Delhi"}],["$","meta","11",{"property":"og:locale","content":"en_IN"}],["$","meta","12",{"property":"og:type","content":"website"}],["$","meta","13",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","14",{"name":"twitter:title","content":"Delhi Smart Bus · Live Transit Tracking"}],["$","meta","15",{"name":"twitter:description","content":"Live GPS bus arrival tracking and crowd telemetry across Delhi NCR."}],["$","link","16",{"rel":"icon","href":"/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}],["$","link","17",{"rel":"icon","href":"/favicon.ico","sizes":"64x64","type":"image/x-icon"}],["$","link","18",{"rel":"icon","href":"/icon.svg","sizes":"any","type":"image/svg+xml"}],["$","link","19",{"rel":"icon","href":"/icon-192.png","sizes":"192x192","type":"image/png"}],["$","link","20",{"rel":"apple-touch-icon","href":"/icon-192.png","sizes":"192x192","type":"image/png"}],["$","$L17","21",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@18","v":null,"s":"$8"}},"a":"$@19","u":"$@1a","b":"r5QQBtyNjtICNLn1sfpyu"}
+11:null
+1a:true
+8:300
+8:C
+19:0
+a:"$undefined"
+6:"$undefined"
+18:"$undefined"
+12:"$undefined"

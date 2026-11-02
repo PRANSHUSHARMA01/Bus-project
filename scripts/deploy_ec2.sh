@@ -19,14 +19,16 @@ echo "--> Updating system packages..."
 sudo apt-get update -y
 sudo apt-get install -y git curl ufw ca-certificates gnupg python3 python3-pip python3-venv nginx certbot python3-certbot-nginx
 
-# 2. Install Node.js 20 LTS (for building frontend static export)
-if ! command -v node &> /dev/null; then
-    echo "--> Installing Node.js 20 LTS..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt-get install -y nodejs
+# Ensure swap space early on memory-constrained EC2 instances (t3.micro / 1GB RAM)
+if [ ! -f /swapfile ] && [ $(free -m | awk '/^Swap:/{print $2}') -eq 0 ]; then
+    echo "--> Configuring 2GB virtual memory swap..."
+    sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
 fi
 
-# 3. Setup Python virtual environment
+# 2. Setup Python virtual environment
 echo "--> Setting up Python 3 virtual environment..."
 cd "$APP_DIR"
 if [ ! -d "venv" ]; then
@@ -36,26 +38,22 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r backend/requirements.txt
 
-# Ensure swap space on memory-constrained EC2 instances (t3.micro / 1GB RAM)
-if [ ! -f /swapfile ] && [ $(free -m | awk '/^Swap:/{print $2}') -eq 0 ]; then
-    echo "--> Configuring 2GB virtual memory swap for compilation..."
-    sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
-    sudo chmod 600 /swapfile
-    sudo mkswap /swapfile
-    sudo swapon /swapfile
+# 3. Frontend Static Assets
+if [ -f "$APP_DIR/backend/static/index.html" ]; then
+    echo "--> Pre-built production frontend detected in backend/static! Bypassing memory-heavy npm build."
+else
+    echo "--> Building frontend Next.js static export..."
+    if ! command -v node &> /dev/null; then
+        echo "--> Installing Node.js 20 LTS..."
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    fi
+    cd "$APP_DIR/frontend"
+    npm ci --prefer-offline
+    NODE_OPTIONS="--max-old-space-size=1536" npm run build
+    mkdir -p "$APP_DIR/backend/static"
+    cp -r "$APP_DIR/frontend/out/"* "$APP_DIR/backend/static/"
 fi
-
-# 4. Build Next.js frontend static export
-echo "--> Building frontend Next.js static export..."
-cd "$APP_DIR/frontend"
-npm ci --prefer-offline
-NODE_OPTIONS="--max-old-space-size=1536" npm run build
-
-# 5. Sync frontend/out static files to backend/static/
-echo "--> Synchronizing static assets into backend/static/..."
-cd "$APP_DIR"
-mkdir -p backend/static
-cp -r frontend/out/* backend/static/
 
 # 6. Ensure persistent database directory
 mkdir -p backend/data
