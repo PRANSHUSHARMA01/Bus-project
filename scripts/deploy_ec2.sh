@@ -52,12 +52,13 @@ cp -r frontend/out/* backend/static/
 mkdir -p backend/data
 sudo chown -R ubuntu:ubuntu "$APP_DIR"
 
-# 7. Install and enable systemd service
-echo "--> Installing systemd service..."
+# 7. Install and enable systemd services
+echo "--> Installing systemd services (Backend API & Fleet Simulator)..."
 sudo cp systemd/smart-bus.service /etc/systemd/system/smart-bus.service
+sudo cp systemd/smart-bus-sim.service /etc/systemd/system/smart-bus-sim.service
 sudo systemctl daemon-reload
-sudo systemctl enable smart-bus.service
-sudo systemctl restart smart-bus.service
+sudo systemctl enable smart-bus.service smart-bus-sim.service
+sudo systemctl restart smart-bus.service smart-bus-sim.service
 
 # 8. Setup Nginx Reverse Proxy
 echo "--> Configuring Nginx reverse proxy..."
