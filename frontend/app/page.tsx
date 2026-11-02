@@ -158,11 +158,26 @@ export default function UberPassengerApp() {
     }
   }, [user, isLoading, router]);
 
-  const firstName = (user?.full_name || userName || "").trim().split(" ")[0];
-  const greeting = firstName
+  // Scroll state for sticky home header collapse and fade
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const rawName = (user?.full_name || userName || "").trim();
+  const isEmailPrefix =
+    Boolean(rawName) &&
+    !rawName.includes(" ") &&
+    (/\d/.test(rawName) || (user?.email && rawName.toLowerCase() === user.email.split("@")[0].toLowerCase()));
+  const displayFirstName = isEmailPrefix ? "" : rawName.split(" ")[0];
+  const greeting = displayFirstName
     ? lang === "hi"
-      ? `नमस्ते, ${firstName}`
-      : `Hi, ${firstName}`
+      ? `नमस्ते, ${displayFirstName}`
+      : `Hi, ${displayFirstName}`
     : lang === "hi"
     ? "नमस्ते"
     : "Hi there";
@@ -533,134 +548,146 @@ export default function UberPassengerApp() {
           VIEW 1: PASSENGER HOME (Monochrome Uber Experience)
          ========================================================================= */}
       {viewMode === "home" && (
-        <main id="main-content" style={{ padding: "16px 16px 0 16px" }}>
-          {/* Top Bar: Location Picker & Alerts Button */}
-          <TopBar
-            currentLocationName={selectedStop ? stopName(selectedStop) : "Select location"}
-            onOpenLocationSheet={() => setLocationSheetOpen(true)}
-            unreadAlertsCount={alerts.length}
-            onOpenAlertsSheet={() => setAlertsSheetOpen(true)}
-          />
+        <main id="main-content" style={{ padding: "0 16px" }}>
+          {/* STICKY HOME HEADER WITH FADE + BLUR (Section 4) */}
+          <header
+            className={`home-header ${scrollY > 8 ? "scrolled" : ""}`}
+            style={{ marginBottom: 12 }}
+          >
+            {/* Row 1: Location Picker & Alerts Button */}
+            <TopBar
+              currentLocationName={selectedStop ? stopName(selectedStop) : "Select location"}
+              onOpenLocationSheet={() => setLocationSheetOpen(true)}
+              unreadAlertsCount={alerts.length}
+              onOpenAlertsSheet={() => setAlertsSheetOpen(true)}
+            />
 
-          {/* Phase G: High-Urgency Safety Mode Active Banner */}
-          {safetyModeActive && (
-            <div
-              style={{
-                background: "linear-gradient(90deg, #881337 0%, #4c0519 100%)",
-                color: "#ffe4e6",
-                padding: "10px 14px",
-                borderRadius: 14,
-                margin: "10px 0 12px 0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                fontSize: 12,
-                fontWeight: 600,
-                border: "1px solid rgba(251, 113, 133, 0.4)",
-                boxShadow: "0 2px 10px rgba(136, 19, 55, 0.3)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Radio size={16} className="animate-pulse" style={{ color: "#fb7185" }} />
-                <span>
-                  {lang === "hi"
-                    ? "सुरक्षा मोड सक्रिय · दिल्ली पुलिस 112 एवं लाइव ट्रैकिंग"
-                    : "SAFETY MODE ACTIVE · Direct 112 PCR Dispatch Armed"}
-                </span>
+            {/* Phase G: High-Urgency Safety Mode Active Banner */}
+            {safetyModeActive && (
+              <div
+                style={{
+                  background: "linear-gradient(90deg, #881337 0%, #4c0519 100%)",
+                  color: "#ffe4e6",
+                  padding: "10px 14px",
+                  borderRadius: 14,
+                  margin: "8px 0 10px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  border: "1px solid rgba(251, 113, 133, 0.4)",
+                  boxShadow: "0 2px 10px rgba(136, 19, 55, 0.3)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Radio size={16} className="animate-pulse" style={{ color: "#fb7185" }} />
+                  <span>
+                    {lang === "hi"
+                      ? "सुरक्षा मोड सक्रिय · दिल्ली पुलिस 112 एवं लाइव ट्रैकिंग"
+                      : "SAFETY MODE ACTIVE · Direct 112 PCR Dispatch Armed"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    onClick={startSosBuffer}
+                    style={{
+                      background: "#e11d48",
+                      color: "#fff",
+                      border: "none",
+                      padding: "3px 10px",
+                      borderRadius: 8,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    SOS
+                  </button>
+                  <button
+                    onClick={() => setSafetyModeActive(false)}
+                    style={{
+                      background: "rgba(0,0,0,0.3)",
+                      border: "1px solid rgba(251, 113, 133, 0.3)",
+                      color: "#fff",
+                      padding: "3px 8px",
+                      borderRadius: 8,
+                      fontSize: 11,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button
-                  onClick={startSosBuffer}
-                  style={{
-                    background: "#e11d48",
-                    color: "#fff",
-                    border: "none",
-                    padding: "3px 10px",
-                    borderRadius: 8,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  SOS
-                </button>
-                <button
-                  onClick={() => setSafetyModeActive(false)}
-                  style={{
-                    background: "rgba(0,0,0,0.3)",
-                    border: "1px solid rgba(251, 113, 133, 0.3)",
-                    color: "#fff",
-                    padding: "3px 8px",
-                    borderRadius: 8,
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                >
-                  Dismiss
-                </button>
+            )}
+
+            {/* Row 2: Mode Tabs (Bus · Metro · Intercity) */}
+            <ModeTabs
+              activeTab={activeMode}
+              onSelectTab={handleSelectMode}
+              lang={lang}
+            />
+
+            {/* Greeting: collapses on scroll */}
+            <div className={`home-greeting-wrap ${scrollY > 24 ? "collapsed" : ""}`}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  margin: "12px 0 10px 0",
+                }}
+              >
+                <div className="text-title" style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
+                  {greeting}
+                </div>
+                {isEmailPrefix && (
+                  <button
+                    onClick={() => router.push("/account")}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {lang === "hi" ? "नाम जोड़ें" : "Add your name"}
+                  </button>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Underlined Mode Tabs: Bus · Metro · Intercity */}
-          <ModeTabs
-            activeTab={activeMode}
-            onSelectTab={handleSelectMode}
-            lang={lang}
-          />
+            {/* Row 3: Sticky Hero Search Pill */}
+            <div style={{ paddingBottom: 6 }}>
+              <SearchPill
+                value={searchQuery}
+                onChange={(val) => {
+                  setSearchQuery(val);
+                  if (!isSearchOpen) setIsSearchOpen(true);
+                }}
+                onOpenScheduleSheet={() => setScheduleSheetOpen(true)}
+                onClickPill={() => setIsSearchOpen(true)}
+                placeholder={lang === "hi" ? "कहाँ जाना है?" : "Where to?"}
+                scheduleLabel={
+                  scheduleOffsetMin === 0
+                    ? lang === "hi" ? "समय सारणी" : "Schedule"
+                    : `+${scheduleOffsetMin}m`
+                }
+              />
+            </div>
 
-          {/* Greeting (Dynamic user first name) */}
-          <div className="text-title" style={{ fontSize: 24, fontWeight: 700, margin: "14px 0 12px 0" }}>
-            {greeting}
-          </div>
-
-          {/* Sticky Hero Search Pill Row with 40px Top Scroll Fade */}
-          <div
-            style={{
-              position: "sticky",
-              top: 0,
-              zIndex: 30,
-              background: "var(--paper)",
-              paddingTop: 8,
-              paddingBottom: 4,
-              marginInline: -4,
-              paddingInline: 4,
-            }}
-          >
-            <SearchPill
-              value={searchQuery}
-              onChange={(val) => {
-                setSearchQuery(val);
-                if (!isSearchOpen) setIsSearchOpen(true);
-              }}
-              onOpenScheduleSheet={() => setScheduleSheetOpen(true)}
-              onClickPill={() => setIsSearchOpen(true)}
-              placeholder={lang === "hi" ? "कहाँ जाना है?" : "Where to?"}
-              scheduleLabel={
-                scheduleOffsetMin === 0
-                  ? lang === "hi" ? "समय सारणी" : "Schedule"
-                  : `+${scheduleOffsetMin}m`
-              }
-            />
-            {/* 40px Scroll Fade Layer under Sticky Search Row */}
+            {/* 32px soft fade below the sticky header */}
             <div
-              className="scroll-fade-top"
+              className="home-header-fade"
+              style={{ opacity: Math.min(1, scrollY / 24) }}
               aria-hidden="true"
-              style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                right: 0,
-                height: 40,
-                pointerEvents: "none",
-                background: "linear-gradient(to bottom, var(--paper) 0%, transparent 100%)",
-                WebkitBackdropFilter: "blur(8px)",
-                backdropFilter: "blur(8px)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-                maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
-              }}
             />
-          </div>
+          </header>
 
           {/* Quick Access: Live Bus Map Banner */}
           <button
@@ -897,132 +924,153 @@ export default function UberPassengerApp() {
               />
             )}
 
-            {/* TRACKING SPECIFIC BUS */}
+            {/* TRACKING SPECIFIC BUS (Section 4B: Sticky Info Header + Scroll Area + Sticky Action Bar) */}
             {!tripPlannerOpen && trackingBus && (
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                  <div>
-                    <div className="text-display tabular-nums" style={{ margin: 0 }}>
-                      4 <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{lang === "hi" ? "मिनट" : "min"}</span>
+              <div className="uber-sheet-content">
+                {/* 1. PINNED INFO HEADER (Fixed layout, never reflows or scrolls away) */}
+                <div className="tracking-sticky-header" role="region" aria-label="Live bus details">
+                  <div className="tracking-info-grid">
+                    <div>
+                      <div className="text-display tabular-nums" style={{ margin: 0, fontSize: "2rem", lineHeight: 1.1 }}>
+                        4 <span style={{ fontSize: 15, color: "var(--text-muted)", fontWeight: 500 }}>{lang === "hi" ? "मिनट" : "min"}</span>
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 16, marginTop: 4, letterSpacing: "-0.01em" }}>
+                        Route {trackingBus.route_id} · <span className="tabular-nums">{trackingBus.reg_no}</span>
+                      </div>
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: 16, marginTop: 4 }}>
-                      Route {trackingBus.route_id} · {trackingBus.reg_no}
-                    </div>
-                    <div className="text-caption" style={{ color: "var(--text-muted)", marginTop: 2 }}>
-                      Towards {trackingBus.towards} · {trackingBus.speed_kmh} km/h
+
+                    <Badge
+                      occupancy={trackingBus.occupancy}
+                      loadPct={trackingBus.load_pct}
+                      label={trackingBus.occupancy}
+                    />
+
+                    {/* Second Row: Destination + Dedicated Speed Chip (Never concatenated) */}
+                    <div className="tracking-dest-row">
+                      <div className="tracking-dest-text" title={`Towards ${trackingBus.towards}`}>
+                        Towards {trackingBus.towards}
+                      </div>
+                      <span className="tracking-speed-chip">
+                        {trackingBus.speed_kmh} km/h
+                      </span>
                     </div>
                   </div>
-
-                  <Badge
-                    occupancy={trackingBus.occupancy}
-                    loadPct={trackingBus.load_pct}
-                    label={trackingBus.occupancy}
-                  />
                 </div>
 
-                <div style={{ display: "flex", gap: 10, margin: "16px 0 20px" }}>
-                  <button
-                    className="btn-pill-primary"
-                    onClick={() => flashToast(lang === "hi" ? "बस आगमन अलर्ट सेट किया गया" : "Arrival notification set")}
-                    style={{ flex: 1 }}
-                  >
-                    <Bell size={16} />
-                    <span>{lang === "hi" ? "अलर्ट सेट करें" : "Notify me"}</span>
-                  </button>
-                  <button
-                    className="btn-pill-secondary"
-                    onClick={() => {
-                      if (typeof navigator !== "undefined" && navigator.clipboard) {
-                        navigator.clipboard.writeText(window.location.href);
-                      }
-                      flashToast(lang === "hi" ? "ट्रैकिंग लिंक कॉपी किया गया" : "Trip link copied to clipboard");
-                    }}
-                    style={{ flex: 1 }}
-                  >
-                    <Share2 size={16} />
-                    <span>{lang === "hi" ? "शेयर करें" : "Share trip"}</span>
-                  </button>
+                {/* 2. SCROLLABLE CORRIDOR TIMELINE */}
+                <div className="tracking-scroll-timeline">
+                  {trackingRoute && (
+                    <CorridorTimeline
+                      route={trackingRoute}
+                      bus={trackingBus}
+                      allBuses={buses.filter((b) => b.route_id === trackingRoute.id)}
+                      selectedStopId={selectedStopId}
+                      onSelectStop={(id) => {
+                        setSelectedStopId(id);
+                        try {
+                          localStorage.setItem("user_selected_stop", id);
+                        } catch {}
+                      }}
+                      onSetDestination={(id) => {
+                        handlePlanTripTo(id);
+                      }}
+                      lang={lang}
+                      onNotify={(msg) => flashToast(msg)}
+                    />
+                  )}
                 </div>
 
-                {/* Beautiful Vertical Journey Corridor Timeline */}
-                {trackingRoute && (
-                  <CorridorTimeline
-                    route={trackingRoute}
-                    bus={trackingBus}
-                    allBuses={buses.filter((b) => b.route_id === trackingRoute.id)}
-                    selectedStopId={selectedStopId}
-                    onSelectStop={(id) => {
-                      setSelectedStopId(id);
-                      try {
-                        localStorage.setItem("user_selected_stop", id);
-                      } catch {}
-                    }}
-                    onSetDestination={(id) => {
-                      handlePlanTripTo(id);
-                    }}
-                    lang={lang}
-                    onNotify={(msg) => flashToast(msg)}
-                  />
-                )}
+                {/* 3. PINNED STICKY ACTION BAR */}
+                <div className="tracking-sticky-actions">
+                  <div className="tracking-actions-grid">
+                    <button
+                      className="tracking-action-btn btn-pill-primary"
+                      onClick={() => flashToast(lang === "hi" ? "बस आगमन अलर्ट सेट किया गया" : "Arrival notification set")}
+                      aria-label="Notify me when bus is approaching"
+                    >
+                      <Bell size={18} />
+                      <span>{lang === "hi" ? "अलर्ट सेट करें" : "Notify me"}</span>
+                    </button>
+                    <button
+                      className="tracking-action-btn btn-pill-secondary"
+                      onClick={() => {
+                        if (typeof navigator !== "undefined" && navigator.clipboard) {
+                          navigator.clipboard.writeText(window.location.href);
+                        }
+                        flashToast(lang === "hi" ? "ट्रैकिंग लिंक कॉपी किया गया" : "Trip link copied to clipboard");
+                      }}
+                      aria-label="Share live journey link"
+                    >
+                      <Share2 size={18} />
+                      <span>{lang === "hi" ? "शेयर करें" : "Share trip"}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* ARRIVALS AT SELECTED STOP */}
+            {/* ARRIVALS AT SELECTED STOP (Pinned Stop Title Header + Scrollable Buses) */}
             {!tripPlannerOpen && !trackingBus && selectedStop && (
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                  <div>
-                    <span className="text-caption" style={{ fontWeight: 700, color: "var(--text-muted)" }}>
-                      BUS STOP
-                    </span>
-                    <h1 className="text-title" style={{ margin: "2px 0 0", fontSize: 22 }}>
-                      {stopName(selectedStop)}
-                    </h1>
+              <div className="uber-sheet-content">
+                <div className="tracking-sticky-header">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <span className="text-caption" style={{ fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em" }}>
+                        {lang === "hi" ? "बस स्टॉप" : "BUS STOP"}
+                      </span>
+                      <h2 className="text-title" style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 700 }}>
+                        {stopName(selectedStop)}
+                      </h2>
+                    </div>
+                    <button
+                      onClick={() => setViewMode("home")}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        background: "var(--surface-2)",
+                        display: "grid",
+                        placeItems: "center",
+                        border: "1px solid var(--border)",
+                        cursor: "pointer",
+                      }}
+                      aria-label="Return home"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setViewMode("home")}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "50%",
-                      background: "var(--surface-2)",
-                      display: "grid",
-                      placeItems: "center",
-                    }}
-                    aria-label="Return home"
-                  >
-                    <X size={18} />
-                  </button>
                 </div>
 
-                {arrivals === null && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <Skeleton height={72} borderRadius={16} />
-                    <Skeleton height={72} borderRadius={16} />
-                  </div>
-                )}
+                <div className="tracking-scroll-timeline">
+                  {arrivals === null && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <Skeleton height={72} borderRadius={16} />
+                      <Skeleton height={72} borderRadius={16} />
+                    </div>
+                  )}
 
-                {arrivals && arrivals.length === 0 && (
-                  <EmptyState
-                    title={lang === "hi" ? "कोई बस नहीं आ रही है" : "No buses at this stop right now"}
-                    description={lang === "hi" ? "इस स्टॉप पर अभी कोई बस नहीं है। नज़दीकी स्टॉप देखें।" : "No live buses on this corridor right now. Try a nearby stop."}
-                    actionText={lang === "hi" ? "नज़दीकी स्टॉप दिखाएं" : "Show nearby stops"}
-                    onAction={handleLocateNearest}
-                  />
-                )}
+                  {arrivals && arrivals.length === 0 && (
+                    <EmptyState
+                      title={lang === "hi" ? "कोई बस नहीं आ रही है" : "No buses at this stop right now"}
+                      description={lang === "hi" ? "इस स्टॉप पर अभी कोई बस नहीं है। नज़दीकी स्टॉप देखें।" : "No live buses on this corridor right now. Try a nearby stop."}
+                      actionText={lang === "hi" ? "नज़दीकी स्टॉप दिखाएं" : "Show nearby stops"}
+                      onAction={handleLocateNearest}
+                    />
+                  )}
 
-                {arrivals && arrivals.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    {arrivals.map((a) => (
-                      <ArrivalCard
-                        key={a.bus_id + a.towards}
-                        arrival={a}
-                        onTrack={() => setTrackingBusId(a.bus_id)}
-                        lang={lang}
-                      />
-                    ))}
-                  </div>
-                )}
+                  {arrivals && arrivals.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      {arrivals.map((a) => (
+                        <ArrivalCard
+                          key={a.bus_id + a.towards}
+                          arrival={a}
+                          onTrack={() => setTrackingBusId(a.bus_id)}
+                          lang={lang}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </section>

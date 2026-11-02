@@ -1832,3 +1832,188 @@ button {
     transition: none !important;
   }
 }
+
+/* ==========================================================================
+   WOMEN SAFETY HUB & QUICK ACTIONS
+   ========================================================================== */
+@keyframes gentleShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.shake-animation {
+  animation: gentleShake 400ms ease-out;
+}
+
+.btn-quick-action:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .btn-quick-action:hover {
+    background: var(--surface-3) !important;
+  }
+}
+
+/* ==========================================================================
+   STICKY HOME HEADER WITH SCROLL COLLAPSE & FADE/BLUR (Section 4)
+   ========================================================================== */
+.home-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  padding-inline: 16px;
+  margin-inline: -16px;
+  background: transparent;
+  transition: background-color 200ms ease-out, box-shadow 200ms ease-out, backdrop-filter 200ms ease-out;
+}
+
+.home-header.scrolled {
+  background: color-mix(in oklab, var(--paper) 85%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .home-header.scrolled {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* 32px soft fade below the sticky header */
+.home-header-fade {
+  position: absolute;
+  bottom: -32px;
+  left: 0;
+  right: 0;
+  height: 32px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--paper) 0%, transparent 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  transition: opacity 200ms ease-out;
+}
+
+/* Greeting collapsible container */
+.home-greeting-wrap {
+  overflow: hidden;
+  max-height: 80px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: max-height 250ms cubic-bezier(0.2, 0, 0, 1), opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+.home-greeting-wrap.collapsed {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  transform: translateY(-8px) !important;
+  margin: 0 !important;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   LIVE-BUS TRACKING SHEET — STICKY INFO HEADER & ACTION BAR (Section 4B)
+   ========================================================================== */
+.uber-sheet-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.tracking-sticky-header {
+  flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface);
+  padding: 4px 0 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tracking-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: start;
+}
+
+.tracking-dest-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tracking-dest-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.tracking-speed-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--r-chip, 8px);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tracking-scroll-timeline {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 0;
+}
+
+.tracking-sticky-actions {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--surface);
+  padding: 12px 0 4px 0;
+  border-top: 1px solid var(--line);
+}
+
+.tracking-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tracking-action-btn {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 150ms ease-out;
+}
+
+.tracking-action-btn:active {
+  transform: scale(0.96);
+}
+
