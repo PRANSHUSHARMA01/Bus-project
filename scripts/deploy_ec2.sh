@@ -36,11 +36,20 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r backend/requirements.txt
 
+# Ensure swap space on memory-constrained EC2 instances (t3.micro / 1GB RAM)
+if [ ! -f /swapfile ] && [ $(free -m | awk '/^Swap:/{print $2}') -eq 0 ]; then
+    echo "--> Configuring 2GB virtual memory swap for compilation..."
+    sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+fi
+
 # 4. Build Next.js frontend static export
 echo "--> Building frontend Next.js static export..."
 cd "$APP_DIR/frontend"
 npm ci --prefer-offline
-npm run build
+NODE_OPTIONS="--max-old-space-size=1536" npm run build
 
 # 5. Sync frontend/out static files to backend/static/
 echo "--> Synchronizing static assets into backend/static/..."
