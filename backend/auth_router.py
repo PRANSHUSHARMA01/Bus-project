@@ -31,6 +31,7 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 JWT_SECRET = os.environ.get("JWT_SECRET", "smartbus-jwt-production-secret-key-32bytes")
 SERVER_PEPPER = os.environ.get("SERVER_PEPPER", "smartbus-production-server-pepper-32bytes")
 IS_PROD = os.environ.get("DEV_MODE", "true").lower() not in ("true", "1", "yes")
+DEV_AUTH_BYPASS = (not IS_PROD) and os.environ.get("DEV_AUTH_BYPASS", "true").lower() in ("true", "1", "yes")
 
 # Google OAuth 2.0 Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
@@ -94,8 +95,8 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Dev token bypass if enabled
-    if token.startswith("dev-user-"):
+    # Dev token bypass if enabled (disabled in production)
+    if DEV_AUTH_BYPASS and token.startswith("dev-user-"):
         parts = token.split("-")
         uid = parts[2] if len(parts) > 2 else "dev-user-123"
         return {
@@ -209,8 +210,8 @@ async def verify_otp(body: VerifyOtpModel, request: Request, response: Response)
     email_h = hash_email(body.email)
 
     # Universal Demo / Testing Passkey:
-    # Allows instant login with 123456 for any email address in development/demo mode
-    if body.code == "123456":
+    # Allows instant login with 123456 for any email address in development/demo mode only
+    if not IS_PROD and body.code == "123456":
         valid = True
         msg = "OK"
     else:

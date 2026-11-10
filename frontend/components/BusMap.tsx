@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Map, { Layer, Marker, Source } from "react-map-gl/maplibre";
 import type { LayerProps, MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -8,23 +8,26 @@ import { Bus, OCC_COLOR, Route, Stop } from "../lib/types";
 
 type LngLat = [number, number];
 
-/** Makes buses glide to their new position smoothly instead of jumping */
+/** Makes buses glide to their new position smoothly without spinning idle RAF frames */
 function useSmooth(buses: Bus[]) {
   const [pos, setPos] = useState<Record<string, LngLat>>({});
   const target = useRef<Record<string, LngLat>>({});
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
     const t: Record<string, LngLat> = {};
     buses.forEach((b) => (t[String(b.bus_id)] = [b.lng, b.lat]));
     target.current = t;
-  }, [buses]);
 
-  useEffect(() => {
-    let raf = 0;
+    if (buses.length === 0) return;
+
+    cancelAnimationFrame(rafRef.current);
     let last = 0;
     const tick = (now: number) => {
+      let keepGoing = true;
       if (now - last > 33) {
         last = now;
+        let anyMoving = false;
         setPos((prev) => {
           const next: Record<string, LngLat> = {};
           let changed = false;
@@ -36,19 +39,27 @@ function useSmooth(buses: Bus[]) {
               changed = true;
               continue;
             }
-            const nx = p[0] + (tx - p[0]) * 0.14;
-            const ny = p[1] + (ty - p[1]) * 0.14;
-            if (Math.abs(nx - p[0]) > 1e-9 || Math.abs(ny - p[1]) > 1e-9) changed = true;
-            next[id] = [nx, ny];
+            const dx = tx - p[0];
+            const dy = ty - p[1];
+            if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) {
+              next[id] = [tx, ty];
+              continue;
+            }
+            anyMoving = true;
+            changed = true;
+            next[id] = [p[0] + dx * 0.18, p[1] + dy * 0.18];
           }
+          if (!anyMoving) keepGoing = false;
           return changed ? next : prev;
         });
       }
-      raf = requestAnimationFrame(tick);
+      if (keepGoing) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [buses]);
 
   return pos;
 }
@@ -125,23 +136,31 @@ export default function BusMap({
     }
   }, [selectedBusId, buses]);
 
-  const geo = {
-    type: "FeatureCollection" as const,
-    features: routes.map((r) => ({
-      type: "Feature" as const,
-      properties: { color: r.color },
-      geometry: { type: "LineString" as const, coordinates: r.path },
-    })),
-  };
+  const geo = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: routes
+        .filter((r) => r.path && r.path.length > 0)
+        .map((r) => ({
+          type: "Feature" as const,
+          properties: { color: r.color },
+          geometry: { type: "LineString" as const, coordinates: r.path },
+        })),
+    }),
+    [routes]
+  );
 
   // High-performance filter: Render stop markers for active corridors or the selected stop
-  const displayStops = (stops || []).filter((s) => {
-    if (s.id === selectedStop) return true;
-    if (s.routes && s.routes.length > 0) {
-      return routes.some((r) => s.routes?.includes(r.id));
-    }
-    return false;
-  });
+  const displayStops = useMemo(() => {
+    const activeRouteIds = new Set(routes.map((r) => r.id));
+    return (stops || []).filter((s) => {
+      if (s.id === selectedStop) return true;
+      if (s.routes && s.routes.length > 0) {
+        return s.routes.some((rid) => activeRouteIds.has(rid));
+      }
+      return false;
+    });
+  }, [stops, routes, selectedStop]);
 
   return (
     <Map

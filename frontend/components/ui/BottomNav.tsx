@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Clock, Compass, Home, User } from "lucide-react";
 
 export type NavTab = "home" | "services" | "activity" | "account";
@@ -50,13 +49,7 @@ export function BottomNav({ activeTab, onSelectTab, lang = "en" }: BottomNavProp
             className={`nav-item-btn ${isActive ? "active" : ""}`}
             aria-current={isActive ? "page" : undefined}
           >
-            {isActive && (
-              <motion.div
-                layoutId="navActiveBg"
-                className="nav-active-bg"
-                transition={{ duration: 0.3, bounce: 0 }}
-              />
-            )}
+            {isActive && <div className="nav-active-bg" />}
             <item.icon size={24} className="nav-item-icon" aria-hidden="true" />
             <span className="nav-item-label">{item.label}</span>
           </button>

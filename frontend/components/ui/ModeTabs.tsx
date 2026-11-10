@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Bus as BusIcon, Compass, Train } from "lucide-react";
 
 export type ModeTab = "bus" | "metro" | "intercity";
@@ -34,13 +33,7 @@ export function ModeTabs({ activeTab, onSelectTab, lang = "en" }: ModeTabsProps)
               <tab.icon size={17} aria-hidden="true" />
               <span>{tab.label}</span>
               {tab.badge && <span className="badge-soon">{tab.badge}</span>}
-              {isActive && (
-                <motion.div
-                  layoutId="modeTabUnderline"
-                  className="mode-tab-underline"
-                  transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-                />
-              )}
+              {isActive && <div className="mode-tab-underline" />}
             </div>
           </button>
         );

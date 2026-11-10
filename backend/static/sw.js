@@ -1,5 +1,5 @@
 // Service Worker for Delhi Smart Bus Tracking PWA
-const CACHE_NAME = "delhi-smart-bus-v3";
+const CACHE_NAME = "delhi-smart-bus-v4";
 const STATIC_ASSETS = [
   "/",
   "/services",
@@ -35,35 +35,48 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// 3. Fetch event: Stale-While-Revalidate for shell, Network-First for API
+// 3. Fetch event: Network-First for HTML routes, Cache-First for hashed _next/static chunks
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // Skip non-GET requests
   if (event.request.method !== "GET") return;
 
-  // Static shell routes & assets: Stale-While-Revalidate
+  // Immutable hashed Next.js assets: Cache-First
+  if (url.origin === self.location.origin && url.pathname.startsWith("/_next/static")) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response.status === 200) {
+          cache.put(event.request, response.clone());
+        }
+        return response;
+      })
+    );
+    return;
+  }
+
+  // HTML shell routes: Network-First so updates appear immediately, with offline cache fallback
   if (
     url.origin === self.location.origin &&
     (url.pathname === "/" ||
       url.pathname.startsWith("/services") ||
       url.pathname.startsWith("/activity") ||
       url.pathname.startsWith("/account") ||
-      url.pathname.startsWith("/_next/static"))
+      url.pathname.startsWith("/conductor"))
   ) {
     event.respondWith(
-      caches.open(CACHE_NAME).then(async (cache) => {
-        const cached = await cache.match(event.request);
-        const networkFetch = fetch(event.request)
-          .then((response) => {
-            if (response.status === 200) {
-              cache.put(event.request, response.clone());
-            }
-            return response;
-          })
-          .catch(() => cached);
-        return cached || networkFetch;
-      })
+      fetch(event.request)
+        .then((response) => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }

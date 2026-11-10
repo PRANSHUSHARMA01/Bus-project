@@ -33,7 +33,8 @@ export function MovingBus({ compact = false }: MovingBusProps) {
   const [doorsOpen, setDoorsOpen] = useState(false);
   const [occupiedSeats, setOccupiedSeats] = useState(17);
   const totalSeats = 35;
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused, setIsPaused] = useState(true);
+  const [userActivated, setUserActivated] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
   const [dragStartX, setDragStartX] = useState<number | null>(null);
 
@@ -80,26 +81,32 @@ export function MovingBus({ compact = false }: MovingBusProps) {
   useEffect(() => {
     if (isReducedMotion || isPaused) return;
 
-    let timer: NodeJS.Timeout;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const schedule = (fn: () => void, ms: number) => {
+      const id = setTimeout(fn, ms);
+      timeouts.push(id);
+      return id;
+    };
+
     const cycle = () => {
       setPhase("stopping");
       setSpeed(12);
 
-      timer = setTimeout(() => {
+      schedule(() => {
         setPhase("stopped");
         setSpeed(0);
         setDoorsOpen(true);
 
-        setTimeout(() => {
+        schedule(() => {
           setOccupiedSeats((prev) => (prev >= 32 ? 14 : prev + 3));
         }, 750);
 
-        setTimeout(() => {
+        schedule(() => {
           setDoorsOpen(false);
           setPhase("accelerating");
           setSpeed(18);
 
-          setTimeout(() => {
+          schedule(() => {
             setPhase("cruising");
             setSpeed(32);
           }, 1100);
@@ -110,7 +117,7 @@ export function MovingBus({ compact = false }: MovingBusProps) {
     const interval = setInterval(cycle, 9000);
     return () => {
       clearInterval(interval);
-      clearTimeout(timer);
+      timeouts.forEach(clearTimeout);
     };
   }, [isReducedMotion, isPaused]);
 
@@ -252,8 +259,15 @@ export function MovingBus({ compact = false }: MovingBusProps) {
       role="region"
       aria-label="Interactive isometric Delhi electric bus figure"
       tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onPointerDown={handlePointerDown}
+      onKeyDown={(e) => {
+        setUserActivated(true);
+        handleKeyDown(e);
+      }}
+      onPointerDown={(e) => {
+        setUserActivated(true);
+        handlePointerDown(e);
+      }}
+      onPointerEnter={() => setUserActivated(true)}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
@@ -335,10 +349,10 @@ export function MovingBus({ compact = false }: MovingBusProps) {
                 50% { transform: translateY(-0.6px); }
               }
 
-              .anim-road { animation: scrollRoad 0.55s linear infinite; }
-              .anim-sky-near { animation: scrollSkyNear 1.4s linear infinite; }
-              .anim-sky-far { animation: scrollSkyFar 3.0s linear infinite; }
-              .anim-bob { animation: busBob 2.2s ease-in-out infinite; }
+              .anim-road { animation: scrollRoad 0.55s linear infinite; will-change: transform; }
+              .anim-sky-near { animation: scrollSkyNear 1.4s linear infinite; will-change: transform; }
+              .anim-sky-far { animation: scrollSkyFar 3.0s linear infinite; will-change: transform; }
+              .anim-bob { animation: busBob 2.2s ease-in-out infinite; will-change: transform; }
             `}</style>
           </defs>
 
@@ -346,7 +360,7 @@ export function MovingBus({ compact = false }: MovingBusProps) {
           <rect width="520" height="340" className="sky-bg" />
 
           {/* 1. Skyline Layer 1 (Far, 0.2x speed) */}
-          <g className={speed > 0 && !isReducedMotion ? "anim-sky-far" : ""}>
+          <g className={speed > 0 && !isReducedMotion && !isPaused && userActivated ? "anim-sky-far" : ""}>
             <g className="skyline-far">
               {/* India Gate Silhouette */}
               <polygon points="40,95 60,95 60,130 72,130 72,95 92,95 92,60 40,60" />
@@ -361,7 +375,7 @@ export function MovingBus({ compact = false }: MovingBusProps) {
           </g>
 
           {/* 2. Skyline Layer 2 (Mid, 0.45x speed) */}
-          <g className={speed > 0 && !isReducedMotion ? "anim-sky-near" : ""}>
+          <g className={speed > 0 && !isReducedMotion && !isPaused && userActivated ? "anim-sky-near" : ""}>
             <g className="skyline-mid">
               {/* Tomb Dome & Minarets */}
               <path d="M 220,140 L 220,105 Q 240,85 260,105 L 260,140 Z" />
@@ -387,7 +401,7 @@ export function MovingBus({ compact = false }: MovingBusProps) {
             })}
 
             {/* Scrolling Dashed Centre Line (at y = -1.0) */}
-            <g className={speed > 0 && !isReducedMotion ? "anim-road" : ""}>
+            <g className={speed > 0 && !isReducedMotion && !isPaused && userActivated ? "anim-road" : ""}>
               {[-18, -12, -6, 0, 6, 12, 18, 24].map((dx) => {
                 const p = face([[dx - 1.5, -1.0, 0.01], [dx + 1.5, -1.0, 0.01], [dx + 1.5, -0.85, 0.01], [dx - 1.5, -0.85, 0.01]]);
                 return <polygon key={dx} points={p} className="markings" />;
@@ -477,7 +491,7 @@ export function MovingBus({ compact = false }: MovingBusProps) {
           </g>
 
           {/* 6. The Bus Body */}
-          <g id="bus-body" className={speed > 0 && !isReducedMotion ? "anim-bob" : ""}>
+          <g id="bus-body" className={speed > 0 && !isReducedMotion && !isPaused && userActivated ? "anim-bob" : ""}>
             {/* Dark Wheel Arch Cavities */}
             {[rearAxleX, frontAxleX].map((axleX) => {
               const cavity = face([

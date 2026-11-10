@@ -53,8 +53,8 @@ export default function AccountPage() {
   const [legalSheetOpen, setLegalSheetOpen] = useState(false);
 
   // Profile Edit
-  const [fullName, setFullName] = useState(user?.full_name || "Pranshu Sharma");
-  const [phone, setPhone] = useState(user?.phone || "+91 98765 43210");
+  const [fullName, setFullName] = useState(user?.full_name || "");
+  const [phone, setPhone] = useState(user?.phone || "");
   const [lang, setLang] = useState<"en" | "hi">(user?.language || "en");
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [personalSaved, setPersonalSaved] = useState(false);
@@ -71,11 +71,9 @@ export default function AccountPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      if (user.full_name) setFullName(user.full_name);
-      if (user.phone) setPhone(user.phone);
-      if (user.language) setLang(user.language);
-    }
+    setFullName(user?.full_name || "");
+    setPhone(user?.phone || "");
+    if (user?.language) setLang(user.language);
   }, [user]);
 
   useEffect(() => {
@@ -220,9 +218,17 @@ export default function AccountPage() {
     await deleteAccount();
   };
 
-  const initials = fullName
-    ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "PS";
+  const displayName = user ? fullName.trim() || "Commuter" : "Hi there";
+  const initials =
+    user && fullName.trim()
+      ? fullName
+          .trim()
+          .split(/\s+/)
+          .map((n) => n[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase()
+      : "";
 
   return (
     <div
@@ -264,7 +270,7 @@ export default function AccountPage() {
                 wordBreak: "break-word",
               }}
             >
-              {fullName}
+              {displayName}
             </h1>
 
             {/* Tiny Chip */}
@@ -284,7 +290,7 @@ export default function AccountPage() {
                 width: "fit-content",
               }}
             >
-              <span>Frequent commuter · 4.9 ★</span>
+              <span>{user ? "Frequent commuter · 4.9 ★" : "Not signed in · Guest"}</span>
             </div>
           </div>
 
@@ -306,7 +312,7 @@ export default function AccountPage() {
             }}
             aria-hidden="true"
           >
-            {initials}
+            {initials || <User size={36} />}
           </div>
         </div>
 
@@ -519,28 +525,53 @@ export default function AccountPage() {
           </span>
 
           <div style={{ marginTop: 12 }}>
-            <button
-              onClick={() => signOut()}
-              className="btn-press"
-              style={{
-                width: "100%",
-                height: 48,
-                borderRadius: "var(--r-card)",
-                background: "oklch(0.50 0.24 27 / 0.12)",
-                color: "oklch(0.46 0.24 27)",
-                border: "1px solid oklch(0.46 0.24 27 / 0.3)",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                fontSize: "0.9375rem",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              <LogOut size={18} />
-              <span>Sign out</span>
-            </button>
+            {user ? (
+              <button
+                onClick={() => signOut()}
+                className="btn-press"
+                style={{
+                  width: "100%",
+                  height: 48,
+                  borderRadius: "var(--r-card)",
+                  background: "oklch(0.50 0.24 27 / 0.12)",
+                  color: "oklch(0.46 0.24 27)",
+                  border: "1px solid oklch(0.46 0.24 27 / 0.3)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  fontSize: "0.9375rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                <LogOut size={18} />
+                <span>Sign out</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push("/login")}
+                className="btn-press"
+                style={{
+                  width: "100%",
+                  height: 48,
+                  borderRadius: "var(--r-card)",
+                  background: "var(--accent)",
+                  color: "var(--accent-ink)",
+                  border: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  fontSize: "0.9375rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                <User size={18} />
+                <span>Sign in</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -321,11 +321,12 @@ def fleet():
 
 @app.get("/routes")
 @app.get("/api/v1/routes")
-def routes():
+def routes(compact: bool = False):
     out = []
     for r in ROUTES.values():
         out.append({"id": r["id"], "name": r["name"], "color": r["color"], "length_m": r["length_m"],
-                    "path": r["path"], "buses": sum(1 for v in ASSIGN.values() if v == r["id"]),
+                    "path": [] if compact else r["path"],
+                    "buses": sum(1 for v in ASSIGN.values() if v == r["id"]),
                     "stops": [{"id": s["id"], "d": s["d"], **STOPS[s["id"]]} for s in r["stops"]]})
     return out
 
@@ -334,11 +335,12 @@ PRECOMPUTED_STOPS = []
 for sid, s in STOPS.items():
     r_list = s.get("routes") or [r["id"] for r in ROUTES.values() if any(x["id"] == sid for x in r["stops"])]
     PRECOMPUTED_STOPS.append({"id": sid, **s, "routes": r_list})
+ACTIVE_PRECOMPUTED_STOPS = [s for s in PRECOMPUTED_STOPS if s.get("routes")]
 
 @app.get("/stops")
 @app.get("/api/v1/stops")
-def stops():
-    return PRECOMPUTED_STOPS
+def stops(active_only: bool = False):
+    return ACTIVE_PRECOMPUTED_STOPS if active_only else PRECOMPUTED_STOPS
 
 # ------------------------------------------------------------------ ETA (the PPT formula)
 # ETA = distance / effective_speed + dwell_time
@@ -598,10 +600,17 @@ def sim_flags():
 # ------------------------------------------------------------------ Static Frontend & SPA Fallback
 STATIC_DIR = Path(__file__).parent / "static"
 
+class ImmutableStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
 if STATIC_DIR.exists():
     next_static_dir = STATIC_DIR / "_next"
     if next_static_dir.exists():
-        app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
+        app.mount("/_next", ImmutableStaticFiles(directory=str(next_static_dir)), name="next_static")
 
     @app.get("/", include_in_schema=False)
     async def serve_root():

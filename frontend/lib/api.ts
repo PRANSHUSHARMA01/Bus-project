@@ -39,10 +39,12 @@ export async function post<T = unknown>(path: string, body: unknown): Promise<T>
 export function usePoll<T>(path: string | null, ms = 1000): T | null {
   const [data, setData] = useState<T | null>(() => (path ? (pollCache.get(path) ?? null) : null));
   const inFlightRef = useRef(false);
+  const lastTextRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!path) return;
     let alive = true;
+    lastTextRef.current = null;
 
     // Seed state immediately if cache has it
     if (pollCache.has(path)) {
@@ -59,7 +61,12 @@ export function usePoll<T>(path: string | null, ms = 1000): T | null {
       try {
         const res = await fetch(API + path);
         if (res.ok) {
-          const json = await res.json();
+          const text = await res.text();
+          if (text === lastTextRef.current) {
+            return; // Avoid redundant JSON.parse & React re-render when data hasn't changed
+          }
+          lastTextRef.current = text;
+          const json = JSON.parse(text);
           if (alive) {
             pollCache.set(path, json);
             setData(json);
@@ -73,21 +80,21 @@ export function usePoll<T>(path: string | null, ms = 1000): T | null {
     };
 
     load();
-    const id = setInterval(load, ms);
+    const id = ms > 0 ? setInterval(load, ms) : null;
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && ms > 0) {
         load();
       }
     };
-    if (typeof document !== "undefined") {
+    if (typeof document !== "undefined" && ms > 0) {
       document.addEventListener("visibilitychange", onVisibilityChange);
     }
 
     return () => {
       alive = false;
-      clearInterval(id);
-      if (typeof document !== "undefined") {
+      if (id !== null) clearInterval(id);
+      if (typeof document !== "undefined" && ms > 0) {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       }
     };

@@ -16,7 +16,8 @@ from db import db
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://mock-supabase.supabase.co")
 JWT_SECRET = os.environ.get("JWT_SECRET") or os.environ.get("SUPABASE_JWT_SECRET", "smartbus-jwt-production-secret-key-32bytes")
 SUPABASE_JWT_SECRET = JWT_SECRET
-DEV_AUTH_BYPASS = os.environ.get("DEV_AUTH_BYPASS", "true").lower() in ("true", "1", "yes")
+IS_PROD = os.environ.get("DEV_MODE", "true").lower() not in ("true", "1", "yes")
+DEV_AUTH_BYPASS = (not IS_PROD) and os.environ.get("DEV_AUTH_BYPASS", "true").lower() in ("true", "1", "yes")
 
 # JWKS Cache (1 hour TTL)
 _JWKS_CACHE: Dict[str, Any] = {"keys": [], "expires_at": 0}

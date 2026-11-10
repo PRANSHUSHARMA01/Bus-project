@@ -11,7 +11,10 @@ yarn-error.log*
 
 # Python & Virtual Environments
 venv/
+.venv/
+.venv_linux/
 backend/venv/
+backend/.venv_linux/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -49,3 +52,23 @@ google*.json
 Thumbs.db
 .vscode/
 .idea/
+
+# Local Agent Prompts, Guides, Screenshots & QA Scripts (Keep out of public deploy commits)
+.agents/
+DECISIONS.md
+GUIDE.*
+PROJECT_STATUS*.md
+SUMMARY.md
+skills-lock.json
+screenshots/
+docs/*.png
+docs/after/
+docs/before/
+docs/dashboards/
+docs/anatomy-rounds/
+docs/round2/
+backend/get_otp.py
+frontend/AGENTS.md
+frontend/scripts/
+scripts/*.js
+scripts/*.py

@@ -1,5 +1,3 @@
-@import "maplibre-gl/dist/maplibre-gl.css";
-
 /* ==========================================================================
    4px BASE SPACING SCALE & UBER MONOCHROME DESIGN SYSTEM
    ========================================================================== */
@@ -187,6 +185,7 @@
 
 .badge-sos-pulse {
   animation: sosPulse 1.2s ease-in-out 2;
+  will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -361,7 +360,8 @@ html, body {
 }
 @media (prefers-reduced-motion: no-preference) {
   .heartbeat {
-    animation: heartbeat 1.4s ease-in-out infinite;
+    animation: heartbeat 1.4s ease-in-out 2;
+    will-change: transform;
   }
 }
 
@@ -425,6 +425,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   width: 100%;
   height: 48px;
   margin-bottom: var(--s3);
@@ -438,6 +439,7 @@ button {
   font-weight: 600;
   padding: var(--s1) var(--s2);
   border-radius: 999px;
+  flex: 1;
   min-width: 0;
   transition: background-color 150ms ease-out;
 }
@@ -451,7 +453,7 @@ button {
 }
 
 .location-picker-name {
-  max-width: 180px;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -517,11 +519,12 @@ button {
 
 .mode-tab-item {
   flex: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
-  font-size: 14px;
+  padding: 0 2px;
+  font-size: clamp(12px, 3.4vw, 14px);
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -538,8 +541,9 @@ button {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 4px;
+  gap: 4px;
+  padding: 10px 2px;
+  max-width: 100%;
 }
 
 .mode-tab-underline {
@@ -553,17 +557,18 @@ button {
 }
 
 .badge-soon {
-  height: 20px;
-  font-size: 11px;
+  height: 18px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0 8px;
+  letter-spacing: 0.04em;
+  padding: 0 5px;
   border-radius: 999px;
   background: var(--surface-3);
   color: var(--text-muted);
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 /* Hero Search Pill ("Where to?") - Exactly 56px high, 40px inner schedule pill, 8px inset */
@@ -576,7 +581,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 8px 8px 18px;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
   border: 1px solid transparent;
   cursor: pointer;
   margin-bottom: var(--s5);
@@ -594,7 +600,7 @@ button {
 .hero-search-input-wrap {
   display: flex;
   align-items: center;
-  gap: var(--s3);
+  gap: var(--s2);
   flex: 1;
   min-width: 0;
 }
@@ -606,6 +612,8 @@ button {
 
 .hero-search-input {
   width: 100%;
+  min-width: 0;
+  flex: 1;
   border: 0;
   outline: 0;
   background: transparent;
@@ -621,6 +629,7 @@ button {
   cursor: pointer;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .hero-schedule-btn {
@@ -628,7 +637,7 @@ button {
   align-items: center;
   gap: 6px;
   height: 40px;
-  padding: 0 14px;
+  padding: 0 12px;
   border-radius: 999px;
   background: var(--surface);
   color: var(--text);
@@ -636,8 +645,22 @@ button {
   font-weight: 600;
   box-shadow: var(--ring-subtle);
   flex-shrink: 0;
+  white-space: nowrap;
   border: 1px solid transparent;
   transition: transform 150ms ease-out;
+}
+
+@media (max-width: 340px) {
+  .hero-search-pill {
+    padding: 6px 6px 6px 12px;
+    gap: 6px;
+  }
+  .hero-schedule-btn {
+    height: 36px;
+    padding: 0 10px;
+    font-size: 12px;
+    gap: 4px;
+  }
 }
 
 .hero-schedule-btn:active {
@@ -856,6 +879,8 @@ button {
   justify-content: center;
   gap: 4px;
   height: 64px;
+  min-width: 0;
+  overflow: hidden;
   border-radius: 999px;
   font-weight: 500;
   font-size: 0.75rem;
@@ -866,7 +891,7 @@ button {
   white-space: nowrap;
   background: transparent;
   border: none;
-  padding: 0;
+  padding: 0 2px;
   transition: color 150ms ease-out, transform 150ms ease-out;
 }
 
@@ -893,10 +918,22 @@ button {
 }
 
 .nav-item-label {
-  font-size: 0.75rem;
+  font-size: clamp(10px, 2.7vw, 12px);
   line-height: 1.2;
   font-weight: 500;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 360px) {
+  .floating-bottom-nav {
+    left: 10px;
+    right: 10px;
+    padding: 4px;
+    gap: 2px;
+  }
 }
 
 /* Primary Black Pill & Secondary Grey Pill Buttons */
@@ -1867,13 +1904,12 @@ button {
   padding-inline: 16px;
   margin-inline: -16px;
   background: transparent;
-  transition: background-color 200ms ease-out, box-shadow 200ms ease-out, backdrop-filter 200ms ease-out;
 }
 
 .home-header.scrolled {
-  background: color-mix(in oklab, var(--paper) 85%, transparent);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  background: color-mix(in oklab, var(--paper) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
@@ -1890,24 +1926,26 @@ button {
   height: 32px;
   pointer-events: none;
   background: linear-gradient(to bottom, var(--paper) 0%, transparent 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
-  transition: opacity 200ms ease-out;
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 180ms ease-out;
 }
 
-/* Greeting collapsible container */
+.home-header.scrolled .home-header-fade {
+  opacity: 1;
+}
+
+/* Greeting collapsible container (composited opacity/transform, zero layout animation) */
 .home-greeting-wrap {
   overflow: hidden;
-  max-height: 80px;
   opacity: 1;
   transform: translateY(0);
-  transition: max-height 250ms cubic-bezier(0.2, 0, 0, 1), opacity 200ms ease-out, transform 200ms ease-out;
+  will-change: transform, opacity;
+  transition: transform 180ms ease-out, opacity 180ms ease-out;
 }
 
 .home-greeting-wrap.collapsed {
-  max-height: 0 !important;
+  height: 0 !important;
   opacity: 0 !important;
   transform: translateY(-8px) !important;
   margin: 0 !important;

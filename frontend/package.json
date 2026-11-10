@@ -32,5 +32,11 @@
     "playwright": "^1.64.1",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "browserslist": [
+    "chrome >= 100",
+    "safari >= 15.4",
+    "firefox >= 100",
+    "edge >= 100"
+  ]
 }

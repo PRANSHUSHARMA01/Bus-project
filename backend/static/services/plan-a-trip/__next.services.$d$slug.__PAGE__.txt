@@ -1,0 +1,29 @@
+2:"$Sreact.fragment"
+3:"/_next/static/chunks/1raer49fr3o1i.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+c:"/_next/static/chunks/055d664jb1lg6.js"
+d:I[52283,["$3","$c"],"default"]
+e:I[97367,["$3"],"OutletBoundary"]
+f:"$Sreact.suspense"
+12:"ViewportBoundary"
+13:I[97367,["$3"],"$12"]
+14:"MetadataBoundary"
+15:I[97367,["$3"],"$14"]
+16:I[27201,["$3"],"IconMark"]
+7:X
+7:C
+8:X
+b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[["$","$Ld",null,{"service":{"id":"plan_trip","slug":"plan-a-trip","title":"Plan a trip","title_hi":"यात्रा योजना बनाएं","subtitle":"Direct & 1-change routes","subtitle_hi":"सीधे व 1-बदलाव वाले रूट","description":"Door-to-door transit route planner with candidate buses and transfer stops.","description_hi":"उम्मीदवार बसों और ट्रांसफर स्टॉप के साथ यात्रा योजना बनाएं।","icon":"MapPin","badge":"Beta","category":"travel","details":{"summary":"Find optimal bus transfers and departure headways between any two Delhi NCR stops.","summary_hi":"किन्हीं दो स्टॉप के बीच सर्वोत्तम बस ट्रांसफर और प्रस्थान खोजें।","items":[{"label":"Algorithms","label_hi":"एल्गोरिदम","val":"Dijkstra Headway Routing"},{"label":"Max Transfers","label_hi":"अधिकतम बदलाव","val":"1 Transfer Optimal"},{"label":"Fares Estimation","label_hi":"किराया अनुमान","val":"Official Delhi DTC Slabs"}],"actionLabel":"Plan transit journey","actionLabel_hi":"यात्रा योजना बनाएं","actionLink":"/services/plan-a-trip"}}}],[["$","script","script-0",{"src":"/_next/static/chunks/055d664jb1lg6.js","async":true}]],["$","$Le",null,{"children":["$","$f",null,{"name":"Next.MetadataOutlet","children":"$@10"}]}]]}],"p":"$@11","v":null,"s":"$8"}}]]
+9:[["children",{"s":{"n":"slug","t":"d","k":"plan-a-trip","s":[]},"h":96,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@a","v":"$7","s":"$8"},"c":"$Qb"}]]
+1:[["children",{"s":"services","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+0:{"t":{"t":{"s":"","h":20,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[null,["$","$L13",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff","media":"(prefers-color-scheme: light)"}],["$","meta","3",{"name":"theme-color","content":"#18181b","media":"(prefers-color-scheme: dark)"}]]}],["$","$L15",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Delhi Smart Bus · Live Tracking & Fleet Intelligence"}],["$","meta","1",{"name":"description","content":"Real-time GPS bus tracking, crowd occupancy intelligence, and accurate arrivals for Delhi DTC & DIMTS electric buses."}],["$","link","2",{"rel":"manifest","href":"/manifest.webmanifest"}],["$","link","3",{"rel":"canonical","href":"https://pranshusharma.tech"}],["$","meta","4",{"name":"mobile-web-app-capable","content":"yes"}],["$","meta","5",{"name":"apple-mobile-web-app-title","content":"Delhi Bus"}],["$","meta","6",{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","meta","7",{"property":"og:title","content":"Delhi Smart Bus · Live Public Transit Tracking"}],["$","meta","8",{"property":"og:description","content":"Track live buses, seat occupancy, and accurate arrival ETAs across 19 major Delhi NCR corridors."}],["$","meta","9",{"property":"og:url","content":"https://pranshusharma.tech"}],["$","meta","10",{"property":"og:site_name","content":"Smart Bus Delhi"}],["$","meta","11",{"property":"og:locale","content":"en_IN"}],["$","meta","12",{"property":"og:type","content":"website"}],["$","meta","13",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","14",{"name":"twitter:title","content":"Delhi Smart Bus · Live Transit Tracking"}],["$","meta","15",{"name":"twitter:description","content":"Live GPS bus arrival tracking and crowd telemetry across Delhi NCR."}],["$","link","16",{"rel":"icon","href":"/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}],["$","link","17",{"rel":"icon","href":"/favicon.ico","sizes":"64x64","type":"image/x-icon"}],["$","link","18",{"rel":"icon","href":"/icon.svg","sizes":"any","type":"image/svg+xml"}],["$","link","19",{"rel":"icon","href":"/icon-192.png","sizes":"192x192","type":"image/png"}],["$","link","20",{"rel":"apple-touch-icon","href":"/icon-192.png","sizes":"192x192","type":"image/png"}],["$","$L16","21",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@17","v":null,"s":"$8"}},"a":"$@18","u":"$@19","b":"VUecLP2ltSv2_75dAvTxW"}
+10:null
+19:true
+8:300
+8:C
+18:0
+a:"$undefined"
+6:"$undefined"
+17:"$undefined"
+11:"$undefined"

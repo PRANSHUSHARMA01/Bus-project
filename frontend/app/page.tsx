@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
+import dynamic from "next/dynamic";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -35,16 +35,36 @@ import {
   ExternalLink,
   Sparkles,
 } from "lucide-react";
-import BusMap from "../components/BusMap";
-import { SharedTripTracker } from "../components/ui/SharedTripTracker";
-import { CookieBanner } from "../components/ui/CookieBanner";
+const BusMap = dynamic(() => import("../components/BusMap"), {
+  ssr: false,
+  loading: () => (
+    <div style={{ width: "100%", height: "100%", background: "var(--surface-2)", display: "grid", placeItems: "center", color: "var(--text-muted)", fontSize: 14 }}>
+      Loading live map…
+    </div>
+  ),
+});
+const SharedTripTracker = dynamic(
+  () => import("../components/ui/SharedTripTracker").then((m) => m.SharedTripTracker),
+  { ssr: false }
+);
+const CorridorTimeline = dynamic(
+  () => import("../components/ui/CorridorTimeline").then((m) => m.CorridorTimeline),
+  { ssr: false }
+);
+const LocationSheet = dynamic(
+  () => import("../components/ui/LocationSheet").then((m) => m.LocationSheet),
+  { ssr: false }
+);
+const TripPlannerView = dynamic(
+  () => import("../components/ui/TripPlannerView").then((m) => m.TripPlannerView),
+  { ssr: false }
+);
+import type { TripOption } from "../components/ui/TripPlannerView";
 import { ArrivalCard } from "../components/ui/ArrivalCard";
 import { Badge } from "../components/ui/Badge";
 import { BottomNav, NavTab } from "../components/ui/BottomNav";
-import { CorridorTimeline } from "../components/ui/CorridorTimeline";
 import { Carousel, CrowdAIArt, NightOwlArt, InterchangeArt } from "../components/ui/Carousel";
 import { EmptyState } from "../components/ui/EmptyState";
-import { LocationSheet } from "../components/ui/LocationSheet";
 import { ModeTabs, ModeTab } from "../components/ui/ModeTabs";
 import { PromoBanner } from "../components/ui/PromoBanner";
 import { SearchPill } from "../components/ui/SearchPill";
@@ -56,7 +76,6 @@ import { StopRow } from "../components/ui/StopRow";
 import { RecentStopRow } from "../components/ui/RecentStopRow";
 import { Toast } from "../components/ui/Toast";
 import { TopBar } from "../components/ui/TopBar";
-import { TripPlannerView, TripOption } from "../components/ui/TripPlannerView";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth-context";
 import { get, post, usePoll } from "../lib/api";
@@ -76,7 +95,7 @@ export default function UberPassengerApp() {
   const router = useRouter();
 
   // App view state
-  const [userName, setUserName] = useState<string>("Pranshu");
+  const [userName, setUserName] = useState<string>("");
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
@@ -134,9 +153,7 @@ export default function UberPassengerApp() {
 
   // Persistence & User Sync
   useEffect(() => {
-    if (user?.full_name) {
-      setUserName(user.full_name);
-    }
+    setUserName(user?.full_name || "");
     if (user?.language) {
       setLang(user.language);
     }
@@ -158,17 +175,30 @@ export default function UberPassengerApp() {
     }
   }, [user, isLoading, router]);
 
-  // Scroll state for sticky home header collapse and fade
-  const [scrollY, setScrollY] = useState(0);
+  // Scroll state for sticky home header collapse and fade (rAF-throttled boolean thresholds)
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isGreetingCollapsed, setIsGreetingCollapsed] = useState(false);
   useEffect(() => {
+    let rafId = 0;
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        const y = window.scrollY;
+        const nextScrolled = y > 8;
+        const nextCollapsed = y > 24;
+        setIsScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
+        setIsGreetingCollapsed((prev) => (prev === nextCollapsed ? prev : nextCollapsed));
+      });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
-  const rawName = (user?.full_name || userName || "").trim();
+  const rawName = (user ? user.full_name || userName || "" : "").trim();
   const isEmailPrefix =
     Boolean(rawName) &&
     !rawName.includes(" ") &&
@@ -195,14 +225,26 @@ export default function UberPassengerApp() {
   const [tripDestName, setTripDestName] = useState<string>("");
   const [tripLoading, setTripLoading] = useState<boolean>(false);
 
-  // Polling data
-  const routes = usePoll<Route[]>("/routes", 60000) ?? [];
-  const stops = usePoll<Stop[]>("/stops", 60000) ?? [];
-  const buses = usePoll<Bus[]>("/buses/live", 1000) ?? [];
-  const alerts = usePoll<Alert[]>("/alerts", 3000) ?? [];
+  // Lightweight polling on Home; full geometry & 2s bus positions only when Map/Search is active
+  const fullRoutes = usePoll<Route[]>(viewMode === "map" ? "/routes" : null, 0) ?? [];
+  const compactRoutes = usePoll<Route[]>("/routes?compact=1", 0) ?? [];
+  const routes = fullRoutes.length > 0 ? fullRoutes : compactRoutes;
+
+  const activeStops = usePoll<Stop[]>("/stops?active_only=1", 0) ?? [];
+  const allStops = usePoll<Stop[]>(
+    isSearchOpen || viewMode === "map" || locationSheetOpen ? "/stops" : null,
+    0
+  ) ?? [];
+  const stops = allStops.length > 0 ? allStops : activeStops;
+
+  const health = usePoll<{ buses_live: number }>("/health", viewMode === "home" ? 10000 : 0);
+  const buses = usePoll<Bus[]>(viewMode === "map" ? "/buses/live" : null, 2000) ?? [];
+  const liveBusCount = buses.length || health?.buses_live || 193;
+
+  const alerts = usePoll<Alert[]>("/alerts", viewMode === "map" ? 5000 : 15000) ?? [];
   const arrivals = usePoll<Arrival[]>(
     selectedStopId ? `/stops/${selectedStopId}/arrivals` : null,
-    1500
+    viewMode === "map" ? 2000 : 10000
   );
 
   // Fallback to active route stop if current selection is invalid
@@ -224,14 +266,15 @@ export default function UberPassengerApp() {
 
   const stopName = (s: Stop) => (lang === "hi" ? s.name_hi : s.name);
 
-  // Autocomplete over all 6,800+ GTFS stops
+  // Autocomplete over all 6,800+ GTFS stops (only computed when search overlay is open)
   const searchHits = useMemo(() => {
+    if (!isSearchOpen) return [];
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
     return stops
       .filter((s) => s.name.toLowerCase().includes(q) || s.name_hi.includes(q))
       .slice(0, 8);
-  }, [searchQuery, stops]);
+  }, [isSearchOpen, searchQuery, stops]);
 
   // Recent stops: Top landmark hubs from active corridors
   const recentStops = useMemo(() => {
@@ -437,7 +480,7 @@ export default function UberPassengerApp() {
       id: "live_map",
       label: lang === "hi" ? "लाइव मैप" : "Live map",
       icon: Map,
-      badge: `${buses.length || 193}`,
+      badge: `${liveBusCount}`,
       badgeType: "live",
       onClick: () => {
         setViewMode("map");
@@ -551,7 +594,7 @@ export default function UberPassengerApp() {
         <main id="main-content" style={{ padding: "0 16px" }}>
           {/* STICKY HOME HEADER WITH FADE + BLUR (Section 4) */}
           <header
-            className={`home-header ${scrollY > 8 ? "scrolled" : ""}`}
+            className={`home-header ${isScrolled ? "scrolled" : ""}`}
             style={{ marginBottom: 12 }}
           >
             {/* Row 1: Location Picker & Alerts Button */}
@@ -630,7 +673,7 @@ export default function UberPassengerApp() {
             />
 
             {/* Greeting: collapses on scroll */}
-            <div className={`home-greeting-wrap ${scrollY > 24 ? "collapsed" : ""}`}>
+            <div className={`home-greeting-wrap ${isGreetingCollapsed ? "collapsed" : ""}`}>
               <div
                 style={{
                   display: "flex",
@@ -684,7 +727,6 @@ export default function UberPassengerApp() {
             {/* 32px soft fade below the sticky header */}
             <div
               className="home-header-fade"
-              style={{ opacity: Math.min(1, scrollY / 24) }}
               aria-hidden="true"
             />
           </header>
@@ -726,8 +768,8 @@ export default function UberPassengerApp() {
               >
                 <Map size={22} />
               </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px 8px" }}>
                   <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
                     {lang === "hi" ? "लाइव बस मैप देखें" : "View Live Bus Map"}
                   </span>
@@ -739,9 +781,11 @@ export default function UberPassengerApp() {
                       borderRadius: 999,
                       background: "rgba(16, 185, 129, 0.15)",
                       color: "var(--crowd-low)",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
                     }}
                   >
-                    {buses.length || 128} Live
+                    {liveBusCount} Live
                   </span>
                 </div>
                 <div className="text-caption" style={{ color: "var(--text-muted)", marginTop: 2 }}>
